@@ -1,0 +1,3 @@
+func {{.Name}}{{.Constructors}} {{.Returns}} {
+{{.Body}}
+}

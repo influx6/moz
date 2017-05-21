@@ -1,0 +1,11 @@
+{{ range .Commentary }}
+//    {{.CommentBlock}}
+{{ end }}
+{{ range .Annotations }}
+//    {{.Name}}
+{{ end }}
+type {{.Name}} {{.Type}} {
+{{ range .Fields }}
+    {{.FieldName}} {{.FieldType}} {{.FieldTags}}
+{{ end }}
+}
