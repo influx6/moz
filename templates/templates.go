@@ -31,8 +31,19 @@ func Get(file string) (string, bool) {
 }
 
 func init(){
-	internalFiles["function.tml"] = "func {{.Name}}({{.Constructors}}){\n{{.Body}}\n}"
-	internalFiles["struct.tml"] = ""
-	internalFiles["variable.tml"] = "{{.Name}} {{.Type}}"
+	internalFiles["variable-type.tml"] = "{{.Name}} {{.Type}}"
+	internalFiles["array.tml"] = "[{{.Size}}]{{.Type}}"
+	internalFiles["variable-assign.tml"] = "{{.Name}}:={{.Value}}"
+	internalFiles["switch.tml"] = "switch {{.Condition}} {\n{{.Case }}\n{{.Default }}\n}"
+	internalFiles["typename.tml"] = "{{.Type}}"
+	internalFiles["variable-assign-basic.tml"] = "var {{.Name}} = {{.Value}}"
+	internalFiles["case-default.tml"] = "default:\n    {{.Action}}\n\n\n "
+	internalFiles["struct.tml"] = "{{ range .Commentary }}\n//    {{.CommentBlock}}\n{{ end }}\n{{ range .Annotations }}\n//    {{.Name}}\n{{ end }}\ntype {{.Name}} {{.Type}} {\n{{ range .Fields }}\n    {{.FieldName}} {{.FieldType}} {{.FieldTags}}\n{{ end }}\n}"
+	internalFiles["slicevalue.tml"] = "[]{{.Type}}{ {{.Values}} }"
+	internalFiles["variable-type-only.tml"] = "{{.Type}}"
+	internalFiles["case.tml"] = "case {{.Condition}}:\n    {{.Action}}\n\n\n "
+	internalFiles["function.tml"] = "func {{.Name}}{{.Constructors}} {{.Returns}} {\n{{.Body}}\n}"
+	internalFiles["slicetype.tml"] = "[]{{.Type}}"
+	internalFiles["variable-name.tml"] = "{{.Name}}"
 
 }

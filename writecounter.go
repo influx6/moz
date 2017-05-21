@@ -31,6 +31,31 @@ func (w *WriteCounter) Write(data []byte) (int, error) {
 
 //======================================================================================================================
 
+// IsNoError returns true/false if the error is nil.
+func IsNoError(err error) bool {
+	return err == nil
+}
+
+// IsDrainError is used to check if a error value matches io.EOF.
+func IsDrainError(err error) bool {
+	if err != nil && err == io.EOF {
+		return true
+	}
+
+	return false
+}
+
+// IsNotDrainError is used to check if a error value matches io.EOF.
+func IsNotDrainError(err error) bool {
+	if err != nil && err != io.EOF {
+		return true
+	}
+
+	return false
+}
+
+//======================================================================================================================
+
 // ConstantWriter defines a writer that consistently writes a provided output.
 type ConstantWriter struct {
 	d []byte

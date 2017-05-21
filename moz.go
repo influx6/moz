@@ -726,8 +726,6 @@ func (f FunctionDeclr) WriteTo(w io.Writer) (int64, error) {
 	return wc.Written(), nil
 }
 
-//======================================================================================================================
-
 // FunctionReturnDeclr defines a declaration which produces argument based output
 // of it's giving int64ernals.
 type FunctionReturnDeclr struct {
@@ -750,8 +748,6 @@ func (f FunctionReturnDeclr) WriteTo(w io.Writer) (int64, error) {
 		RuneEnd:   ')',
 	}).WriteTo(w)
 }
-
-//======================================================================================================================
 
 // FunctionConstructorDeclr defines a declaration which produces argument based output
 // of it's giving int64ernals.
@@ -776,14 +772,12 @@ func (f FunctionConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
 	}).WriteTo(w)
 }
 
-//======================================================================================================================
-
 // FunctionBodyDeclr defines a type used to define the contents of a body.
 type FunctionBodyDeclr struct {
 	Body []Declaration `json:"body"`
 }
 
-// WriteTo writes to the provided writer the variable declaration.
+// WriteTo writes to the provided writer the structure declaration.
 func (f FunctionBodyDeclr) WriteTo(w io.Writer) (int64, error) {
 	var total int64
 
@@ -797,6 +791,126 @@ func (f FunctionBodyDeclr) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	return total, nil
+}
+
+//======================================================================================================================
+
+// DefaultCaseDeclr defines a structure which generates switch default case declarations.
+type DefaultCaseDeclr struct {
+	Behaviour Declaration
+}
+
+// WriteTo writes to the provided writer the structure declaration.
+func (c DefaultCaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("defaultCaseDeclr", templates.Must("case-default.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var caseAction bytes.Buffer
+
+	if _, err := c.Behaviour.WriteTo(&caseAction); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Action string
+	}{
+		Action: caseAction.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// CaseDeclr defines a structure which generates switch case declarations.
+type CaseDeclr struct {
+	Condition Declaration
+	Behaviour Declaration
+}
+
+// WriteTo writes to the provided writer the structure declaration.
+func (c CaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("caseDeclr", templates.Must("case.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var caseCondition, caseAction bytes.Buffer
+
+	if _, err := c.Condition.WriteTo(&caseCondition); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	if _, err := c.Behaviour.WriteTo(&caseAction); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Action    string
+		Condition string
+	}{
+		Action:    caseAction.String(),
+		Condition: caseCondition.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// SwitchDeclr defines a structure which generates switch declarations.
+type SwitchDeclr struct {
+	Condition Declaration
+	Cases     []CaseDeclr
+	Default   DefaultCaseDeclr
+}
+
+// WriteTo writes to the provided writer the structure declaration.
+func (c SwitchDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("caseDeclr", templates.Must("case.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var caseCondition, caseDefault, caseAction bytes.Buffer
+
+	for _, item := range c.Cases {
+		if _, err := item.WriteTo(&caseAction); IsNotDrainError(err) {
+			return 0, err
+		}
+	}
+
+	if c.Default.Behaviour != nil {
+		if _, err := c.Default.WriteTo(&caseDefault); IsNotDrainError(err) {
+			return 0, err
+		}
+	}
+
+	if _, err := c.Condition.WriteTo(&caseCondition); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Condition string
+		Cases     string
+		Default   string
+	}{
+		Cases:     caseAction.String(),
+		Default:   caseDefault.String(),
+		Condition: caseCondition.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 //======================================================================================================================
