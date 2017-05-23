@@ -9,14 +9,20 @@ import (
 	"github.com/influx6/moz"
 )
 
-func TestPackageGeneration(t *testing.T) {
-	expected := `func main() {
+// TestFunctionGen validates the expected output of a giving function generator.
+func TestFunctionGen(t *testing.T) {
+	expected := `func main(v int) {
 	fmt.Printf("Welcome to Lola Land");
 }`
 
 	src := moz.Function(
 		moz.Name("main"),
-		moz.Constructor(),
+		moz.Constructor(
+			moz.VarType(
+				moz.Name("v"),
+				moz.Type("int"),
+			),
+		),
 		moz.Returns(),
 		moz.Text(`	fmt.Printf("Welcome to Lola Land");`, nil),
 	)
