@@ -37,6 +37,7 @@ func TestStructGen(t *testing.T) {
 	}
 	tests.Passed("Should have successfully written source output.")
 
+	tests.Info("Source: %+s", bu.String())
 	if bu.String() != expected {
 		tests.Info("Source: %+q", bu.String())
 		tests.Info("Expected: %+q", expected)
@@ -74,6 +75,8 @@ func TestFunctionGen(t *testing.T) {
 		tests.Failed("Should have successfully written source output: %+q.", err)
 	}
 	tests.Passed("Should have successfully written source output.")
+
+	tests.Info("Source: %+s", bu.String())
 
 	if bu.String() != expected {
 		tests.Info("Source: %+q", bu.String())
