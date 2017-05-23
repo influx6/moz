@@ -1,1 +1,1 @@
-{{.Format}}:{{.Name}}
+{{.Format}}:"{{.Name}}"

@@ -122,6 +122,13 @@ func Value(rn interface{}, converter func(interface{}) string) ValueDeclr {
 	}
 }
 
+// Text returns a new instance of a TextDeclr.
+func Text(txt string) TextBlockDeclr {
+	return TextBlockDeclr{
+		Block: txt,
+	}
+}
+
 // String returns a new instance of a StringDeclr.
 func String(rn string) StringDeclr {
 	return StringDeclr{
@@ -225,6 +232,24 @@ func Struct(name NameDeclr, comments Declaration, annotations Declaration, field
 	}
 }
 
+// Annotations returns a slice instance of Declaration.
+func Annotations(names ...string) Declaration {
+	var decls Declarations
+
+	for _, name := range names {
+		decls = append(decls, Annotation(name))
+	}
+
+	return NewlineMapper.Map(decls...)
+}
+
+// Annotation returns a new instance of a AnnotationDeclr.
+func Annotation(name string) AnnotationDeclr {
+	return AnnotationDeclr{
+		Value: name,
+	}
+}
+
 // Tag returns a new instance of a TagDeclr.
 func Tag(format string, name string) TagDeclr {
 	return TagDeclr{
@@ -269,8 +294,8 @@ func Source(tml *template.Template, binding interface{}) SourceDeclr {
 	}
 }
 
-// Text returns a new instance of a TextDeclr.
-func Text(tml string, binding interface{}) TextDeclr {
+// SourceText returns a new instance of a TextDeclr.
+func SourceText(tml string, binding interface{}) TextDeclr {
 	return TextDeclr{
 		Template: tml,
 		Binding:  binding,

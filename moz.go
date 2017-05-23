@@ -17,6 +17,9 @@ var (
 	// CommaWriter defines the a writer that consistently writes a ','.
 	CommaWriter = NewConstantWriter([]byte(","))
 
+	// NewlineWriter defines the a writer that consistently writes a \n.
+	NewlineWriter = NewConstantWriter([]byte("\n"))
+
 	// CommaSpacedWriter defines the a writer that consistently writes a ', '.
 	CommaSpacedWriter = NewConstantWriter([]byte(", "))
 
@@ -99,6 +102,27 @@ func (mapper MapAny) Map(dls ...Declaration) Declaration {
 }
 
 //======================================================================================================================
+
+// NewlineMapper defines a struct which implements the DeclarationMap which maps a set of
+// items by seperating their output with a period '.', but execludes before the first and
+// after the last item.
+var NewlineMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, error) {
+	wc := NewWriteCounter(to)
+
+	total := len(declrs) - 1
+
+	for index, declr := range declrs {
+		if _, err := declr.WriteTo(wc); err != nil && err != io.EOF {
+			return 0, err
+		}
+
+		if index < total {
+			NewlineWriter.WriteTo(wc)
+		}
+	}
+
+	return wc.Written(), nil
+}}
 
 // DotMapper defines a struct which implements the DeclarationMap which maps a set of
 // items by seperating their output with a period '.', but execludes before the first and
@@ -1473,14 +1497,14 @@ func (n MultiCommentDeclr) WriteTo(w io.Writer) (int64, error) {
 
 //======================================================================================================================
 
-// TextBlockDeclr defines a declaration struct for representing a single comment.
-type TextBlockDeclr struct {
-	Block string `json:"text"`
+// AnnotationDeclr defines a struct for generating a annotation.
+type AnnotationDeclr struct {
+	Value string `json:"value"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
-func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
-	tml, err := ToTemplate("textBlockDeclr", templates.Must("text.tml"), nil)
+func (n AnnotationDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("annotationDeclr", templates.Must("annotations.tml"), nil)
 	if err != nil {
 		return 0, err
 	}
@@ -1488,6 +1512,29 @@ func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
 	wc := NewWriteCounter(w)
 
 	if err := tml.Execute(wc, n); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// String returns the internal name associated with the NameDeclr.
+func (n AnnotationDeclr) String() string {
+	return n.Value
+}
+
+//======================================================================================================================
+
+// TextBlockDeclr defines a declaration struct for representing a single comment.
+type TextBlockDeclr struct {
+	Block string `json:"text"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	wc := NewWriteCounter(w)
+
+	if _, err := wc.Write([]byte(n.Block)); err != nil {
 		return 0, err
 	}
 
