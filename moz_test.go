@@ -11,7 +11,7 @@ import (
 
 // TestFunctionGen validates the expected output of a giving function generator.
 func TestFunctionGen(t *testing.T) {
-	expected := `func main(v int,m string) {
+	expected := `func main(v int, m string) {
 	fmt.Printf("Welcome to Lola Land");
 }`
 
@@ -38,6 +38,7 @@ func TestFunctionGen(t *testing.T) {
 	}
 	tests.Passed("Should have successfully written source output.")
 
+	tests.Info("Source: %+q", bu.String())
 	if bu.String() != expected {
 		tests.Info("Source: %+q", bu.String())
 		tests.Info("Expected: %+q", expected)

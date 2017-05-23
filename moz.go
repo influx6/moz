@@ -17,6 +17,9 @@ var (
 	// CommaWriter defines the a writer that consistently writes a ','.
 	CommaWriter = NewConstantWriter([]byte(","))
 
+	// CommaSpacedWriter defines the a writer that consistently writes a ', '.
+	CommaSpacedWriter = NewConstantWriter([]byte(", "))
+
 	// PeriodWriter defines the a writer that consistently writes a '.'.
 	PeriodWriter = NewConstantWriter([]byte("."))
 )
@@ -112,6 +115,27 @@ var DotMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, 
 
 		if index < total {
 			PeriodWriter.WriteTo(wc)
+		}
+	}
+
+	return wc.Written(), nil
+}}
+
+// CommaSpacedMapper defines a struct which implements the DeclarationMap which maps a set of
+// items by seperating their output with a coma ', ', but execludes before the first and
+// after the last item.
+var CommaSpacedMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, error) {
+	wc := NewWriteCounter(to)
+
+	total := len(declrs) - 1
+
+	for index, declr := range declrs {
+		if _, err := declr.WriteTo(wc); err != nil && err != io.EOF {
+			return 0, err
+		}
+
+		if index < total {
+			CommaSpacedWriter.WriteTo(wc)
 		}
 	}
 
@@ -1537,7 +1561,7 @@ func (f ConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
 		decals = append(decals, item)
 	}
 
-	arguments := CommaMapper.Map(decals...)
+	arguments := CommaSpacedMapper.Map(decals...)
 
 	return (BlockDeclr{
 		Block:     arguments,
