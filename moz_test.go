@@ -2,7 +2,6 @@ package moz_test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"testing"
 
@@ -29,6 +28,11 @@ func TestPackageGeneration(t *testing.T) {
 	}
 	tests.Passed("Should have successfully written source output.")
 
-	fmt.Printf("Source: %+s\n", bu.String())
-	fmt.Printf("Expected: %+s\n", expected)
+	if bu.String() != expected {
+		tests.Info("Source: %+q", bu.String())
+		tests.Info("Expected: %+q", expected)
+
+		tests.Failed("Should have successfully matched generated output with expected.")
+	}
+	tests.Passed("Should have successfully matched generated output with expected.")
 }
