@@ -11,7 +11,7 @@ import (
 
 // TestFunctionGen validates the expected output of a giving function generator.
 func TestFunctionGen(t *testing.T) {
-	expected := `func main(v int) {
+	expected := `func main(v int,m string) {
 	fmt.Printf("Welcome to Lola Land");
 }`
 
@@ -21,6 +21,10 @@ func TestFunctionGen(t *testing.T) {
 			moz.VarType(
 				moz.Name("v"),
 				moz.Type("int"),
+			),
+			moz.VarType(
+				moz.Name("m"),
+				moz.Type("string"),
 			),
 		),
 		moz.Returns(),

@@ -110,7 +110,7 @@ var DotMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, 
 			return 0, err
 		}
 
-		if index > 1 && index < total {
+		if index < total {
 			PeriodWriter.WriteTo(wc)
 		}
 	}
@@ -131,7 +131,7 @@ var CommaMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64
 			return 0, err
 		}
 
-		if index > 1 && index < total {
+		if index < total {
 			CommaWriter.WriteTo(wc)
 		}
 	}
