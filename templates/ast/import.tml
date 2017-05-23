@@ -1,0 +1,5 @@
+import (
+{{ range .Imports}}
+    {{.}}
+{{end}}
+)

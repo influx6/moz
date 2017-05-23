@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"strconv"
+	tm "text/template"
 
 	"github.com/influx6/moz/templates"
 )
@@ -46,6 +47,19 @@ type MapOut func(io.Writer, ...Declaration) (int64, error)
 
 // Declarations defines the body contents of a giving declaration/structure.
 type Declarations []Declaration
+
+// WriteTo writes to the provided writer the variable declaration.
+func (d Declarations) WriteTo(w io.Writer) (int64, error) {
+	wc := NewWriteCounter(w)
+
+	for _, item := range d {
+		if _, err := item.WriteTo(wc); IsNotDrainError(err) {
+			return wc.Written(), err
+		}
+	}
+
+	return wc.Written(), nil
+}
 
 // Map applies a giving declaration mapper to the underlying io.Readers of the Declaration.
 func (d Declarations) Map(mp DeclarationMap) Declaration {
@@ -127,6 +141,89 @@ var CommaMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64
 
 //======================================================================================================================
 
+// TextDeclr defines a declaration type which takes a giving source text and generate text.Template for it
+// and providing binding and will execute the template to generate it's output
+type TextDeclr struct {
+	Template string
+	Binding  interface{}
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (tx TextDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := tm.New("textDeclr").Parse(tx.Template)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, tx.Binding); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// SourceDeclr defines a declaration type which takes a giving source template
+// and providing binding and will execute the template to generate it's output
+type SourceDeclr struct {
+	Template *tm.Template
+	Binding  interface{}
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (src SourceDeclr) WriteTo(w io.Writer) (int64, error) {
+	wc := NewWriteCounter(w)
+
+	if err := src.Template.Execute(wc, src.Binding); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// PackageDeclr defines a declaration which generates a go package source.
+type PackageDeclr struct {
+	Name Declaration  `json:"name"`
+	Body Declarations `json:"body"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (pkg PackageDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("packageDeclr", templates.Must("package.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var named, body bytes.Buffer
+
+	if _, err := pkg.Name.WriteTo(&named); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	if _, err := pkg.Body.WriteTo(&body); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Name string
+		Body string
+	}{
+		Name: named.String(),
+		Body: body.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
 // TypeDeclr defines a declaration struct for representing a giving type.
 type TypeDeclr struct {
 	TypeName string `json:"typeName"`
@@ -164,6 +261,26 @@ type NameDeclr struct {
 	Name string `json:"name"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n NameDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("nameDeclr", templates.Must("name.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Name string
+	}{
+		Name: n.Name,
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal name associated with the NameDeclr.
 func (n NameDeclr) String() string {
 	return n.Name
@@ -181,9 +298,49 @@ func (n RuneASCIIDeclr) String() string {
 	return strconv.QuoteRuneToASCII(n.Value)
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n RuneASCIIDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("runeASCIIDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // RuneGraphicsDeclr defines a declaration struct for representing a giving value.
 type RuneGraphicsDeclr struct {
 	Value rune `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n RuneGraphicsDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("runeGraphicsDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -196,6 +353,26 @@ type RuneDeclr struct {
 	Value rune `json:"value"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n RuneDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("runeDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n RuneDeclr) String() string {
 	return strconv.QuoteRune(n.Value)
@@ -204,6 +381,26 @@ func (n RuneDeclr) String() string {
 // StringASCIIDeclr defines a declaration struct for representing a giving value.
 type StringASCIIDeclr struct {
 	Value string `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n StringASCIIDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("stringASCIIDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -216,6 +413,26 @@ type StringDeclr struct {
 	Value string `json:"value"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n StringDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("stringDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n StringDeclr) String() string {
 	return strconv.Quote(n.Value)
@@ -224,6 +441,26 @@ func (n StringDeclr) String() string {
 // BoolDeclr defines a declaration struct for representing a giving value.
 type BoolDeclr struct {
 	Value bool `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n BoolDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("boolDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -237,6 +474,26 @@ type UIntBaseDeclr struct {
 	Base  int    `json:"base"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n UIntBaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("uintBaseDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n UIntBaseDeclr) String() string {
 	return strconv.FormatUint(n.Value, n.Base)
@@ -247,6 +504,26 @@ type UInt64Declr struct {
 	Value uint64 `json:"value"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n UInt64Declr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("uint64Declr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n UInt64Declr) String() string {
 	return strconv.FormatUint(n.Value, 10)
@@ -255,6 +532,26 @@ func (n UInt64Declr) String() string {
 // UInt32Declr defines a declaration struct for representing a giving value.
 type UInt32Declr struct {
 	Value uint32 `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n UInt32Declr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("uint32Declr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -268,6 +565,26 @@ type IntBaseDeclr struct {
 	Base  int   `json:"base"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n IntBaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("intBaseDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n IntBaseDeclr) String() string {
 	return strconv.FormatInt(n.Value, n.Base)
@@ -276,6 +593,26 @@ func (n IntBaseDeclr) String() string {
 // Int64Declr defines a declaration struct for representing a giving value.
 type Int64Declr struct {
 	Value int64 `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n Int64Declr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("int64Declr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -288,6 +625,26 @@ type Int32Declr struct {
 	Value int32 `json:"value"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n Int32Declr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("int32Declr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n Int32Declr) String() string {
 	return strconv.FormatInt(int64(n.Value), 10)
@@ -296,6 +653,26 @@ func (n Int32Declr) String() string {
 // IntDeclr defines a declaration struct for representing a giving value.
 type IntDeclr struct {
 	Value int `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n IntDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("intDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -310,6 +687,26 @@ type FloatBaseDeclr struct {
 	Precision int     `json:"precision"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n FloatBaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("floatBaseDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n FloatBaseDeclr) String() string {
 	return strconv.FormatFloat(n.Value, 'f', n.Precision, n.Bitsize)
@@ -318,6 +715,26 @@ func (n FloatBaseDeclr) String() string {
 // Float32Declr defines a declaration struct for representing a giving value.
 type Float32Declr struct {
 	Value float32 `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n Float32Declr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("float32Declr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -330,6 +747,26 @@ type Float64Declr struct {
 	Value float64 `json:"value"`
 }
 
+// WriteTo writes to the provided writer the variable declaration.
+func (n Float64Declr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("float64Declr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // String returns the internal data associated with the structure.
 func (n Float64Declr) String() string {
 	return strconv.FormatFloat(n.Value, 'f', 4, 64)
@@ -339,6 +776,26 @@ func (n Float64Declr) String() string {
 type ValueDeclr struct {
 	Value          interface{}              `json:"value"`
 	ValueConverter func(interface{}) string `json:"-"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n ValueDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("valueDeclr", templates.Must("value.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Value string
+	}{
+		Value: n.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 // String returns the internal data associated with the structure.
@@ -685,29 +1142,36 @@ func (c ConditionDeclr) WriteTo(w io.Writer) (int64, error) {
 // FunctionDeclr defines a declaration which produces function about based on the giving
 // constructor and body.
 type FunctionDeclr struct {
-	Name        NameDeclr                `json:"name"`
-	Constructor FunctionConstructorDeclr `json:"constructor"`
-	Body        FunctionBodyDeclr        `json:"body"`
+	Name        NameDeclr        `json:"name"`
+	Constructor ConstructorDeclr `json:"constructor"`
+	Returns     Declaration      `json:"returns"`
+	Body        Declarations     `json:"body"`
 }
 
 // WriteTo writes to the provided writer the function declaration.
 func (f FunctionDeclr) WriteTo(w io.Writer) (int64, error) {
-	var constr, body bytes.Buffer
+	var constr, returns, body bytes.Buffer
 
-	if _, err := f.Constructor.WriteTo(&constr); err != nil {
+	if _, err := f.Constructor.WriteTo(&constr); IsNotDrainError(err) {
 		return 0, err
 	}
 
-	if _, err := f.Body.WriteTo(&body); err != nil {
+	if _, err := f.Returns.WriteTo(&returns); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	if _, err := f.Body.WriteTo(&body); IsNotDrainError(err) {
 		return 0, err
 	}
 
 	var declr = struct {
 		Name        string
+		Returns     string
 		Body        string
 		Constructor string
 	}{
 		Name:        f.Name.String(),
+		Returns:     returns.String(),
 		Body:        body.String(),
 		Constructor: constr.String(),
 	}
@@ -726,14 +1190,318 @@ func (f FunctionDeclr) WriteTo(w io.Writer) (int64, error) {
 	return wc.Written(), nil
 }
 
-// FunctionReturnDeclr defines a declaration which produces argument based output
-// of it's giving int64ernals.
-type FunctionReturnDeclr struct {
+// FunctionTypeDeclr defines a declaration which produces function about based on the giving
+// constructor and body.
+type FunctionTypeDeclr struct {
+	Name        NameDeclr        `json:"name"`
+	Constructor ConstructorDeclr `json:"constructor"`
+	Returns     Declaration      `json:"returns"`
+}
+
+// WriteTo writes to the provided writer the function declaration.
+func (f FunctionTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	var constr, returns bytes.Buffer
+
+	if _, err := f.Constructor.WriteTo(&constr); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	if _, err := f.Returns.WriteTo(&returns); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	var declr = struct {
+		Name        string
+		Returns     string
+		Constructor string
+	}{
+		Name:        f.Name.String(),
+		Returns:     returns.String(),
+		Constructor: constr.String(),
+	}
+
+	tml, err := ToTemplate("functionTypeDeclr", templates.Must("function-type.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, declr); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// TagDeclr defines a declaration for representing go type tags.
+type TagDeclr struct {
+	Format string `json:"format"`
+	Name   string `json:"name"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (v TagDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("tagDeclr", templates.Must("tag.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, v); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// StructTypeDeclr defines a declaration which produces a variable declaration.
+type StructTypeDeclr struct {
+	Name NameDeclr    `json:"name"`
+	Type TypeDeclr    `json:"typename"`
+	Tags Declarations `json:"tags"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (v StructTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("structTypeDeclr", templates.Must("structtype.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var tags bytes.Buffer
+	tags.WriteRune('`')
+	if _, err := v.Tags.WriteTo(&tags); IsNotDrainError(err) {
+		return 0, err
+	}
+	tags.WriteRune('`')
+
+	wc := NewWriteCounter(w)
+	if err := tml.Execute(wc, struct {
+		Name string
+		Type string
+		Tags string
+	}{
+		Name: v.Name.String(),
+		Type: v.Type.String(),
+		Tags: tags.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// StructDeclr defines a declaration struct for representing a single comment.
+type StructDeclr struct {
+	Name        NameDeclr    `json:"name"`
+	Type        TypeDeclr    `json:"type"`
+	Comments    Declaration  `json:"comments"`
+	Annotations Declaration  `json:"annotations"`
+	Fields      Declarations `json:"fields"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (v StructDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("structDeclr", templates.Must("struct.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var fields []string
+	var comments, annotations bytes.Buffer
+
+	if _, err := v.Comments.WriteTo(&comments); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	if _, err := v.Annotations.WriteTo(&annotations); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	var b bytes.Buffer
+	for _, item := range v.Fields {
+		b.Reset()
+
+		if _, err := item.WriteTo(&b); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		fields = append(fields, b.String())
+	}
+
+	wc := NewWriteCounter(w)
+	if err := tml.Execute(wc, struct {
+		Name        string
+		Type        string
+		Comments    string
+		Annotations string
+		Fields      []string
+	}{
+		Fields:      fields,
+		Name:        v.Name.String(),
+		Type:        v.Type.String(),
+		Comments:    comments.String(),
+		Annotations: annotations.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// CommentDeclr defines a declaration struct for representing a single comment.
+type CommentDeclr struct {
+	MainBlock Declaration  `json:"mainBlock"`
+	Blocks    Declarations `json:"blocks"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n CommentDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("commentDeclr", templates.Must("comments.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var mainBlock bytes.Buffer
+	var blocks []string
+
+	if _, err := n.MainBlock.WriteTo(&mainBlock); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	var bu bytes.Buffer
+	for _, block := range n.Blocks {
+		bu.Reset()
+
+		if _, err := block.WriteTo(&bu); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		blocks = append(blocks, bu.String())
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		MainBlock string
+		Blocks    []string
+	}{
+		MainBlock: mainBlock.String(),
+		Blocks:    blocks,
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// MultiCommentDeclr defines a declaration struct for representing a single comment.
+type MultiCommentDeclr struct {
+	MainBlock Declaration  `json:"mainBlock"`
+	Blocks    Declarations `json:"blocks"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n MultiCommentDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("multiCommentDeclr", templates.Must("multicomments.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var mainBlock bytes.Buffer
+	var blocks []string
+
+	if _, err := n.MainBlock.WriteTo(&mainBlock); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	var bu bytes.Buffer
+	for _, block := range n.Blocks {
+		bu.Reset()
+
+		if _, err := block.WriteTo(&bu); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		blocks = append(blocks, bu.String())
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		MainBlock string
+		Blocks    []string
+	}{
+		MainBlock: mainBlock.String(),
+		Blocks:    blocks,
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// TextBlockDeclr defines a declaration struct for representing a single comment.
+type TextBlockDeclr struct {
+	Block string `json:"text"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("textBlockDeclr", templates.Must("text.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, n); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// String returns the internal name associated with the NameDeclr.
+func (n TextBlockDeclr) String() string {
+	return n.Block
+}
+
+//======================================================================================================================
+
+// CustomReturnDeclr defines a declaration which produces argument based output
+// of it's giving internals.
+type CustomReturnDeclr struct {
+	Returns Declarations `json:"returns"`
+}
+
+// WriteTo writes to the provided writer the function argument declaration.
+func (f CustomReturnDeclr) WriteTo(w io.Writer) (int64, error) {
+	arguments := CommaMapper.Map(f.Returns...)
+
+	return (BlockDeclr{
+		Block:     arguments,
+		RuneBegin: '(',
+		RuneEnd:   ')',
+	}).WriteTo(w)
+}
+
+// ReturnDeclr defines a declaration which produces argument based output
+// of it's giving internals.
+type ReturnDeclr struct {
 	Returns []TypeDeclr `json:"returns"`
 }
 
 // WriteTo writes to the provided writer the function argument declaration.
-func (f FunctionReturnDeclr) WriteTo(w io.Writer) (int64, error) {
+func (f ReturnDeclr) WriteTo(w io.Writer) (int64, error) {
 	var decals []Declaration
 
 	for _, item := range f.Returns {
@@ -749,14 +1517,16 @@ func (f FunctionReturnDeclr) WriteTo(w io.Writer) (int64, error) {
 	}).WriteTo(w)
 }
 
-// FunctionConstructorDeclr defines a declaration which produces argument based output
-// of it's giving int64ernals.
-type FunctionConstructorDeclr struct {
+//======================================================================================================================
+
+// ConstructorDeclr defines a declaration which produces argument based output
+// of it's giving internals.
+type ConstructorDeclr struct {
 	Arguments []VariableTypeDeclr `json:"constructor"`
 }
 
 // WriteTo writes to the provided writer the function argument declaration.
-func (f FunctionConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
+func (f ConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
 	var decals []Declaration
 
 	for _, item := range f.Arguments {
@@ -772,25 +1542,112 @@ func (f FunctionConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
 	}).WriteTo(w)
 }
 
-// FunctionBodyDeclr defines a type used to define the contents of a body.
-type FunctionBodyDeclr struct {
-	Body []Declaration `json:"body"`
+//======================================================================================================================
+
+// ImportItemDeclr defines a type to represent a import statement.
+type ImportItemDeclr struct {
+	Path      string `json:"path"`
+	Namespace string `json:"namespace"`
 }
 
 // WriteTo writes to the provided writer the structure declaration.
-func (f FunctionBodyDeclr) WriteTo(w io.Writer) (int64, error) {
-	var total int64
-
-	for _, item := range f.Body {
-		nid, err := item.WriteTo(w)
-		if err != nil {
-			return total, err
-		}
-
-		total += nid
+func (im ImportItemDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("importItemDeclr", templates.Must("import-item.tml"), nil)
+	if err != nil {
+		return 0, err
 	}
 
-	return total, nil
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, &im); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// ImportDeclr defines a type to represent a import statement.
+type ImportDeclr struct {
+	Packages []ImportItemDeclr `json:"packages"`
+}
+
+// WriteTo writes to the provided writer the structure declaration.
+func (im ImportDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("importDeclr", templates.Must("import.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var pkgs []string
+
+	var b bytes.Buffer
+	for _, item := range im.Packages {
+		b.Reset()
+
+		if _, err := item.WriteTo(&b); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		pkgs = append(pkgs, b.String())
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Packages []string
+	}{
+		Packages: pkgs,
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// IfDeclr defines a type to represent a if condition.
+type IfDeclr struct {
+	Condition Declaration
+	Action    Declaration
+}
+
+// WriteTo writes to the provided writer the structure declaration.
+func (c IfDeclr) WriteTo(w io.Writer) (int64, error) {
+	tml, err := ToTemplate("ifDeclr", templates.Must("if.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	block := ByteBlockDeclr{
+		Block:      c.Condition,
+		BlockBegin: []byte("("),
+		BlockEnd:   []byte(")"),
+	}
+
+	var action, condition bytes.Buffer
+
+	if _, err := block.WriteTo(&condition); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	if _, err := c.Action.WriteTo(&action); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Condition string
+		Action    string
+	}{
+		Condition: condition.String(),
+		Action:    action.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
 }
 
 //======================================================================================================================

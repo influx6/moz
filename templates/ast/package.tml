@@ -1,0 +1,5 @@
+{{ if .Name != ""}}
+package {{.Name}}
+
+{{ end }}
+{{.Body}}

@@ -1,11 +1,7 @@
-{{ range .Commentary }}
-//    {{.CommentBlock}}
-{{ end }}
-{{ range .Annotations }}
-//    {{.Name}}
-{{ end }}
+{{.Comments}}
+{{.Annotations}}
 type {{.Name}} {{.Type}} {
 {{ range .Fields }}
-    {{.FieldName}} {{.FieldType}} {{.FieldTags}}
+    {{.}} 
 {{ end }}
 }
