@@ -1,1 +1,1 @@
-func {{.Name}}{{.Constructors}} {{.Returns}}
+func {{.Name}}{{.Constructor}} {{.Returns}}

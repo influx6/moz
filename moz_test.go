@@ -25,9 +25,9 @@ func TestPackageGeneration(t *testing.T) {
 	var bu bytes.Buffer
 
 	if _, err := src.WriteTo(&bu); err != nil && err != io.EOF {
-		tests.Failed("Should have successfully written source output")
+		tests.Failed("Should have successfully written source output: %+q.", err)
 	}
-	tests.Passed("Should have successfully written source output")
+	tests.Passed("Should have successfully written source output.")
 
 	fmt.Printf("Source: %+s\n", bu.String())
 	fmt.Printf("Expected: %+s\n", expected)

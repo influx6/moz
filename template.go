@@ -1,6 +1,6 @@
 package moz
 
-import "html/template"
+import "text/template"
 
 // ToTemplate returns a template instance with the giving templ string and functions.
 func ToTemplate(name string, templ string, mx template.FuncMap) (*template.Template, error) {

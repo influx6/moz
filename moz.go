@@ -1502,6 +1502,10 @@ type ReturnDeclr struct {
 
 // WriteTo writes to the provided writer the function argument declaration.
 func (f ReturnDeclr) WriteTo(w io.Writer) (int64, error) {
+	if len(f.Returns) == 0 {
+		return 0, nil
+	}
+
 	var decals []Declaration
 
 	for _, item := range f.Returns {
