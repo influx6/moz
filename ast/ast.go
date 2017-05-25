@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -183,3 +184,23 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 
 	return packageDeclrs, nil
 }
+
+//===========================================================================================================
+
+// PackageAnnotationProcessor defines a function type which is used to process a given annotation
+// for a specific package.
+type PackageAnnotationProcessor func(AnnotationDeclaration, PackageDeclaration) (io.WriterTo, error)
+
+// TypeAnnotationProcessor defines a function type which is used to process a given annotation
+// for a specific type.
+type TypeAnnotationProcessor func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) (io.WriterTo, error)
+
+//===========================================================================================================
+
+// PackageAnnotationGenerator defines a function which generates specific code related to the giving
+// Annotation and it's data with a provided annotation processor.
+type PackageAnnotationGenerator func(AnnotationDeclaration, PackageDeclaration, PackageAnnotationProcessor) error
+
+// TypeAnnotationGenerator defines a function which generates specific code related to the giving
+// Annotation and it's data with a provided annotation processor.
+type TypeAnnotationGenerator func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration, PackageAnnotationProcessor) error
