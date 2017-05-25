@@ -51,12 +51,21 @@ type AnnotationDeclaration struct {
 // giving package.
 type PackageDeclaration struct {
 	Package     string                  `json:"package"`
+	Path        string                  `json:"path"`
+	FilePath    string                  `json:"filepath"`
+	File        string                  `json:"file"`
 	Annotations []AnnotationDeclaration `json:"annotations"`
 	Types       []TypeDeclaration       `json:"types"`
 }
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
 type TypeDeclaration struct {
+	LineNumber  int                     `json:"line_number"`
+	Column      int                     `json:"column"`
+	Package     string                  `json:"package"`
+	Path        string                  `json:"path"`
+	FilePath    string                  `json:"filepath"`
+	File        string                  `json:"file"`
 	Object      *ast.TypeSpec           `json:"struct"`
 	Annotations []AnnotationDeclaration `json:"annotations"`
 }
@@ -64,7 +73,7 @@ type TypeDeclaration struct {
 // ParseAnnotations parses the package which generates a series of ast with associated
 // annotation for processing.
 func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
-	_, packages, err := PackageDir(dir, parser.ParseComments)
+	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +81,18 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 	var packageDeclrs []PackageDeclaration
 
 	for _, pkg := range packages {
-		for _, file := range pkg.Files {
+		for path, file := range pkg.Files {
 
 			var packageDeclr PackageDeclaration
 			packageDeclr.Package = pkg.Name
+			packageDeclr.FilePath = path
+
+			if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
+				packageDeclr.Path = filepath.Dir(relPath)
+				packageDeclr.File = filepath.Base(relPath)
+			}
+
+			// fmt.Printf("Real: %+q\n", packageDeclr)
 
 			for _, comment := range file.Doc.List {
 				text := strings.TrimPrefix(comment.Text, "//")
@@ -136,9 +153,17 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 						switch obj := spec.(type) {
 						case *ast.TypeSpec:
 
+							tokenPosition := tokenFiles.Position(spec.Pos())
+
 							packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
 								Object:      obj,
 								Annotations: annotations,
+								File:        packageDeclr.File,
+								Package:     packageDeclr.Package,
+								Path:        packageDeclr.Path,
+								FilePath:    packageDeclr.FilePath,
+								LineNumber:  tokenPosition.Line,
+								Column:      tokenPosition.Column,
 							})
 
 						case *ast.ImportSpec:

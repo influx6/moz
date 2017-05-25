@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/influx6/faux/sink"
@@ -19,5 +20,10 @@ func main() {
 
 	events.Emit(sinks.Info("Using Dir: %s", cdir).With("dir", cdir))
 
-	_, _ = ast.ParseAnnotations(cdir)
+	pkgs, err := ast.ParseAnnotations(cdir)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Pkgs: %#v\n", pkgs)
 }
