@@ -1,4 +1,4 @@
-package moz
+package gen
 
 import (
 	"bytes"

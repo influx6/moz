@@ -1,4 +1,4 @@
-package moz_test
+package gen_test
 
 import (
 	"bytes"
@@ -6,27 +6,27 @@ import (
 	"testing"
 
 	"github.com/influx6/faux/tests"
-	"github.com/influx6/moz"
+	"github.com/influx6/moz/gen"
 )
 
 // TestStructGen validates the generation of a struct.
 func TestStructGen(t *testing.T) {
 	expected := "// Floppy provides a basic function.\n// \n// Demonstration of using floppy API.\n// \n//\n//@Flipo\n//@API\ntype Floppy struct {\n\n    Name string `json:\"name\"` \n\n}"
 
-	src := moz.Struct(
-		moz.Name("Floppy"),
-		moz.Commentary(
-			moz.Text("Floppy provides a basic function."),
-			moz.Text("Demonstration of using floppy API."),
+	src := gen.Struct(
+		gen.Name("Floppy"),
+		gen.Commentary(
+			gen.Text("Floppy provides a basic function."),
+			gen.Text("Demonstration of using floppy API."),
 		),
-		moz.Annotations(
+		gen.Annotations(
 			"Flipo",
 			"API",
 		),
-		moz.Field(
-			moz.Name("Name"),
-			moz.Type("string"),
-			moz.Tag("json", "name"),
+		gen.Field(
+			gen.Name("Name"),
+			gen.Type("string"),
+			gen.Tag("json", "name"),
 		),
 	)
 
@@ -53,20 +53,20 @@ func TestFunctionGen(t *testing.T) {
 	fmt.Printf("Welcome to Lola Land");
 }`
 
-	src := moz.Function(
-		moz.Name("main"),
-		moz.Constructor(
-			moz.VarType(
-				moz.Name("v"),
-				moz.Type("int"),
+	src := gen.Function(
+		gen.Name("main"),
+		gen.Constructor(
+			gen.VarType(
+				gen.Name("v"),
+				gen.Type("int"),
 			),
-			moz.VarType(
-				moz.Name("m"),
-				moz.Type("string"),
+			gen.VarType(
+				gen.Name("m"),
+				gen.Type("string"),
 			),
 		),
-		moz.Returns(),
-		moz.SourceText(`	fmt.Printf("Welcome to Lola Land");`, nil),
+		gen.Returns(),
+		gen.SourceText(`	fmt.Printf("Welcome to Lola Land");`, nil),
 	)
 
 	var bu bytes.Buffer
