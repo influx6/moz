@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bytes"
+	"io"
 	"text/template"
 )
 
@@ -166,7 +167,7 @@ func Name(name string) NameDeclr {
 }
 
 // Package returns a new instance of a PackageDeclr.
-func Package(name Declaration, dirs ...Declaration) PackageDeclr {
+func Package(name io.WriterTo, dirs ...io.WriterTo) PackageDeclr {
 	return PackageDeclr{
 		Name: name,
 		Body: dirs,
@@ -174,7 +175,7 @@ func Package(name Declaration, dirs ...Declaration) PackageDeclr {
 }
 
 // CustomReturns returns a new instance of a CustomReturnDeclr.
-func CustomReturns(returns ...Declaration) CustomReturnDeclr {
+func CustomReturns(returns ...io.WriterTo) CustomReturnDeclr {
 	return CustomReturnDeclr{
 		Returns: returns,
 	}
@@ -195,7 +196,7 @@ func Constructor(args ...VariableTypeDeclr) ConstructorDeclr {
 }
 
 // Interface returns a new instance of a StructDeclr to generate a go struct.
-func Interface(name NameDeclr, comments Declaration, annotations Declaration, fields ...Declaration) StructDeclr {
+func Interface(name NameDeclr, comments io.WriterTo, annotations io.WriterTo, fields ...io.WriterTo) StructDeclr {
 	if annotations == nil {
 		annotations = bytes.NewBuffer(nil)
 	}
@@ -214,7 +215,7 @@ func Interface(name NameDeclr, comments Declaration, annotations Declaration, fi
 }
 
 // Struct returns a new instance of a StructDeclr to generate a go struct.
-func Struct(name NameDeclr, comments Declaration, annotations Declaration, fields ...Declaration) StructDeclr {
+func Struct(name NameDeclr, comments io.WriterTo, annotations io.WriterTo, fields ...io.WriterTo) StructDeclr {
 	if annotations == nil {
 		annotations = bytes.NewBuffer(nil)
 	}
@@ -232,9 +233,9 @@ func Struct(name NameDeclr, comments Declaration, annotations Declaration, field
 	}
 }
 
-// Annotations returns a slice instance of Declaration.
-func Annotations(names ...string) Declaration {
-	var decls Declarations
+// Annotations returns a slice instance of io.WriterTo.
+func Annotations(names ...string) io.WriterTo {
+	var decls WritersTo
 
 	for _, name := range names {
 		decls = append(decls, Annotation(name))
@@ -259,7 +260,7 @@ func Tag(format string, name string) TagDeclr {
 }
 
 // Field returns a new instance of a StructTypeDeclr.
-func Field(name NameDeclr, ntype TypeDeclr, tags ...Declaration) StructTypeDeclr {
+func Field(name NameDeclr, ntype TypeDeclr, tags ...io.WriterTo) StructTypeDeclr {
 	return StructTypeDeclr{
 		Name: name,
 		Type: ntype,
@@ -268,7 +269,7 @@ func Field(name NameDeclr, ntype TypeDeclr, tags ...Declaration) StructTypeDeclr
 }
 
 // FunctionType returns a new instance of a FunctionTypeDeclr.
-func FunctionType(name NameDeclr, constr ConstructorDeclr, returns Declaration) FunctionTypeDeclr {
+func FunctionType(name NameDeclr, constr ConstructorDeclr, returns io.WriterTo) FunctionTypeDeclr {
 	return FunctionTypeDeclr{
 		Name:        name,
 		Constructor: constr,
@@ -277,7 +278,7 @@ func FunctionType(name NameDeclr, constr ConstructorDeclr, returns Declaration) 
 }
 
 // Function returns a new instance of a FunctionDeclr.
-func Function(name NameDeclr, constr ConstructorDeclr, returns Declaration, body ...Declaration) FunctionDeclr {
+func Function(name NameDeclr, constr ConstructorDeclr, returns io.WriterTo, body ...io.WriterTo) FunctionDeclr {
 	return FunctionDeclr{
 		Name:        name,
 		Constructor: constr,
@@ -331,48 +332,48 @@ func Suffix(end rune) SingleBlockDeclr {
 }
 
 // MultiCommentary returns a new instance of a MultiCommentDeclr.
-func MultiCommentary(mainblock Declaration, elems ...Declaration) MultiCommentDeclr {
+func MultiCommentary(mainblock io.WriterTo, elems ...io.WriterTo) MultiCommentDeclr {
 	return MultiCommentDeclr{
 		MainBlock: mainblock,
-		Blocks:    Declarations(elems),
+		Blocks:    WritersTo(elems),
 	}
 }
 
 // Commentary returns a new instance of a CommentDeclr.
-func Commentary(mainblock Declaration, elems ...Declaration) CommentDeclr {
+func Commentary(mainblock io.WriterTo, elems ...io.WriterTo) CommentDeclr {
 	return CommentDeclr{
 		MainBlock: mainblock,
-		Blocks:    Declarations(elems),
+		Blocks:    WritersTo(elems),
 	}
 }
 
 // Block returns a new instance of a BlockDeclr with no prefix and suffix.
-func Block(elems ...Declaration) BlockDeclr {
+func Block(elems ...io.WriterTo) BlockDeclr {
 	return BlockDeclr{
-		Block: Declarations(elems),
+		Block: WritersTo(elems),
 	}
 }
 
 // WrapBlock returns a new instance of a BlockDeclr.
-func WrapBlock(begin, end rune, elems ...Declaration) BlockDeclr {
+func WrapBlock(begin, end rune, elems ...io.WriterTo) BlockDeclr {
 	return BlockDeclr{
 		RuneBegin: begin,
 		RuneEnd:   end,
-		Block:     Declarations(elems),
+		Block:     WritersTo(elems),
 	}
 }
 
 // ByteWrapBlock returns a new instance of a ByteBlockDeclr.
-func ByteWrapBlock(begin, end []byte, elems ...Declaration) ByteBlockDeclr {
+func ByteWrapBlock(begin, end []byte, elems ...io.WriterTo) ByteBlockDeclr {
 	return ByteBlockDeclr{
 		BlockBegin: begin,
 		BlockEnd:   end,
-		Block:      Declarations(elems),
+		Block:      WritersTo(elems),
 	}
 }
 
 // Switch returns a new instance of a SwitchDeclr.
-func Switch(condition Declaration, def DefaultCaseDeclr, cases ...CaseDeclr) SwitchDeclr {
+func Switch(condition io.WriterTo, def DefaultCaseDeclr, cases ...CaseDeclr) SwitchDeclr {
 	if def.Behaviour == nil {
 		def.Behaviour = bytes.NewBuffer(nil)
 	}
@@ -385,14 +386,14 @@ func Switch(condition Declaration, def DefaultCaseDeclr, cases ...CaseDeclr) Swi
 }
 
 // DefaultCase returns a new instance of a DefaultCaseDeclr.
-func DefaultCase(action Declaration) DefaultCaseDeclr {
+func DefaultCase(action io.WriterTo) DefaultCaseDeclr {
 	return DefaultCaseDeclr{
 		Behaviour: action,
 	}
 }
 
 // Case returns a new instance of a CaseDeclr.
-func Case(condition, action Declaration) CaseDeclr {
+func Case(condition, action io.WriterTo) CaseDeclr {
 	return CaseDeclr{
 		Condition: condition,
 		Behaviour: action,
@@ -409,7 +410,7 @@ func Condition(pre VariableNameDeclr, op OperatorDeclr, post VariableNameDeclr) 
 }
 
 // Var returns a new instance of a VariableShortAssignmentDeclr.
-func Var(name NameDeclr, value Declaration) VariableShortAssignmentDeclr {
+func Var(name NameDeclr, value io.WriterTo) VariableShortAssignmentDeclr {
 	return VariableShortAssignmentDeclr{
 		Name:  name,
 		Value: value,
@@ -417,7 +418,7 @@ func Var(name NameDeclr, value Declaration) VariableShortAssignmentDeclr {
 }
 
 // AssignVar returns a new instance of a VariableAssignmentDeclr.
-func AssignVar(name NameDeclr, value Declaration) VariableAssignmentDeclr {
+func AssignVar(name NameDeclr, value io.WriterTo) VariableAssignmentDeclr {
 	return VariableAssignmentDeclr{
 		Name:  name,
 		Value: value,
@@ -454,7 +455,7 @@ func SliceType(ty string) SliceTypeDeclr {
 }
 
 // Slice returns a new instance of a SliceDeclr.
-func Slice(typeName string, elems ...Declaration) SliceDeclr {
+func Slice(typeName string, elems ...io.WriterTo) SliceDeclr {
 	return SliceDeclr{
 		Type:   Type(typeName),
 		Values: elems,
@@ -462,7 +463,7 @@ func Slice(typeName string, elems ...Declaration) SliceDeclr {
 }
 
 // If returns a new instance of a IfDeclr.
-func If(condition, action Declaration) IfDeclr {
+func If(condition, action io.WriterTo) IfDeclr {
 	return IfDeclr{
 		Action:    action,
 		Condition: condition,

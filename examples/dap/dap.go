@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-//go:generate moz
+//go:generate moz annotation
 
 // IgnitionFn defines a functiion type for a ignition function.
 //@homa

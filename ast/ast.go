@@ -252,9 +252,9 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 // WriteDirective defines a struct which contains giving directives as to the file and
 // the relative path within which it should be written to.
 type WriteDirective struct {
-	Writer     io.WriterTo // WriteTo which contains the complete content of the file to be written to.
-	Annotation string      // annotation name, set by generator.
-	Dir        string      // Relative dir path written into it if not existing.
+	Writer io.WriterTo // WriteTo which contains the complete content of the file to be written to.
+	Dir    string      // Relative dir path written into it if not existing.
+	Ext    string      // Extension to use for file.
 }
 
 // TypeAnnotationGenerator defines a function which generates specific code related to the giving
@@ -313,11 +313,102 @@ func (a *AnnotationRegistry) MustPackage(annotation string) PackageAnnotationGen
 	panic(err)
 }
 
-// ParseDeclr runs the generators suited to deliver a complete write for the
-// annotations associated with the
-func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]WriteDirective, error) {
+// AnnotationWriteDirective defines a type which provides a WriteDiretive and the associated
+// name.
+type AnnotationWriteDirective struct {
+	WriteDirective
+	Annotation string
+}
 
-	return nil, nil
+// ParseDeclr runs the generators suited for each declaration and type returning a slice of
+// AnnotationWriteDirective that delivers the content to be created for each piece.
+func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationWriteDirective, error) {
+	var directives []AnnotationWriteDirective
+
+	// Generate directives for package level
+	for _, annotation := range declr.Annotations {
+		generator, err := a.GetPackage(annotation.Name)
+		if err != nil {
+			continue
+		}
+
+		drs, err := generator(annotation, declr)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, directive := range drs {
+			directives = append(directives, AnnotationWriteDirective{
+				WriteDirective: directive,
+				Annotation:     annotation.Name,
+			})
+		}
+	}
+
+	for _, inter := range declr.Interfaces {
+		for _, annotation := range inter.Annotations {
+			generator, err := a.GetInterfaceType(annotation.Name)
+			if err != nil {
+				continue
+			}
+
+			drs, err := generator(annotation, inter, declr)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, directive := range drs {
+				directives = append(directives, AnnotationWriteDirective{
+					WriteDirective: directive,
+					Annotation:     annotation.Name,
+				})
+			}
+		}
+	}
+
+	for _, structs := range declr.Structs {
+		for _, annotation := range structs.Annotations {
+			generator, err := a.GetStructType(annotation.Name)
+			if err != nil {
+				continue
+			}
+
+			drs, err := generator(annotation, structs, declr)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, directive := range drs {
+				directives = append(directives, AnnotationWriteDirective{
+					WriteDirective: directive,
+					Annotation:     annotation.Name,
+				})
+			}
+		}
+	}
+
+	for _, typ := range declr.Types {
+		for _, annotation := range typ.Annotations {
+			generator, err := a.GetType(annotation.Name)
+			if err != nil {
+				continue
+			}
+
+			drs, err := generator(annotation, typ, declr)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, directive := range drs {
+				directives = append(directives, AnnotationWriteDirective{
+					WriteDirective: directive,
+					Annotation:     annotation.Name,
+				})
+			}
+		}
+	}
+
+	return directives, nil
 }
 
 // GetPackage returns the annotation generator associated with the giving annotation name.

@@ -29,33 +29,25 @@ var (
 
 //======================================================================================================================
 
-// Declaration defines a type which exposes a method to return a giving declaration
-// source.
-type Declaration interface {
-	WriteTo(io.Writer) (int64, error)
-}
-
-//======================================================================================================================
-
-// DeclarationMap defines a int64erface which maps giving declaration values
+// WriterToMap defines a int64erface which maps giving declaration values
 // int64o appropriate form for final output. It allows us create custom wrappers to
 // define specific output style for a giving set of declarations.
-type DeclarationMap interface {
-	Map(...Declaration) Declaration
+type WriterToMap interface {
+	Map(...io.WriterTo) io.WriterTo
 }
 
 // MapOut defines an function type which maps giving
 // data retrieved from a series of readers int64o the provided byte slice, returning
 // the total number of data written and any error encountered.
-type MapOut func(io.Writer, ...Declaration) (int64, error)
+type MapOut func(io.Writer, ...io.WriterTo) (int64, error)
 
 //======================================================================================================================
 
-// Declarations defines the body contents of a giving declaration/structure.
-type Declarations []Declaration
+// WritersTo defines the body contents of a giving declaration/structure.
+type WritersTo []io.WriterTo
 
 // WriteTo writes to the provided writer the variable declaration.
-func (d Declarations) WriteTo(w io.Writer) (int64, error) {
+func (d WritersTo) WriteTo(w io.Writer) (int64, error) {
 	wc := NewWriteCounter(w)
 
 	for _, item := range d {
@@ -67,8 +59,8 @@ func (d Declarations) WriteTo(w io.Writer) (int64, error) {
 	return wc.Written(), nil
 }
 
-// Map applies a giving declaration mapper to the underlying io.Readers of the Declaration.
-func (d Declarations) Map(mp DeclarationMap) Declaration {
+// Map applies a giving declaration mapper to the underlying io.Readers of the io.WriterTo.
+func (d WritersTo) Map(mp WriterToMap) io.WriterTo {
 	return mp.Map(d...)
 }
 
@@ -78,10 +70,10 @@ func (d Declarations) Map(mp DeclarationMap) Declaration {
 // writes to the provided io.Writer.
 type MapAnyWriter struct {
 	Map MapOut
-	Dcl []Declaration
+	Dcl []io.WriterTo
 }
 
-// WriteTo takes the data slice and writes int64ernal Declarations int64o the giving writer.
+// WriteTo takes the data slice and writes int64ernal WritersTo int64o the giving writer.
 func (m MapAnyWriter) WriteTo(to io.Writer) (int64, error) {
 	return m.Map(to, m.Dcl...)
 }
@@ -97,7 +89,7 @@ type MapAny struct {
 
 // Map takes a giving set of readers returning a structure which implements the io.Reader int64erface
 // for copying underlying data to the expected output.
-func (mapper MapAny) Map(dls ...Declaration) Declaration {
+func (mapper MapAny) Map(dls ...io.WriterTo) io.WriterTo {
 	return MapAnyWriter{Map: mapper.MapFn, Dcl: dls}
 }
 
@@ -106,7 +98,7 @@ func (mapper MapAny) Map(dls ...Declaration) Declaration {
 // NewlineMapper defines a struct which implements the DeclarationMap which maps a set of
 // items by seperating their output with a period '.', but execludes before the first and
 // after the last item.
-var NewlineMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, error) {
+var NewlineMapper = MapAny{MapFn: func(to io.Writer, declrs ...io.WriterTo) (int64, error) {
 	wc := NewWriteCounter(to)
 
 	total := len(declrs) - 1
@@ -127,7 +119,7 @@ var NewlineMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int
 // DotMapper defines a struct which implements the DeclarationMap which maps a set of
 // items by seperating their output with a period '.', but execludes before the first and
 // after the last item.
-var DotMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, error) {
+var DotMapper = MapAny{MapFn: func(to io.Writer, declrs ...io.WriterTo) (int64, error) {
 	wc := NewWriteCounter(to)
 
 	total := len(declrs) - 1
@@ -148,7 +140,7 @@ var DotMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, 
 // CommaSpacedMapper defines a struct which implements the DeclarationMap which maps a set of
 // items by seperating their output with a coma ', ', but execludes before the first and
 // after the last item.
-var CommaSpacedMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, error) {
+var CommaSpacedMapper = MapAny{MapFn: func(to io.Writer, declrs ...io.WriterTo) (int64, error) {
 	wc := NewWriteCounter(to)
 
 	total := len(declrs) - 1
@@ -169,7 +161,7 @@ var CommaSpacedMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) 
 // CommaMapper defines a struct which implements the DeclarationMap which maps a set of
 // items by seperating their output with a coma ',', but execludes before the first and
 // after the last item.
-var CommaMapper = MapAny{MapFn: func(to io.Writer, declrs ...Declaration) (int64, error) {
+var CommaMapper = MapAny{MapFn: func(to io.Writer, declrs ...io.WriterTo) (int64, error) {
 	wc := NewWriteCounter(to)
 
 	total := len(declrs) - 1
@@ -234,8 +226,8 @@ func (src SourceDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // PackageDeclr defines a declaration which generates a go package source.
 type PackageDeclr struct {
-	Name Declaration  `json:"name"`
-	Body Declarations `json:"body"`
+	Name io.WriterTo `json:"name"`
+	Body WritersTo   `json:"body"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -877,7 +869,7 @@ func (t SliceTypeDeclr) WriteTo(w io.Writer) (int64, error) {
 // SliceDeclr defines a declaration struct for representing a go slice.
 type SliceDeclr struct {
 	Type   TypeDeclr     `json:"type"`
-	Values []Declaration `json:"values"`
+	Values []io.WriterTo `json:"values"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -995,7 +987,7 @@ func (v VariableNameDeclr) WriteTo(w io.Writer) (int64, error) {
 // VariableAssignmentDeclr defines a declaration which produces a variable declaration.
 type VariableAssignmentDeclr struct {
 	Name  NameDeclr   `json:"name"`
-	Value Declaration `json:"value"`
+	Value io.WriterTo `json:"value"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1029,7 +1021,7 @@ func (v VariableAssignmentDeclr) WriteTo(w io.Writer) (int64, error) {
 // VariableShortAssignmentDeclr defines a declaration which produces a variable declaration.
 type VariableShortAssignmentDeclr struct {
 	Name  NameDeclr   `json:"name"`
-	Value Declaration `json:"value"`
+	Value io.WriterTo `json:"value"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1104,7 +1096,7 @@ func (b SingleBlockDeclr) WriteTo(w io.Writer) (int64, error) {
 // eg. A BlockDeclr with Char '{''}'
 // 		Will produce '{{DataFROMWriter}}' output.
 type ByteBlockDeclr struct {
-	Block      Declaration `json:"block"`
+	Block      io.WriterTo `json:"block"`
 	BlockBegin []byte      `json:"begin"`
 	BlockEnd   []byte      `json:"end"`
 }
@@ -1192,8 +1184,8 @@ func (c ConditionDeclr) WriteTo(w io.Writer) (int64, error) {
 type FunctionDeclr struct {
 	Name        NameDeclr        `json:"name"`
 	Constructor ConstructorDeclr `json:"constructor"`
-	Returns     Declaration      `json:"returns"`
-	Body        Declarations     `json:"body"`
+	Returns     io.WriterTo      `json:"returns"`
+	Body        WritersTo        `json:"body"`
 }
 
 // WriteTo writes to the provided writer the function declaration.
@@ -1243,7 +1235,7 @@ func (f FunctionDeclr) WriteTo(w io.Writer) (int64, error) {
 type FunctionTypeDeclr struct {
 	Name        NameDeclr        `json:"name"`
 	Constructor ConstructorDeclr `json:"constructor"`
-	Returns     Declaration      `json:"returns"`
+	Returns     io.WriterTo      `json:"returns"`
 }
 
 // WriteTo writes to the provided writer the function declaration.
@@ -1308,9 +1300,9 @@ func (v TagDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // StructTypeDeclr defines a declaration which produces a variable declaration.
 type StructTypeDeclr struct {
-	Name NameDeclr    `json:"name"`
-	Type TypeDeclr    `json:"typename"`
-	Tags Declarations `json:"tags"`
+	Name NameDeclr `json:"name"`
+	Type TypeDeclr `json:"typename"`
+	Tags WritersTo `json:"tags"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1345,11 +1337,11 @@ func (v StructTypeDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // StructDeclr defines a declaration struct for representing a single comment.
 type StructDeclr struct {
-	Name        NameDeclr    `json:"name"`
-	Type        TypeDeclr    `json:"type"`
-	Comments    Declaration  `json:"comments"`
-	Annotations Declaration  `json:"annotations"`
-	Fields      Declarations `json:"fields"`
+	Name        NameDeclr   `json:"name"`
+	Type        TypeDeclr   `json:"type"`
+	Comments    io.WriterTo `json:"comments"`
+	Annotations io.WriterTo `json:"annotations"`
+	Fields      WritersTo   `json:"fields"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1405,8 +1397,8 @@ func (v StructDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // CommentDeclr defines a declaration struct for representing a single comment.
 type CommentDeclr struct {
-	MainBlock Declaration  `json:"mainBlock"`
-	Blocks    Declarations `json:"blocks"`
+	MainBlock io.WriterTo `json:"mainBlock"`
+	Blocks    WritersTo   `json:"blocks"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1451,8 +1443,8 @@ func (n CommentDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // MultiCommentDeclr defines a declaration struct for representing a single comment.
 type MultiCommentDeclr struct {
-	MainBlock Declaration  `json:"mainBlock"`
-	Blocks    Declarations `json:"blocks"`
+	MainBlock io.WriterTo `json:"mainBlock"`
+	Blocks    WritersTo   `json:"blocks"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1551,7 +1543,7 @@ func (n TextBlockDeclr) String() string {
 // CustomReturnDeclr defines a declaration which produces argument based output
 // of it's giving internals.
 type CustomReturnDeclr struct {
-	Returns Declarations `json:"returns"`
+	Returns WritersTo `json:"returns"`
 }
 
 // WriteTo writes to the provided writer the function argument declaration.
@@ -1577,7 +1569,7 @@ func (f ReturnDeclr) WriteTo(w io.Writer) (int64, error) {
 		return 0, nil
 	}
 
-	var decals []Declaration
+	var decals []io.WriterTo
 
 	for _, item := range f.Returns {
 		decals = append(decals, item)
@@ -1602,7 +1594,7 @@ type ConstructorDeclr struct {
 
 // WriteTo writes to the provided writer the function argument declaration.
 func (f ConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
-	var decals []Declaration
+	var decals []io.WriterTo
 
 	for _, item := range f.Arguments {
 		decals = append(decals, item)
@@ -1683,8 +1675,8 @@ func (im ImportDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // IfDeclr defines a type to represent a if condition.
 type IfDeclr struct {
-	Condition Declaration
-	Action    Declaration
+	Condition io.WriterTo
+	Action    io.WriterTo
 }
 
 // WriteTo writes to the provided writer the structure declaration.
@@ -1729,7 +1721,7 @@ func (c IfDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // DefaultCaseDeclr defines a structure which generates switch default case declarations.
 type DefaultCaseDeclr struct {
-	Behaviour Declaration
+	Behaviour io.WriterTo
 }
 
 // WriteTo writes to the provided writer the structure declaration.
@@ -1760,8 +1752,8 @@ func (c DefaultCaseDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // CaseDeclr defines a structure which generates switch case declarations.
 type CaseDeclr struct {
-	Condition Declaration
-	Behaviour Declaration
+	Condition io.WriterTo
+	Behaviour io.WriterTo
 }
 
 // WriteTo writes to the provided writer the structure declaration.
@@ -1798,7 +1790,7 @@ func (c CaseDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // SwitchDeclr defines a structure which generates switch declarations.
 type SwitchDeclr struct {
-	Condition Declaration
+	Condition io.WriterTo
 	Cases     []CaseDeclr
 	Default   DefaultCaseDeclr
 }

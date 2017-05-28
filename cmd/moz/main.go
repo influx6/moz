@@ -8,6 +8,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/influx6/faux/sink"
 	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/moz"
 	"github.com/influx6/moz/ast"
 	"github.com/minio/cli"
 )
@@ -76,7 +77,7 @@ func main() {
 func annotationCLI(c *cli.Context) {
 	cdir, err := os.Getwd()
 	if err != nil {
-		events.Emit(sinks.Error("Failed to retrieve current directory: %+q", err))
+		events.Emit(sinks.Error(err).With("dir", cdir).With("message", "Failed to retrieve current directory"))
 		return
 	}
 
@@ -84,8 +85,11 @@ func annotationCLI(c *cli.Context) {
 
 	pkgs, err := ast.ParseAnnotations(cdir)
 	if err != nil {
-		panic(err)
+		events.Emit(sinks.Error(err).With("dir", cdir).With("message", "Failed to parse package annotations"))
+		return
 	}
 
-	fmt.Printf("Pkgs: %#v\n", pkgs)
+	if err := moz.Parse(events, pkgs...); err != nil {
+		events.Emit(sinks.Error(err).With("dir", cdir).With("message", "Failed to parse package declarations"))
+	}
 }

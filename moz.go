@@ -2,8 +2,19 @@ package moz
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/influx6/faux/sink"
+	"github.com/influx6/faux/sink/sinks"
 	"github.com/influx6/moz/ast"
+)
+
+const (
+	annotationFileFormat = "%s_annotation_%s_gen.%s"
 )
 
 var (
@@ -14,14 +25,90 @@ var (
 
 // Parse takes the provided package declrations parsing all internals with the
 // appropriate generators suited to the type and annotations.
-func Parse(packageDeclrs ...ast.PackageDeclaration) error {
+func Parse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) error {
+	{
+	parseloop:
+		for _, pkg := range packageDeclrs {
+			wdrs, err := Annotations.ParseDeclr(pkg)
+			if err != nil {
+				log.Emit(sinks.Error("ParseFailure: Package %q", pkg.Package).
+					With("error", err).With("package", pkg.Package))
+				continue
+			}
 
-	return nil
-}
+			fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
 
-// ParseDeclr takes the provided package declration and runs the
-// appropriate generators suited to apply the annotations related to it.
-func ParseDeclr(packageDeclrs ast.PackageDeclaration) error {
+			for _, item := range wdrs {
+				extension := item.WriteDirective.Ext
+
+				if extension == "" {
+					extension = "go"
+				} else {
+					extension = strings.TrimPrefix(extension, ".")
+				}
+
+				dir := filepath.Dir(pkg.FilePath)
+				annotation := strings.ToLower(item.Annotation)
+				annotationFile := fmt.Sprintf(annotationFileFormat, fileName, annotation, extension)
+
+				if item.Dir == "" {
+					newDirFile := filepath.Join(dir, annotationFile)
+					newFile, err := os.Open(newDirFile)
+					if err != nil {
+						log.Emit(sinks.Error("IOError: Unable to create file").With("file", newFile).With("package", pkg.Package).With("error", err))
+						return err
+					}
+
+					if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
+						newFile.Close()
+						log.Emit(sinks.Error("IOError: Unable to write content to file").
+							With("file", newFile).With("error", err).With("package", pkg.Package))
+						return err
+					}
+
+					log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
+						With("package", pkg.Package).With("file", pkg.File).With("generated-file", newDirFile))
+
+					newFile.Close()
+					continue
+				}
+
+				if filepath.IsAbs(item.Dir) {
+					log.Emit(sinks.Error("WriteDirectiveError: Expected relative Dir path not absolute").
+						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
+
+					continue parseloop
+				}
+
+				newDir := filepath.Join(dir, item.Dir)
+				newDirFile := filepath.Join(newDir, annotationFile)
+
+				if err := os.MkdirAll(newDir, 0700); err != nil && err != os.ErrExist {
+					return err
+				}
+
+				newFile, err := os.Open(newDirFile)
+				if err != nil {
+					log.Emit(sinks.Error("IOError: Unable to create file").
+						With("file", newFile).With("error", err))
+					return err
+				}
+
+				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
+					newFile.Close()
+					log.Emit(sinks.Error("IOError: Unable to write content to file").
+						With("file", newFile).With("error", err))
+					return err
+				}
+
+				log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
+					With("package", pkg.Package).With("file", pkg.File).With("generated-file", newDirFile))
+
+				newFile.Close()
+			}
+		}
+
+	}
 
 	return nil
 }
