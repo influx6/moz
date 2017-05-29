@@ -11,6 +11,15 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/influx6/faux/sink"
+	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/moz/gen"
+)
+
+const (
+	annotationFileFormat    = "%s_annotation_%s.%s"
+	altAnnotationFileFormat = "%s_annotation_%s"
 )
 
 // Contains giving sets of variables exposing sytem GOPATH and GOPATHSRC.
@@ -100,6 +109,8 @@ type TypeDeclaration struct {
 	Object      *ast.TypeSpec           `json:"object"`
 	Annotations []AnnotationDeclaration `json:"annotations"`
 }
+
+//===========================================================================================================
 
 // ParseAnnotations parses the package which generates a series of ast with associated
 // annotation for processing.
@@ -248,40 +259,112 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 
 //===========================================================================================================
 
-// WriteDirective defines a struct which contains giving directives as to the file and
-// WriteDirective defines a struct which contains giving directives as to the file and
-// the relative path within which it should be written to.
-type WriteDirective struct {
-	Writer io.WriterTo // WriteTo which contains the complete content of the file to be written to.
-	Dir    string      // Relative dir path written into it if not existing.
-	Ext    string      // Extension to use for file.
+// Parse takes the provided package declrations parsing all internals with the
+// appropriate generators suited to the type and annotations.
+func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
+	{
+	parseloop:
+		for _, pkg := range packageDeclrs {
+			wdrs, err := provider.ParseDeclr(pkg)
+			if err != nil {
+				log.Emit(sinks.Error("ParseFailure: Package %q", pkg.Package).
+					With("error", err).With("package", pkg.Package))
+				continue
+			}
+
+			for _, item := range wdrs {
+
+				if filepath.IsAbs(item.Dir) {
+					log.Emit(sinks.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
+						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
+
+					continue parseloop
+				}
+
+				var namedFileDir, namedFile string
+
+				annotation := strings.ToLower(item.Annotation)
+				newDir := filepath.Dir(pkg.FilePath)
+
+				if item.FileName == "" {
+
+					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
+					annotationFile := fmt.Sprintf(annotationFileFormat, annotation, fileName, "go")
+
+					namedFileDir = newDir
+					namedFile = filepath.Join(namedFileDir, annotationFile)
+				} else {
+					namedFileDir = filepath.Join(newDir, item.Dir)
+
+					annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
+					namedFile = filepath.Join(namedFileDir, annotationFile)
+				}
+
+				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+					return err
+				}
+
+				newFile, err := os.Open(namedFile)
+				if err != nil {
+					log.Emit(sinks.Error("IOError: Unable to create file").
+						With("file", newFile).With("error", err))
+					return err
+				}
+
+				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
+					newFile.Close()
+					log.Emit(sinks.Error("IOError: Unable to write content to file").
+						With("file", newFile).With("error", err))
+					return err
+				}
+
+				log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
+					With("package", pkg.Package).With("file", pkg.File).With("generated-file", namedFile))
+
+				newFile.Close()
+			}
+		}
+
+	}
+
+	return nil
 }
+
+//===========================================================================================================
 
 // TypeAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation for a non-struct, non-interface type declaration. This allows you to apply and create
 // new sources specifically for a giving type(non-struct, non-interface).
 // It is responsible to fully contain all operations required to both generator any source and write such to
-type TypeAnnotationGenerator func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]WriteDirective, error)
+type TypeAnnotationGenerator func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 // StructAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving struct type.
 // It is responsible to fully contain all operations required to both generator any source and write such to.
-type StructAnnotationGenerator func(AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]WriteDirective, error)
+type StructAnnotationGenerator func(AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 // InterfaceAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving interface type.
 // It is responsible to fully contain all operations required to both generator any source and write such to
 // appropriate files as intended, meta-data about package, and file paths are already include in the PackageDeclaration.
-type InterfaceAnnotationGenerator func(AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]WriteDirective, error)
+type InterfaceAnnotationGenerator func(AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 // PackageAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation for a package. This allows you to apply and create new sources specifically because of a
 // package wide annotation.
 // It is responsible to fully contain all operations required to both generator any source and write such to
 // All generators are expected to return
-type PackageAnnotationGenerator func(AnnotationDeclaration, PackageDeclaration) ([]WriteDirective, error)
+type PackageAnnotationGenerator func(AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 //===========================================================================================================
+
+// Annotations defines a struct which contains a map of all annotation code generator.
+type Annotations struct {
+	Types      map[string]TypeAnnotationGenerator
+	Structs    map[string]StructAnnotationGenerator
+	Packages   map[string]PackageAnnotationGenerator
+	Interfaces map[string]InterfaceAnnotationGenerator
+}
 
 // AnnotationRegistry defines a structure which contains giving list of possible
 // annotation generators for both package level and type level declaration.
@@ -303,6 +386,81 @@ func NewAnnotationRegistry() *AnnotationRegistry {
 	}
 }
 
+// Clone returns a type which contains all copies of the generators provided by
+// the AnnotationRegistry.
+func (a *AnnotationRegistry) Clone() Annotations {
+	a.ml.RLock()
+	defer a.ml.RUnlock()
+
+	var cloned Annotations
+
+	for name, item := range a.pkgAnnotations {
+		cloned.Packages[name] = item
+	}
+
+	for name, item := range a.structAnnotations {
+		cloned.Structs[name] = item
+	}
+
+	for name, item := range a.typeAnnotations {
+		cloned.Types[name] = item
+	}
+
+	for name, item := range a.interfaceAnnotations {
+		cloned.Interfaces[name] = item
+	}
+
+	return cloned
+}
+
+// CopyStrategy defines a int type used to represent a copy strategy for
+// cloning a AnnotationStrategy.
+type CopyStrategy int
+
+// Contains different copy strategy.
+const (
+	OursOverTheirs CopyStrategy = iota + 1
+	TheirsOverOurs
+)
+
+// Copy copies over all available type generators from the provided AnnotationRegistry with
+// the CopyStrategy.
+func (a *AnnotationRegistry) Copy(registry *AnnotationRegistry, strategy CopyStrategy) {
+	cloned := registry.Clone()
+
+	a.ml.Lock()
+	defer a.ml.Unlock()
+
+	for name, item := range cloned.Packages {
+		_, ok := a.pkgAnnotations[name]
+
+		if !ok || (ok && strategy == TheirsOverOurs) {
+			a.pkgAnnotations[name] = item
+		}
+	}
+
+	for name, item := range cloned.Types {
+		_, ok := a.typeAnnotations[name]
+		if !ok || (ok && strategy == TheirsOverOurs) {
+			a.typeAnnotations[name] = item
+		}
+	}
+
+	for name, item := range cloned.Structs {
+		_, ok := a.structAnnotations[name]
+		if !ok || (ok && strategy == TheirsOverOurs) {
+			a.structAnnotations[name] = item
+		}
+	}
+
+	for name, item := range cloned.Interfaces {
+		_, ok := a.interfaceAnnotations[name]
+		if !ok || (ok && strategy == TheirsOverOurs) {
+			a.interfaceAnnotations[name] = item
+		}
+	}
+}
+
 // MustPackage returns the annotation generator associated with the giving annotation name.
 func (a *AnnotationRegistry) MustPackage(annotation string) PackageAnnotationGenerator {
 	annon, err := a.GetPackage(annotation)
@@ -316,12 +474,12 @@ func (a *AnnotationRegistry) MustPackage(annotation string) PackageAnnotationGen
 // AnnotationWriteDirective defines a type which provides a WriteDiretive and the associated
 // name.
 type AnnotationWriteDirective struct {
-	WriteDirective
+	gen.WriteDirective
 	Annotation string
 }
 
 // ParseDeclr runs the generators suited for each declaration and type returning a slice of
-// AnnotationWriteDirective that delivers the content to be created for each piece.
+// Annotationgen.WriteDirective that delivers the content to be created for each piece.
 func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationWriteDirective, error) {
 	var directives []AnnotationWriteDirective
 

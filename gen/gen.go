@@ -29,6 +29,17 @@ var (
 
 //======================================================================================================================
 
+// WriteDirective defines a struct which contains giving directives as to the file and
+// the relative path within which it should be written to.
+// Include are tags which give meta description of the optionality of each field.
+type WriteDirective struct {
+	Writer   io.WriterTo `ast:"-,!optional"`       // WriteTo which contains the complete content of the file to be written to.
+	Dir      string      `ast:"dir,optional"`      // Relative dir path written into it if not existing.
+	FileName string      `ast:"filename,optional"` // alternative fileName to use for new file.
+}
+
+//======================================================================================================================
+
 // WriterToMap defines a int64erface which maps giving declaration values
 // int64o appropriate form for final output. It allows us create custom wrappers to
 // define specific output style for a giving set of declarations.

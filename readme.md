@@ -9,9 +9,10 @@ Install
 go get -u github.com/influx6/moz
 ```
 
-Intro
---------
-Moz is a code generator built around the concepts of pluggable `io.WriteTo` elements that allow a elegant but capable system for generating code programmatically. It uses functional compositions to define structures and how these structures connect to create desired output, which becomes rather easy to both understand and use.
+Introduction 
+----------------------------
+
+Moz is a code generator which builds around the concepts of pluggable `io.WriteTo` elements that allow a elegant but capable system for generating code programmatically. It uses functional compositions to define structures and how these structures connect to create desired output, which becomes rather easy to both understand and use.
 
 Moz does not provide a complete set of all possible programming structures found in the Go programming language but provides a mixture of basic and needed structures with a go template strategy that allows us to quickly generate code structures, more so, moz provides a annotation strategy that provides a higher level of code generation based on a target, which either will generate new methods/functions or generate new packages based on that target. 
 
@@ -26,8 +27,25 @@ Features
 - Annotation code generation (pending)
 
 
-Example
------------
+Annotation Code Generation
+----------------------------
+
+Moz provides a annotation style code generation system apart from it's code generation structures. This is provide to allow descriptive annotations to be added to giving Go structures (`interface`, `struct`, `type alises`) within their comments and as well as to the package.
+
+This annotation then are passed by the moz `annotation` CLI tooling which can generate a series of files and packages based on the internal logic of the generator associated with that annotation to meet the needs for that type.
+
+For example: If we wanted to be able to generate code for database CRUD activities without having to use ORMs or write such code manually, with the Moz annotation code generation ability, we can create a `struct` generator that can use a `@mongo` annotation, which generates mongo CRUD functions which expect such a type and perform the appropriate CRUD operations.
+
+Example in [Example](./examples/dap), which demonstrates use of annotations to code generate other pieces of a code project.
+
+Code Generation structures
+---------------------------
+
+Moz provides the [Gen Package](./gen) which defines sets of structures which define specific code structures and are used to built a programmatically combination that define the expected code to be produced. It also provides a functional composition style functions that provide a cleaner and more descriptive approach to how these blocks are combined.
+
+The code gen is heavily geared towards the use of `text/template` but also ensures to be flexible to provide non-template based structures that work as well.
+
+### Example
 
 - Generate a struct with moz
 

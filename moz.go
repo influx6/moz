@@ -2,19 +2,14 @@ package moz
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/influx6/faux/sink"
 	"github.com/influx6/faux/sink/sinks"
 	"github.com/influx6/moz/ast"
-)
-
-const (
-	annotationFileFormat = "%s_annotation_%s_gen.%s"
+	"github.com/influx6/moz/gen"
 )
 
 var (
@@ -22,96 +17,6 @@ var (
 	// storage for all annotation registration.
 	Annotations = ast.NewAnnotationRegistry()
 )
-
-// Parse takes the provided package declrations parsing all internals with the
-// appropriate generators suited to the type and annotations.
-func Parse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) error {
-	{
-	parseloop:
-		for _, pkg := range packageDeclrs {
-			wdrs, err := Annotations.ParseDeclr(pkg)
-			if err != nil {
-				log.Emit(sinks.Error("ParseFailure: Package %q", pkg.Package).
-					With("error", err).With("package", pkg.Package))
-				continue
-			}
-
-			fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
-
-			for _, item := range wdrs {
-				extension := item.WriteDirective.Ext
-
-				if extension == "" {
-					extension = "go"
-				} else {
-					extension = strings.TrimPrefix(extension, ".")
-				}
-
-				dir := filepath.Dir(pkg.FilePath)
-				annotation := strings.ToLower(item.Annotation)
-				annotationFile := fmt.Sprintf(annotationFileFormat, fileName, annotation, extension)
-
-				if item.Dir == "" {
-					newDirFile := filepath.Join(dir, annotationFile)
-					newFile, err := os.Open(newDirFile)
-					if err != nil {
-						log.Emit(sinks.Error("IOError: Unable to create file").With("file", newFile).With("package", pkg.Package).With("error", err))
-						return err
-					}
-
-					if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
-						newFile.Close()
-						log.Emit(sinks.Error("IOError: Unable to write content to file").
-							With("file", newFile).With("error", err).With("package", pkg.Package))
-						return err
-					}
-
-					log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
-						With("package", pkg.Package).With("file", pkg.File).With("generated-file", newDirFile))
-
-					newFile.Close()
-					continue
-				}
-
-				if filepath.IsAbs(item.Dir) {
-					log.Emit(sinks.Error("WriteDirectiveError: Expected relative Dir path not absolute").
-						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
-
-					continue parseloop
-				}
-
-				newDir := filepath.Join(dir, item.Dir)
-				newDirFile := filepath.Join(newDir, annotationFile)
-
-				if err := os.MkdirAll(newDir, 0700); err != nil && err != os.ErrExist {
-					return err
-				}
-
-				newFile, err := os.Open(newDirFile)
-				if err != nil {
-					log.Emit(sinks.Error("IOError: Unable to create file").
-						With("file", newFile).With("error", err))
-					return err
-				}
-
-				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
-					newFile.Close()
-					log.Emit(sinks.Error("IOError: Unable to write content to file").
-						With("file", newFile).With("error", err))
-					return err
-				}
-
-				log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
-					With("package", pkg.Package).With("file", pkg.File).With("generated-file", newDirFile))
-
-				newFile.Close()
-			}
-		}
-
-	}
-
-	return nil
-}
 
 // RegisterAnnotation which adds the generator depending on it's type into the appropriate
 // registry. It only supports  the following generators:
@@ -148,4 +53,88 @@ func MustRegisterAnnotation(name string, generator interface{}) {
 	if err := RegisterAnnotation(name, generator); err != nil {
 		panic(err)
 	}
+}
+
+// MustParseWith calls the ParseWith method to attempt to parse the ast.PackageDeclarations
+// and panics if it encounters an error.
+func MustParseWith(log sink.Sink, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) {
+	if err := ParseWith(log, provider, packageDeclrs...); err != nil {
+		panic(err)
+	}
+}
+
+// ParseWith takes the provided package declarations and annotation registry and attempts
+// parsing all internals structuers with the appropriate generators suited to the type and annotations.
+func ParseWith(log sink.Sink, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) error {
+	return ast.Parse(log, provider, packageDeclrs...)
+}
+
+// MustParse calls the Parse method to attempt to parse the ast.PackageDeclarations
+// and panics if it encounters an error.
+func MustParse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) {
+	if err := Parse(log, packageDeclrs...); err != nil {
+		panic(err)
+	}
+}
+
+// Parse takes the provided package declarations and the default Annotations registry and attempts
+// parsing all internals structuers with the appropriate generators suited to the type and annotations.
+func Parse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) error {
+	return ast.Parse(log, Annotations, packageDeclrs...)
+}
+
+// MustWriteDirectives calls the WriteDirectives method to attempt to parse the ast.PackageDeclarations
+// and panics if it encounters an error.
+func MustWriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteDirective) {
+	if err := WriteDirectives(log, rootDir, directives...); err != nil {
+		panic(err)
+	}
+}
+
+// WriteDirectives defines a funtion to sync the slices of WriteDirectives into a giving directory
+// root.
+func WriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteDirective) error {
+
+	{
+	directiveloop:
+		for _, directive := range directives {
+
+			if filepath.IsAbs(directive.Dir) {
+				log.Emit(sinks.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
+					With("root-dir", rootDir).With("directive-dir", directive.Dir))
+
+				continue directiveloop
+			}
+
+			namedFileDir := filepath.Join(rootDir, directive.Dir)
+			namedFile := filepath.Join(namedFileDir, directive.FileName)
+
+			if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+				return err
+			}
+
+			newFile, err := os.Open(namedFile)
+			if err != nil {
+				log.Emit(sinks.Error("IOError: Unable to create file").
+					With("file", namedFile).With("dir", namedFileDir).With("error", err))
+				return err
+			}
+
+			if _, err := directive.Writer.WriteTo(newFile); err != nil && err != io.EOF {
+				log.Emit(sinks.Error("IOError: Unable to write to file").
+					With("file", namedFile).With("dir", namedFileDir).With("error", err))
+
+				newFile.Close()
+
+				return err
+			}
+
+			log.Emit(sinks.Info("Directive Resolved").With("file", namedFile).With("dir", namedFileDir))
+
+			// Close giving file
+			newFile.Close()
+		}
+	}
+
+	return nil
 }

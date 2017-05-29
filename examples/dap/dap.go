@@ -1,7 +1,5 @@
 // Package dap defines a sample package which is used to test out our annotation parser.
 //@plugin(./annotations/buga.sol)
-//@plugin(./annotations/fude.sol)
-//@plugin(./annotations/nick.sol)
 package dap
 
 import (
