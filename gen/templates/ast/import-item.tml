@@ -1,1 +1,1 @@
-{{.Namespace}} {{.Path}}
+{{.Namespace}} "{{.Path}}"

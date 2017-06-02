@@ -25,7 +25,7 @@ var (
 // 3. InterfaceAnnotationGenerator (see Package http://github.com/influx6/moz/ast.InterfaceAnnotationGenerator)
 // 4. PackageAnnotationGenerator (see Package http://github.com/influx6/moz/ast.PackageAnnotationGenerator)
 // Any other type will cause the return of an error.
-func RegisterAnnotation(name string, generator interface{}) error {
+func RegisterAnnotation(name string, generator interface{}) bool {
 	switch gen := generator.(type) {
 	case ast.PackageAnnotationGenerator:
 		Annotations.RegisterPackage(name, gen)
@@ -36,23 +36,10 @@ func RegisterAnnotation(name string, generator interface{}) error {
 	case ast.InterfaceAnnotationGenerator:
 		Annotations.RegisterInterfaceType(name, gen)
 	default:
-		return errors.New("Generator type not supported")
+		panic(errors.New("Generator type not supported"))
 	}
 
-	return nil
-}
-
-// MustRegisterAnnotation which adds the generator depending on it's type into the appropriate
-// registry. It only supports  the following generators:
-// 1. TypeAnnotationGenerator (see Package http://github.com/influx6/moz/ast.TypeAnnotationGenerator)
-// 2. StructAnnotationGenerator (see Package http://github.com/influx6/moz/ast.StructAnnotationGenerator)
-// 3. InterfaceAnnotationGenerator (see Package http://github.com/influx6/moz/ast.InterfaceAnnotationGenerator)
-// 4. PackageAnnotationGenerator (see Package http://github.com/influx6/moz/ast.PackageAnnotationGenerator)
-// Any other type will cause a panic.
-func MustRegisterAnnotation(name string, generator interface{}) {
-	if err := RegisterAnnotation(name, generator); err != nil {
-		panic(err)
-	}
+	return true
 }
 
 // MustParseWith calls the ParseWith method to attempt to parse the ast.PackageDeclarations

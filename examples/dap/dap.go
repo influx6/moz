@@ -20,12 +20,11 @@ type Ignitable interface {
 }
 
 // IgnitionDescription defines the description giving to a ignition key.
-//@homa
+//@mongo
 type IgnitionDescription string
 
 // Ignitor defines a struct which is used to ignite the package.
-//@homa
-//@mongo
+//@restapi
 type Ignitor struct {
 	Name string `json:"name"`
 	Repo Repo   `json:"repo"`
@@ -37,7 +36,6 @@ func (i Ignitor) Ignite() string {
 }
 
 // Repo defines a struct which defines a object pointing to a specific repo.
-//@oauth
 type Repo struct {
 	URL string `json:"url"`
 }

@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"text/template"
 )
@@ -147,9 +148,29 @@ func Imports(ims ...ImportItemDeclr) ImportDeclr {
 // Import returns a new instance of a ImportItemDeclr.
 func Import(path string, namespace string) ImportItemDeclr {
 	return ImportItemDeclr{
-		Path:      path,
 		Namespace: namespace,
+		Path:      path,
 	}
+}
+
+// AssignMap returns a combination of types that represent a map type.
+func AssignMap(name string, maptype string, mapvalue string) VariableShortAssignmentDeclr {
+	return Var(Name(name), MapValue(maptype, mapvalue))
+}
+
+// MapVar returns a combination of types that represent a map type.
+func MapVar(name string, maptype string, mapvalue string) VariableTypeDeclr {
+	return VarType(Name(name), MapType(maptype, mapvalue))
+}
+
+// MapValue returns a combination of types that represent a map type.
+func MapValue(maptype string, mapvalue string) TypeDeclr {
+	return Type(fmt.Sprintf("map[%s]%s{}", maptype, mapvalue))
+}
+
+// MapType returns a combination of types that represent a map type.
+func MapType(maptype string, mapvalue string) TypeDeclr {
+	return Type(fmt.Sprintf("map[%s]%s", maptype, mapvalue))
 }
 
 // Type returns a new instance of a TypeDeclr.
@@ -290,7 +311,7 @@ func Function(name NameDeclr, constr ConstructorDeclr, returns io.WriterTo, body
 // Source returns a new instance of a SourceDeclr.
 func Source(tml *template.Template, binding interface{}) SourceDeclr {
 	return SourceDeclr{
-		Template: tml,
+		Template: tml.Funcs(defaultFuncs),
 		Binding:  binding,
 	}
 }
@@ -420,6 +441,19 @@ func Var(name NameDeclr, value io.WriterTo) VariableShortAssignmentDeclr {
 // AssignVar returns a new instance of a VariableAssignmentDeclr.
 func AssignVar(name NameDeclr, value io.WriterTo) VariableAssignmentDeclr {
 	return VariableAssignmentDeclr{
+		Name:  name,
+		Value: value,
+	}
+}
+
+// MapAssignValue returns a new instance of a ValueAssignmentDeclr.
+func MapAssignValue(mapname string, key string, value string) ValueAssignmentDeclr {
+	return AssignValue(Name(fmt.Sprintf("%s[%s]", mapname, key)), Name(fmt.Sprintf("%s", value)))
+}
+
+// AssignValue returns a new instance of a ValueAssignmentDeclr.
+func AssignValue(name NameDeclr, value io.WriterTo) ValueAssignmentDeclr {
+	return ValueAssignmentDeclr{
 		Name:  name,
 		Value: value,
 	}

@@ -571,6 +571,8 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationW
 
 // GetPackage returns the annotation generator associated with the giving annotation name.
 func (a *AnnotationRegistry) GetPackage(annotation string) (PackageAnnotationGenerator, error) {
+	annotation = strings.TrimPrefix(annotation, "@")
+
 	var annon PackageAnnotationGenerator
 	var ok bool
 
@@ -599,6 +601,7 @@ func (a *AnnotationRegistry) MustInterfaceType(annotation string) InterfaceAnnot
 
 // GetInterfaceType returns the annotation generator associated with the giving annotation name.
 func (a *AnnotationRegistry) GetInterfaceType(annotation string) (InterfaceAnnotationGenerator, error) {
+	annotation = strings.TrimPrefix(annotation, "@")
 	var annon InterfaceAnnotationGenerator
 	var ok bool
 
@@ -627,6 +630,7 @@ func (a *AnnotationRegistry) MustStructType(annotation string) StructAnnotationG
 
 // GetStructType returns the annotation generator associated with the giving annotation name.
 func (a *AnnotationRegistry) GetStructType(annotation string) (StructAnnotationGenerator, error) {
+	annotation = strings.TrimPrefix(annotation, "@")
 	var annon StructAnnotationGenerator
 	var ok bool
 
@@ -655,6 +659,8 @@ func (a *AnnotationRegistry) MustType(annotation string) TypeAnnotationGenerator
 
 // GetType returns the annotation generator associated with the giving annotation name.
 func (a *AnnotationRegistry) GetType(annotation string) (TypeAnnotationGenerator, error) {
+	annotation = strings.TrimPrefix(annotation, "@")
+
 	var annon TypeAnnotationGenerator
 	var ok bool
 
@@ -673,6 +679,7 @@ func (a *AnnotationRegistry) GetType(annotation string) (TypeAnnotationGenerator
 
 // RegisterInterfaceType adds a interface type level annotation generator into the registry.
 func (a *AnnotationRegistry) RegisterInterfaceType(annotation string, generator InterfaceAnnotationGenerator) {
+	annotation = strings.TrimPrefix(annotation, "@")
 	a.ml.Lock()
 	{
 		a.interfaceAnnotations[annotation] = generator
@@ -682,6 +689,7 @@ func (a *AnnotationRegistry) RegisterInterfaceType(annotation string, generator 
 
 // RegisterStructType adds a struct type level annotation generator into the registry.
 func (a *AnnotationRegistry) RegisterStructType(annotation string, generator StructAnnotationGenerator) {
+	annotation = strings.TrimPrefix(annotation, "@")
 	a.ml.Lock()
 	{
 		a.structAnnotations[annotation] = generator
@@ -691,6 +699,7 @@ func (a *AnnotationRegistry) RegisterStructType(annotation string, generator Str
 
 // RegisterType adds a type(non-struct, non-interface) level annotation generator into the registry.
 func (a *AnnotationRegistry) RegisterType(annotation string, generator TypeAnnotationGenerator) {
+	annotation = strings.TrimPrefix(annotation, "@")
 	a.ml.Lock()
 	{
 		a.typeAnnotations[annotation] = generator
@@ -700,6 +709,7 @@ func (a *AnnotationRegistry) RegisterType(annotation string, generator TypeAnnot
 
 // RegisterPackage adds a package level annotation generator into the registry.
 func (a *AnnotationRegistry) RegisterPackage(annotation string, generator PackageAnnotationGenerator) {
+	annotation = strings.TrimPrefix(annotation, "@")
 	a.ml.Lock()
 	{
 		a.pkgAnnotations[annotation] = generator

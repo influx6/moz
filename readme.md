@@ -38,6 +38,54 @@ For example: If we wanted to be able to generate code for database CRUD activiti
 
 Example in [Example](./examples/dap), which demonstrates use of annotations to code generate other pieces of a code project.
 
+
+### How Annotation Code Generation works
+
+Moz provides 4 types of Annotation generators, which are function types which provide the necessary operations to be performed to create the underline series of sources to be generated for each annotation. 
+
+Moz provide the following generators:
+
+#### StructType Code Generators
+
+This functions are specific to provide code generation instructions for struct type declarations which the given annotation is attached to.
+
+```go
+type StructAnnotationGenerator func(AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+```
+
+*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+
+#### InterfaceType Code Generators
+
+This functions are specific to provide code generation instructions for interface declarations which the given annotation is attached to.
+
+```go
+type InterfaceAnnotationGenerator func(AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+```
+
+*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+
+#### PackageType Code Generators
+
+This functions are specific to provide code generation instructions for given annotation declared on the package comment block.
+
+```go
+type PackageAnnotationGenerator func(AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+```
+
+*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+
+#### Non(Struct|Interface) Code Generators
+
+This functions are specific to provide code generation instructions for non-struct and non-interface declarations which the given annotation is attached to.
+
+```go
+type TypeAnnotationGenerator func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+```
+
+*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+
+
 Code Generation structures
 ---------------------------
 

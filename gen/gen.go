@@ -201,7 +201,8 @@ type TextDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (tx TextDeclr) WriteTo(w io.Writer) (int64, error) {
-	tml, err := tm.New("textDeclr").Parse(tx.Template)
+	w = NewNoBOM(w)
+	tml, err := tm.New("textDeclr").Funcs(defaultFuncs).Parse(tx.Template)
 	if err != nil {
 		return 0, err
 	}
@@ -224,6 +225,7 @@ type SourceDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (src SourceDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	wc := NewWriteCounter(w)
 
 	if err := src.Template.Execute(wc, src.Binding); err != nil {
@@ -243,6 +245,7 @@ type PackageDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (pkg PackageDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("packageDeclr", templates.Must("package.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -287,6 +290,7 @@ func (t TypeDeclr) String() string {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (t TypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("typeDeclr", templates.Must("variable-type-only.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -314,6 +318,7 @@ type NameDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n NameDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("nameDeclr", templates.Must("name.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -351,6 +356,7 @@ func (n RuneASCIIDeclr) String() string {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n RuneASCIIDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("runeASCIIDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -376,6 +382,7 @@ type RuneGraphicsDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n RuneGraphicsDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("runeGraphicsDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -406,6 +413,7 @@ type RuneDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n RuneDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("runeDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -436,6 +444,7 @@ type StringASCIIDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n StringASCIIDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("stringASCIIDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -466,6 +475,7 @@ type StringDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n StringDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("stringDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -496,6 +506,7 @@ type BoolDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n BoolDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("boolDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -527,6 +538,7 @@ type UIntBaseDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n UIntBaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("uintBaseDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -557,6 +569,7 @@ type UInt64Declr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n UInt64Declr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("uint64Declr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -587,6 +600,7 @@ type UInt32Declr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n UInt32Declr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("uint32Declr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -618,6 +632,7 @@ type IntBaseDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n IntBaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("intBaseDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -648,6 +663,7 @@ type Int64Declr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n Int64Declr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("int64Declr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -678,6 +694,7 @@ type Int32Declr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n Int32Declr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("int32Declr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -708,6 +725,7 @@ type IntDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n IntDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("intDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -740,6 +758,7 @@ type FloatBaseDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n FloatBaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("floatBaseDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -770,6 +789,7 @@ type Float32Declr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n Float32Declr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("float32Declr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -800,6 +820,7 @@ type Float64Declr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n Float64Declr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("float64Declr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -831,6 +852,7 @@ type ValueDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n ValueDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("valueDeclr", templates.Must("value.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -863,6 +885,7 @@ type SliceTypeDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (t SliceTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("sliceTypeDeclr", templates.Must("slicetype.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -885,6 +908,7 @@ type SliceDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (t SliceDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	var vam bytes.Buffer
 
 	if _, err := CommaMapper.Map(t.Values...).WriteTo(&vam); err != nil && err != io.EOF {
@@ -946,6 +970,7 @@ func (n OperatorDeclr) String() string {
 
 // WriteTo writes the giving representation into the provided writer.
 func (n OperatorDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	total, err := w.Write([]byte(n.Operation))
 	return int64(total), err
 }
@@ -960,6 +985,7 @@ type VariableTypeDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v VariableTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("variableDeclr", templates.Must("variable-type.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -981,6 +1007,7 @@ type VariableNameDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v VariableNameDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("variableDeclr", templates.Must("variable-name.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1003,6 +1030,7 @@ type VariableAssignmentDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v VariableAssignmentDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("variableDeclr", templates.Must("variable-assign-basic.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1037,7 +1065,43 @@ type VariableShortAssignmentDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v VariableShortAssignmentDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("variableDeclr", templates.Must("variable-assign.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var vam bytes.Buffer
+
+	if _, err := v.Value.WriteTo(&vam); err != nil && err != io.EOF {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, struct {
+		Name  string
+		Value string
+	}{
+		Name:  v.Name.String(),
+		Value: vam.String(),
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// ValueAssignmentDeclr defines a declaration which produces a variable declaration.
+type ValueAssignmentDeclr struct {
+	Name  NameDeclr   `json:"name"`
+	Value io.WriterTo `json:"value"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (v ValueAssignmentDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+	tml, err := ToTemplate("valueAssignmentDeclr", templates.Must("value-assign.tml"), nil)
 	if err != nil {
 		return 0, err
 	}
@@ -1075,6 +1139,7 @@ type SingleByteBlockDeclr struct {
 
 // WriteTo writes the giving representation into the provided writer.
 func (b SingleByteBlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	wc := NewWriteCounter(w)
 
 	if _, err := wc.Write(b.Block); err != nil {
@@ -1093,6 +1158,7 @@ type SingleBlockDeclr struct {
 
 // WriteTo writes the giving representation into the provided writer.
 func (b SingleBlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	wc := NewWriteCounter(w)
 
 	if _, err := wc.Write([]byte{byte(b.Rune)}); err != nil {
@@ -1114,6 +1180,7 @@ type ByteBlockDeclr struct {
 
 // WriteTo writes the giving representation into the provided writer.
 func (b ByteBlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	wc := NewWriteCounter(w)
 
 	if _, err := wc.Write(b.BlockBegin); err != nil {
@@ -1143,6 +1210,8 @@ type BlockDeclr struct {
 
 // WriteTo writes the giving representation into the provided writer.
 func (b BlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	wc := NewWriteCounter(w)
 
 	if _, err := wc.Write([]byte{byte(b.RuneBegin)}); err != nil {
@@ -1171,6 +1240,8 @@ type ConditionDeclr struct {
 
 // WriteTo writes the giving representation into the provided writer.
 func (c ConditionDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	wc := NewWriteCounter(w)
 
 	if _, err := c.PreVar.WriteTo(wc); err != nil && err != io.EOF {
@@ -1201,6 +1272,8 @@ type FunctionDeclr struct {
 
 // WriteTo writes to the provided writer the function declaration.
 func (f FunctionDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	var constr, returns, body bytes.Buffer
 
 	if _, err := f.Constructor.WriteTo(&constr); IsNotDrainError(err) {
@@ -1251,6 +1324,8 @@ type FunctionTypeDeclr struct {
 
 // WriteTo writes to the provided writer the function declaration.
 func (f FunctionTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	var constr, returns bytes.Buffer
 
 	if _, err := f.Constructor.WriteTo(&constr); IsNotDrainError(err) {
@@ -1295,6 +1370,8 @@ type TagDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v TagDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("tagDeclr", templates.Must("tag.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1318,6 +1395,8 @@ type StructTypeDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v StructTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("structTypeDeclr", templates.Must("structtype.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1357,6 +1436,8 @@ type StructDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (v StructDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("structDeclr", templates.Must("struct.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1414,6 +1495,8 @@ type CommentDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n CommentDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("commentDeclr", templates.Must("comments.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1460,6 +1543,8 @@ type MultiCommentDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n MultiCommentDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("multiCommentDeclr", templates.Must("multicomments.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1507,6 +1592,8 @@ type AnnotationDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n AnnotationDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("annotationDeclr", templates.Must("annotations.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1535,6 +1622,8 @@ type TextBlockDeclr struct {
 
 // WriteTo writes to the provided writer the variable declaration.
 func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	wc := NewWriteCounter(w)
 
 	if _, err := wc.Write([]byte(n.Block)); err != nil {
@@ -1559,6 +1648,8 @@ type CustomReturnDeclr struct {
 
 // WriteTo writes to the provided writer the function argument declaration.
 func (f CustomReturnDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	arguments := CommaMapper.Map(f.Returns...)
 
 	return (BlockDeclr{
@@ -1576,6 +1667,8 @@ type ReturnDeclr struct {
 
 // WriteTo writes to the provided writer the function argument declaration.
 func (f ReturnDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	if len(f.Returns) == 0 {
 		return 0, nil
 	}
@@ -1605,6 +1698,8 @@ type ConstructorDeclr struct {
 
 // WriteTo writes to the provided writer the function argument declaration.
 func (f ConstructorDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	var decals []io.WriterTo
 
 	for _, item := range f.Arguments {
@@ -1630,6 +1725,8 @@ type ImportItemDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (im ImportItemDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("importItemDeclr", templates.Must("import-item.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1651,6 +1748,8 @@ type ImportDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (im ImportDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("importDeclr", templates.Must("import.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1672,9 +1771,9 @@ func (im ImportDeclr) WriteTo(w io.Writer) (int64, error) {
 	wc := NewWriteCounter(w)
 
 	if err := tml.Execute(wc, struct {
-		Packages []string
+		Imports []string
 	}{
-		Packages: pkgs,
+		Imports: pkgs,
 	}); err != nil {
 		return 0, err
 	}
@@ -1692,6 +1791,8 @@ type IfDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (c IfDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("ifDeclr", templates.Must("if.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1737,6 +1838,8 @@ type DefaultCaseDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (c DefaultCaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("defaultCaseDeclr", templates.Must("case-default.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1769,6 +1872,8 @@ type CaseDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (c CaseDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("caseDeclr", templates.Must("case.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1808,6 +1913,8 @@ type SwitchDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (c SwitchDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+
 	tml, err := ToTemplate("caseDeclr", templates.Must("case.tml"), nil)
 	if err != nil {
 		return 0, err
@@ -1846,6 +1953,37 @@ func (c SwitchDeclr) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// NoBOMWriter removes any unwanted characters like \x00 found in
+// possible code.
+type NoBOMWriter struct {
+	io.Writer
+}
+
+// NewNoBOM returns a new instance of the NoBOMWriter
+func NewNoBOM(w io.Writer) *NoBOMWriter {
+	return &NoBOMWriter{
+		Writer: w,
+	}
+}
+
+// Write writes the bytes provided after removing such any \x00
+// characters.
+func (bom *NoBOMWriter) Write(b []byte) (int, error) {
+	var bm []byte
+
+	for _, bl := range b {
+		if bl == byte('\x00') {
+			continue
+		}
+
+		bm = append(bm, bl)
+	}
+
+	return bom.Writer.Write(bm)
 }
 
 //======================================================================================================================

@@ -1,5 +1,4 @@
-import (
-{{ range .Imports}}
+import ({{ range .Imports}}
     {{.}}
-{{end}}
-)
+{{end}})
+

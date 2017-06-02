@@ -1,4 +1,4 @@
-{{ if .Name != ""}}
+{{ if notequal .Name "" }}
 package {{.Name}}
 
 {{ end }}
