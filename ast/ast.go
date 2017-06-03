@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -55,8 +56,8 @@ func PackageFile(file string, mode parser.Mode) (*token.FileSet, *ast.File, erro
 
 // AnnotationDeclaration defines a annotation type which holds detail about a giving annotation.
 type AnnotationDeclaration struct {
-	Name     string `json:"name"`
-	Argument string `json:"argument"`
+	Name      string   `json:"name"`
+	Arguments []string `json:"arguments"`
 }
 
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
@@ -114,9 +115,10 @@ type TypeDeclaration struct {
 
 // ParseAnnotations parses the package which generates a series of ast with associated
 // annotation for processing.
-func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
+func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
 	if err != nil {
+		log.Emit(sinks.Error(err).With("message", "Failed to parse directory").With("dir", dir))
 		return nil, err
 	}
 
@@ -145,10 +147,27 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 
 				annons := annotation.FindStringSubmatch(text)
 
+				log.Emit(sinks.Info("Annotation in Package comments %+q", annons).
+					With("dir", dir).
+					With("documentation", file.Doc).
+					With("comment", comment))
+
 				if len(annons) > 1 {
+					var arguments []string
+
+					args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+					for _, elem := range strings.Split(args, ",") {
+						if unquoted, err := strconv.Unquote(elem); err == nil {
+							arguments = append(arguments, unquoted)
+							continue
+						}
+
+						arguments = append(arguments, strings.TrimSpace(elem))
+					}
+
 					packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
-						Name:     annons[1],
-						Argument: annons[2],
+						Name:      annons[1],
+						Arguments: arguments,
 					})
 
 					continue
@@ -175,11 +194,30 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 							}
 
 							annons := annotation.FindStringSubmatch(text)
+							log.Emit(sinks.Info("Annotation in Decleration comment %+q", annons).
+								With("dir", dir).
+								With("comment", comment).
+								With("documentation", rdeclr.Doc).
+								With("position", rdeclr.Pos()).
+								With("token", rdeclr.Tok.String()))
 
 							if len(annons) > 1 {
+								var arguments []string
+
+								args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+								for _, elem := range strings.Split(args, ",") {
+
+									if unquoted, err := strconv.Unquote(elem); err == nil {
+										arguments = append(arguments, unquoted)
+										continue
+									}
+
+									arguments = append(arguments, strings.TrimSpace(elem))
+								}
+
 								annotations = append(annotations, AnnotationDeclaration{
-									Name:     annons[1],
-									Argument: annons[2],
+									Name:      annons[1],
+									Arguments: arguments,
 								})
 
 								continue
@@ -199,6 +237,12 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 
 							switch robj := obj.Type.(type) {
 							case *ast.StructType:
+
+								log.Emit(sinks.Info("Annotation in Decleration").
+									With("Type", "Struct").
+									With("Annotations", annotations).
+									With("StructName", obj.Name))
+
 								packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
 									Object:      obj,
 									Struct:      robj,
@@ -213,6 +257,11 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 								break
 
 							case *ast.InterfaceType:
+								log.Emit(sinks.Info("Annotation in Decleration").
+									With("Type", "Interface").
+									With("Annotations", annotations).
+									With("StructName", obj.Name))
+
 								packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
 									Object:      obj,
 									Interface:   robj,
@@ -226,6 +275,12 @@ func ParseAnnotations(dir string) ([]PackageDeclaration, error) {
 								})
 								break
 							default:
+								log.Emit(sinks.Info("Annotation in Decleration").
+									With("Type", "OtherType").
+									With("Marker", "NonStruct/NonInterface:Type").
+									With("Annotations", annotations).
+									With("StructName", obj.Name))
+
 								packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
 									Object:      obj,
 									Annotations: annotations,
@@ -301,12 +356,15 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 				}
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+					log.Emit(sinks.Error("IOError: Unable to create writer directory").
+						With("dir", namedFileDir).With("error", err))
 					return err
 				}
 
-				newFile, err := os.Open(namedFile)
+				newFile, err := os.Create(namedFile)
 				if err != nil {
 					log.Emit(sinks.Error("IOError: Unable to create file").
+						With("dir", namedFileDir).
 						With("file", newFile).With("error", err))
 					return err
 				}
@@ -314,11 +372,13 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
 					newFile.Close()
 					log.Emit(sinks.Error("IOError: Unable to write content to file").
+						With("dir", namedFileDir).
 						With("file", newFile).With("error", err))
 					return err
 				}
 
 				log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
+					With("dir", namedFileDir).
 					With("package", pkg.Package).With("file", pkg.File).With("generated-file", namedFile))
 
 				newFile.Close()

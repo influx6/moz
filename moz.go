@@ -1,7 +1,7 @@
 package moz
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -29,14 +29,30 @@ func RegisterAnnotation(name string, generator interface{}) bool {
 	switch gen := generator.(type) {
 	case ast.PackageAnnotationGenerator:
 		Annotations.RegisterPackage(name, gen)
+		break
+	case func(ast.AnnotationDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
+		Annotations.RegisterPackage(name, gen)
+		break
 	case ast.TypeAnnotationGenerator:
 		Annotations.RegisterType(name, gen)
+		break
+	case func(ast.AnnotationDeclaration, ast.TypeDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
+		Annotations.RegisterType(name, gen)
+		break
 	case ast.StructAnnotationGenerator:
 		Annotations.RegisterStructType(name, gen)
+		break
+	case func(ast.AnnotationDeclaration, ast.StructDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
+		Annotations.RegisterStructType(name, gen)
+		break
 	case ast.InterfaceAnnotationGenerator:
 		Annotations.RegisterInterfaceType(name, gen)
+		break
+	case func(ast.AnnotationDeclaration, ast.InterfaceDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
+		Annotations.RegisterInterfaceType(name, gen)
+		break
 	default:
-		panic(errors.New("Generator type not supported"))
+		panic(fmt.Errorf("Generator type for %q not supported: %#v", name, generator))
 	}
 
 	return true

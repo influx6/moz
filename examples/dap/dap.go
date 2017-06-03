@@ -1,5 +1,5 @@
 // Package dap defines a sample package which is used to test out our annotation parser.
-//@plugin(./annotations/buga.sol)
+// @assets(dapassets, ".tml : .js", dappers)
 package dap
 
 import (

@@ -1,4 +1,4 @@
-package db
+package annotations
 
 import (
 	"github.com/influx6/moz"
