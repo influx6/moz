@@ -15,6 +15,9 @@ if err != nil {
 
 assetGen := gen.Package(
     gen.Name("{{.Package}}"),
+    gen.Text("\n"),
+    gen.Text("//go:generate go run generate.go"),
+    gen.Text("\n"),
     gen.AssignVar(
         gen.Name("files"),
         gen.Type("make(map[string][]byte)"),

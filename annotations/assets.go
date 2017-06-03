@@ -62,6 +62,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 			gen.Text("+build ignore"),
 		),
 		gen.Text("\n"),
+		gen.Text("\n"),
 		gen.Package(
 			gen.Name("main"),
 			gen.Imports(
