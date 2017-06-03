@@ -2,6 +2,7 @@ package annotations
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/influx6/faux/fmtwriter"
@@ -50,6 +51,10 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 		Writer:   fmtwriter.New(genFile, true),
 		FileName: fmt.Sprintf("%s.go", pkgName),
 		Dir:      pkgName,
+	})
+
+	directives = append(directives, gen.WriteDirective{
+		Dir: filepath.Join(pkgName, contentFileName),
 	})
 
 	mainFile := gen.Block(

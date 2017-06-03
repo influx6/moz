@@ -340,26 +340,42 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 					continue parseloop
 				}
 
+				log.Emit(sinks.Info("Executing WriteDirective").
+					With("annotation", item.Annotation).
+					With("fileName", item.FileName).
+					With("toDir", item.Dir))
+
 				var namedFileDir, namedFile string
 
 				annotation := strings.ToLower(item.Annotation)
 				newDir := filepath.Dir(pkg.FilePath)
 
-				log.Emit(sinks.Info("Executing WriteDirective").
-					With("annotation", item.Annotation).
-					With("fileName", item.FileName).
-					With("toDir", item.Dir))
+				if item.Dir != "" {
+					namedFileDir = filepath.Join(newDir, item.Dir)
+				} else {
+					namedFileDir = newDir
+				}
+
+				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+					log.Emit(sinks.Error("IOError: Unable to create writer directory").
+						With("dir", namedFileDir).With("error", err))
+					return err
+				}
+
+				if item.Writer == nil {
+					log.Emit(sinks.Info("Annotation Resolved").
+						With("annotation", item.Annotation).
+						With("dir", namedFileDir))
+					continue
+				}
 
 				if item.FileName == "" {
 
 					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
 					annotationFile := fmt.Sprintf(annotationFileFormat, annotation, fileName, "go")
 
-					namedFileDir = newDir
 					namedFile = filepath.Join(namedFileDir, annotationFile)
 				} else {
-					namedFileDir = filepath.Join(newDir, item.Dir)
-
 					// annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
 					namedFile = filepath.Join(namedFileDir, item.FileName)
 				}
@@ -368,12 +384,6 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 					With("annotation", item.Annotation).
 					With("file", namedFile).
 					With("dir", namedFileDir))
-
-				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-					log.Emit(sinks.Error("IOError: Unable to create writer directory").
-						With("dir", namedFileDir).With("error", err))
-					return err
-				}
 
 				newFile, err := os.Create(namedFile)
 				if err != nil {
