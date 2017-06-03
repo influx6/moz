@@ -147,8 +147,9 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 
 				annons := annotation.FindStringSubmatch(text)
 
-				log.Emit(sinks.Info("Annotation in Package comments %+q", annons).
+				log.Emit(sinks.Info("Annotation in Package comments").
 					With("dir", dir).
+					With("annotation", annons).
 					With("documentation", file.Doc).
 					With("comment", comment))
 
