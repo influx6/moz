@@ -1,4 +1,3 @@
 {{ if notequal .Name "" }}package {{.Name}}
-
 {{ end }}
 {{.Body}}
