@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
@@ -46,7 +47,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 	)
 
 	directives = append(directives, gen.WriteDirective{
-		Writer:   genFile,
+		Writer:   fmtwriter.New(genFile, true),
 		FileName: fmt.Sprintf("%s.go", pkgName),
 		Dir:      pkgName,
 	})
@@ -95,7 +96,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 	)
 
 	directives = append(directives, gen.WriteDirective{
-		Writer:   mainFile,
+		Writer:   fmtwriter.New(mainFile, true),
 		FileName: "generate.go",
 		Dir:      pkgName,
 	})

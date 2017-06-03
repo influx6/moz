@@ -5,7 +5,7 @@ events := sink.New(sinks.Stdout{})
 items, err := vfiles.ParseDir("{{.TargetDir}}", []string{
     {{range .Extensions}}
         {{ if notequal . ""}}
-        "{{trimspace .}}",
+        {{trimspace . | quote}},
         {{ end }}
     {{ end }}
 })

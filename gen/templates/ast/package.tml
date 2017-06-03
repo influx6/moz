@@ -1,5 +1,4 @@
-{{ if notequal .Name "" }}
-package {{.Name}}
+{{ if notequal .Name "" }}package {{.Name}}
 
 {{ end }}
 {{.Body}}

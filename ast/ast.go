@@ -158,12 +158,14 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 
 					args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
 					for _, elem := range strings.Split(args, ",") {
+						elem = strings.TrimSpace(elem)
+
 						if unquoted, err := strconv.Unquote(elem); err == nil {
 							arguments = append(arguments, unquoted)
 							continue
 						}
 
-						arguments = append(arguments, strings.TrimSpace(elem))
+						arguments = append(arguments, elem)
 					}
 
 					packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
@@ -207,13 +209,14 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 
 								args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
 								for _, elem := range strings.Split(args, ",") {
+									elem = strings.TrimSpace(elem)
 
 									if unquoted, err := strconv.Unquote(elem); err == nil {
 										arguments = append(arguments, unquoted)
 										continue
 									}
 
-									arguments = append(arguments, strings.TrimSpace(elem))
+									arguments = append(arguments, elem)
 								}
 
 								annotations = append(annotations, AnnotationDeclaration{
@@ -342,6 +345,11 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 				annotation := strings.ToLower(item.Annotation)
 				newDir := filepath.Dir(pkg.FilePath)
 
+				log.Emit(sinks.Info("Executing WriteDirective").
+					With("annotation", item.Annotation).
+					With("fileName", item.FileName).
+					With("toDir", item.Dir))
+
 				if item.FileName == "" {
 
 					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
@@ -352,9 +360,14 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 				} else {
 					namedFileDir = filepath.Join(newDir, item.Dir)
 
-					annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
-					namedFile = filepath.Join(namedFileDir, annotationFile)
+					// annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
+					namedFile = filepath.Join(namedFileDir, item.FileName)
 				}
+
+				log.Emit(sinks.Info("OS:Operation for annotation").
+					With("annotation", item.Annotation).
+					With("file", namedFile).
+					With("dir", namedFileDir))
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
 					log.Emit(sinks.Error("IOError: Unable to create writer directory").
