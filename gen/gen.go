@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"strconv"
+	"strings"
 	tm "text/template"
 
 	"github.com/influx6/moz/gen/templates"
@@ -1517,7 +1518,7 @@ func (n CommentDeclr) WriteTo(w io.Writer) (int64, error) {
 			return 0, err
 		}
 
-		blocks = append(blocks, bu.String())
+		blocks = append(blocks, strings.Split(bu.String(), "\n")...)
 	}
 
 	wc := NewWriteCounter(w)
@@ -1565,7 +1566,7 @@ func (n MultiCommentDeclr) WriteTo(w io.Writer) (int64, error) {
 			return 0, err
 		}
 
-		blocks = append(blocks, bu.String())
+		blocks = append(blocks, strings.Split(bu.String(), "\n")...)
 	}
 
 	wc := NewWriteCounter(w)
@@ -1987,3 +1988,11 @@ func (bom *NoBOMWriter) Write(b []byte) (int, error) {
 }
 
 //======================================================================================================================
+
+func cleanSpace(ns ...string) []string {
+	for index, item := range ns {
+		ns[index] = strings.TrimSpace(item)
+	}
+
+	return ns
+}

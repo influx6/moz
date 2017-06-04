@@ -1,0 +1,30 @@
+// CRUDOperator defines an interface which allows the HTTPApi to divert the final operation of 
+// the given CRUD request for the {{quote .Struct.Name}} type. This is provided by the user.
+type CRUDOperator interface{
+    Create({{.Struct.Name}}) error
+    Delete(string) ({{.Struct.Name}}, error)
+    Update(string, {{.Struct.Name}}) error
+    Get(string) ({{.Struct.Name}}, error)
+}
+
+// HTTPApi defines a struct which holds the http api handlers for providing CRUD 
+// operations for the provided {{quote .Struct.Name}} type.
+type HTTPApi struct{
+    Operator CRUDOperator
+}
+
+// Create receives an http request to create a new {{quote .Struct.Name}}.
+func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Request) {
+
+}
+
+
+type APIServer struct{
+    API HTTPApi
+    Router *httptree
+}
+// ServeHTTP defines the function to meet the http.Handler interface to appropriately 
+// parse all request to the appropriate handler.
+func (api *ApiSerrver) ServeHTTP(w http.ResponseWriter, r http.Request) {
+
+}

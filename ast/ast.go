@@ -13,8 +13,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/influx6/faux/sink"
-	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/faux/metrics"
+	"github.com/influx6/faux/metrics/sentries/stdout"
 	"github.com/influx6/moz/gen"
 )
 
@@ -115,10 +115,10 @@ type TypeDeclaration struct {
 
 // ParseAnnotations parses the package which generates a series of ast with associated
 // annotation for processing.
-func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
+func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, error) {
 	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
 	if err != nil {
-		log.Emit(sinks.Error(err).With("message", "Failed to parse directory").With("dir", dir))
+		log.Emit(stdout.Error(err).With("message", "Failed to parse directory").With("dir", dir))
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 
 				annons := annotation.FindStringSubmatch(text)
 
-				log.Emit(sinks.Info("Annotation in Package comments").
+				log.Emit(stdout.Info("Annotation in Package comments").
 					With("dir", dir).
 					With("annotation", annons).
 					With("documentation", file.Doc).
@@ -197,7 +197,7 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 							}
 
 							annons := annotation.FindStringSubmatch(text)
-							log.Emit(sinks.Info("Annotation in Decleration comment %+q", annons).
+							log.Emit(stdout.Info("Annotation in Decleration comment %+q", annons).
 								With("dir", dir).
 								With("comment", comment).
 								With("documentation", rdeclr.Doc).
@@ -242,7 +242,7 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 							switch robj := obj.Type.(type) {
 							case *ast.StructType:
 
-								log.Emit(sinks.Info("Annotation in Decleration").
+								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "Struct").
 									With("Annotations", annotations).
 									With("StructName", obj.Name))
@@ -261,7 +261,7 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 								break
 
 							case *ast.InterfaceType:
-								log.Emit(sinks.Info("Annotation in Decleration").
+								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "Interface").
 									With("Annotations", annotations).
 									With("StructName", obj.Name))
@@ -279,7 +279,7 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 								})
 								break
 							default:
-								log.Emit(sinks.Info("Annotation in Decleration").
+								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "OtherType").
 									With("Marker", "NonStruct/NonInterface:Type").
 									With("Annotations", annotations).
@@ -320,13 +320,13 @@ func ParseAnnotations(log sink.Sink, dir string) ([]PackageDeclaration, error) {
 
 // Parse takes the provided package declrations parsing all internals with the
 // appropriate generators suited to the type and annotations.
-func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
+func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
 	{
 	parseloop:
 		for _, pkg := range packageDeclrs {
 			wdrs, err := provider.ParseDeclr(pkg)
 			if err != nil {
-				log.Emit(sinks.Error("ParseFailure: Package %q", pkg.Package).
+				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
 					With("error", err).With("package", pkg.Package))
 				continue
 			}
@@ -334,13 +334,13 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 			for _, item := range wdrs {
 
 				if filepath.IsAbs(item.Dir) {
-					log.Emit(sinks.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
+					log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
 						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
 
 					continue parseloop
 				}
 
-				log.Emit(sinks.Info("Executing WriteDirective").
+				log.Emit(stdout.Info("Executing WriteDirective").
 					With("annotation", item.Annotation).
 					With("fileName", item.FileName).
 					With("toDir", item.Dir))
@@ -357,13 +357,13 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 				}
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-					log.Emit(sinks.Error("IOError: Unable to create writer directory").
+					log.Emit(stdout.Error("IOError: Unable to create writer directory").
 						With("dir", namedFileDir).With("error", err))
 					return err
 				}
 
 				if item.Writer == nil {
-					log.Emit(sinks.Info("Annotation Resolved").
+					log.Emit(stdout.Info("Annotation Resolved").
 						With("annotation", item.Annotation).
 						With("dir", namedFileDir))
 					continue
@@ -380,14 +380,14 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 					namedFile = filepath.Join(namedFileDir, item.FileName)
 				}
 
-				log.Emit(sinks.Info("OS:Operation for annotation").
+				log.Emit(stdout.Info("OS:Operation for annotation").
 					With("annotation", item.Annotation).
 					With("file", namedFile).
 					With("dir", namedFileDir))
 
 				newFile, err := os.Create(namedFile)
 				if err != nil {
-					log.Emit(sinks.Error("IOError: Unable to create file").
+					log.Emit(stdout.Error("IOError: Unable to create file").
 						With("dir", namedFileDir).
 						With("file", newFile).With("error", err))
 					return err
@@ -395,13 +395,13 @@ func Parse(log sink.Sink, provider *AnnotationRegistry, packageDeclrs ...Package
 
 				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
 					newFile.Close()
-					log.Emit(sinks.Error("IOError: Unable to write content to file").
+					log.Emit(stdout.Error("IOError: Unable to write content to file").
 						With("dir", namedFileDir).
 						With("file", newFile).With("error", err))
 					return err
 				}
 
-				log.Emit(sinks.Info("Annotation Resolved").With("annotation", item.Annotation).
+				log.Emit(stdout.Info("Annotation Resolved").With("annotation", item.Annotation).
 					With("dir", namedFileDir).
 					With("package", pkg.Package).With("file", pkg.File).With("generated-file", namedFile))
 

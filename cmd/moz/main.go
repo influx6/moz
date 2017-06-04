@@ -9,8 +9,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/faux/sink"
-	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/faux/metrics"
+	"github.com/influx6/faux/metrics/sentries/stdout"
 	"github.com/influx6/moz"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/cmd/moz/templates"
@@ -21,7 +21,7 @@ import (
 	_ "github.com/influx6/moz/annotations"
 )
 
-var events = sink.New(sinks.Stdout{})
+var events = metrics.New(stdout.Stdout{})
 
 // Version defines the version number for the cli.
 var Version = "0.1"
@@ -170,7 +170,7 @@ func assetsCLI(c *cli.Context) {
 	)
 
 	if err := os.MkdirAll(assetDir, 0700); err != nil && !os.IsExist(err) {
-		events.Emit(sinks.Error(err).With("dir", rootCMD).
+		events.Emit(metrics.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory"))
 		panic(err)
@@ -178,7 +178,7 @@ func assetsCLI(c *cli.Context) {
 
 	genDir := filepath.Join(rootDir, pkgName+".go")
 	if err := utils.WriteFile(events, fmtwriter.New(genFile, true), genDir); err != nil {
-		events.Emit(sinks.Error(err).With("dir", rootCMD).
+		events.Emit(metrics.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory: generate.go"))
 		panic(err)
@@ -186,7 +186,7 @@ func assetsCLI(c *cli.Context) {
 
 	dir := filepath.Join(rootDir, "generate.go")
 	if err := utils.WriteFile(events, fmtwriter.New(mainFile, true), dir); err != nil {
-		events.Emit(sinks.Error(err).With("dir", rootCMD).
+		events.Emit(metrics.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory: generate.go"))
 		panic(err)
@@ -196,19 +196,19 @@ func assetsCLI(c *cli.Context) {
 func annotationCLI(c *cli.Context) {
 	cdir, err := os.Getwd()
 	if err != nil {
-		events.Emit(sinks.Error(err).With("dir", cdir).With("message", "Failed to retrieve current directory"))
+		events.Emit(metrics.Error(err).With("dir", cdir).With("message", "Failed to retrieve current directory"))
 		return
 	}
 
-	events.Emit(sinks.Info("Using Dir: %s", cdir).With("dir", cdir))
+	events.Emit(metrics.Info("Using Dir: %s", cdir).With("dir", cdir))
 
 	pkgs, err := ast.ParseAnnotations(events, cdir)
 	if err != nil {
-		events.Emit(sinks.Error(err).With("dir", cdir).With("message", "Failed to parse package annotations"))
+		events.Emit(metrics.Error(err).With("dir", cdir).With("message", "Failed to parse package annotations"))
 		return
 	}
 
 	if err := moz.Parse(events, pkgs...); err != nil {
-		events.Emit(sinks.Error(err).With("dir", cdir).With("message", "Failed to parse package declarations"))
+		events.Emit(metrics.Error(err).With("dir", cdir).With("message", "Failed to parse package declarations"))
 	}
 }
