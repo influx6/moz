@@ -13,7 +13,7 @@ var (
 )
 
 // HTTPRestAnnotationGenerator defines a code generator for creating a restful HTTP for a giving struct.
-func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructAnnotationGenerator, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
 	httpGen := gen.Block(
 		gen.Commentary(
 			gen.SourceText(`Package http provides a auto-generated package which contains a http restful CRUD API for 

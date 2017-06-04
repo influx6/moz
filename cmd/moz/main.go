@@ -170,7 +170,7 @@ func assetsCLI(c *cli.Context) {
 	)
 
 	if err := os.MkdirAll(assetDir, 0700); err != nil && !os.IsExist(err) {
-		events.Emit(metrics.Error(err).With("dir", rootCMD).
+		events.Emit(stdout.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory"))
 		panic(err)
@@ -178,7 +178,7 @@ func assetsCLI(c *cli.Context) {
 
 	genDir := filepath.Join(rootDir, pkgName+".go")
 	if err := utils.WriteFile(events, fmtwriter.New(genFile, true), genDir); err != nil {
-		events.Emit(metrics.Error(err).With("dir", rootCMD).
+		events.Emit(stdout.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory: generate.go"))
 		panic(err)
@@ -186,7 +186,7 @@ func assetsCLI(c *cli.Context) {
 
 	dir := filepath.Join(rootDir, "generate.go")
 	if err := utils.WriteFile(events, fmtwriter.New(mainFile, true), dir); err != nil {
-		events.Emit(metrics.Error(err).With("dir", rootCMD).
+		events.Emit(stdout.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory: generate.go"))
 		panic(err)
@@ -196,19 +196,19 @@ func assetsCLI(c *cli.Context) {
 func annotationCLI(c *cli.Context) {
 	cdir, err := os.Getwd()
 	if err != nil {
-		events.Emit(metrics.Error(err).With("dir", cdir).With("message", "Failed to retrieve current directory"))
+		events.Emit(stdout.Error(err).With("dir", cdir).With("message", "Failed to retrieve current directory"))
 		return
 	}
 
-	events.Emit(metrics.Info("Using Dir: %s", cdir).With("dir", cdir))
+	events.Emit(stdout.Info("Using Dir: %s", cdir).With("dir", cdir))
 
 	pkgs, err := ast.ParseAnnotations(events, cdir)
 	if err != nil {
-		events.Emit(metrics.Error(err).With("dir", cdir).With("message", "Failed to parse package annotations"))
+		events.Emit(stdout.Error(err).With("dir", cdir).With("message", "Failed to parse package annotations"))
 		return
 	}
 
 	if err := moz.Parse(events, pkgs...); err != nil {
-		events.Emit(metrics.Error(err).With("dir", cdir).With("message", "Failed to parse package declarations"))
+		events.Emit(stdout.Error(err).With("dir", cdir).With("message", "Failed to parse package declarations"))
 	}
 }

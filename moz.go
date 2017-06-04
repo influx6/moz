@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/influx6/faux/sink"
-	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/faux/metrics"
+	"github.com/influx6/faux/metrics/sentries/stdout"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
@@ -60,7 +60,7 @@ func RegisterAnnotation(name string, generator interface{}) bool {
 
 // MustParseWith calls the ParseWith method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustParseWith(log sink.Sink, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) {
+func MustParseWith(log metrics.Metrics, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) {
 	if err := ParseWith(log, provider, packageDeclrs...); err != nil {
 		panic(err)
 	}
@@ -68,13 +68,13 @@ func MustParseWith(log sink.Sink, provider *ast.AnnotationRegistry, packageDeclr
 
 // ParseWith takes the provided package declarations and annotation registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
-func ParseWith(log sink.Sink, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) error {
+func ParseWith(log metrics.Metrics, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) error {
 	return ast.Parse(log, provider, packageDeclrs...)
 }
 
 // MustParse calls the Parse method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustParse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) {
+func MustParse(log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) {
 	if err := Parse(log, packageDeclrs...); err != nil {
 		panic(err)
 	}
@@ -82,13 +82,13 @@ func MustParse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) {
 
 // Parse takes the provided package declarations and the default Annotations registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
-func Parse(log sink.Sink, packageDeclrs ...ast.PackageDeclaration) error {
+func Parse(log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) error {
 	return ast.Parse(log, Annotations, packageDeclrs...)
 }
 
 // MustWriteDirectives calls the WriteDirectives method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustWriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteDirective) {
+func MustWriteDirectives(log metrics.Metrics, rootDir string, directives ...gen.WriteDirective) {
 	if err := WriteDirectives(log, rootDir, directives...); err != nil {
 		panic(err)
 	}
@@ -96,14 +96,14 @@ func MustWriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteD
 
 // WriteDirectives defines a funtion to sync the slices of WriteDirectives into a giving directory
 // root.
-func WriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteDirective) error {
+func WriteDirectives(log metrics.Metrics, rootDir string, directives ...gen.WriteDirective) error {
 
 	{
 	directiveloop:
 		for _, directive := range directives {
 
 			if filepath.IsAbs(directive.Dir) {
-				log.Emit(sinks.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
+				log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
 					With("root-dir", rootDir).With("directive-dir", directive.Dir))
 
 				continue directiveloop
@@ -118,13 +118,13 @@ func WriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteDirec
 
 			newFile, err := os.Open(namedFile)
 			if err != nil {
-				log.Emit(sinks.Error("IOError: Unable to create file").
+				log.Emit(stdout.Error("IOError: Unable to create file").
 					With("file", namedFile).With("dir", namedFileDir).With("error", err))
 				return err
 			}
 
 			if _, err := directive.Writer.WriteTo(newFile); err != nil && err != io.EOF {
-				log.Emit(sinks.Error("IOError: Unable to write to file").
+				log.Emit(stdout.Error("IOError: Unable to write to file").
 					With("file", namedFile).With("dir", namedFileDir).With("error", err))
 
 				newFile.Close()
@@ -132,7 +132,7 @@ func WriteDirectives(log sink.Sink, rootDir string, directives ...gen.WriteDirec
 				return err
 			}
 
-			log.Emit(sinks.Info("Directive Resolved").With("file", namedFile).With("dir", namedFileDir))
+			log.Emit(stdout.Info("Directive Resolved").With("file", namedFile).With("dir", namedFileDir))
 
 			// Close giving file
 			newFile.Close()
