@@ -17,15 +17,15 @@ import (
 
 	"github.com/influx6/faux/fmtwriter"
 
-	"github.com/influx6/faux/sink"
+	"github.com/influx6/faux/metrics"
 
-	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/faux/metrics/sentries/stdout"
 )
 
 func main() {
 	// go:generate go run generate.go
 
-	events := sink.New(sinks.Stdout{})
+	events := metrics.New(stdout.Stdout{})
 
 	items, err := vfiles.ParseDir("dappers", []string{
 
@@ -39,6 +39,9 @@ func main() {
 
 	assetGen := gen.Package(
 		gen.Name("dapassets"),
+		gen.Text("\n"),
+		gen.Text("//go:generate go run generate.go"),
+		gen.Text("\n"),
 		gen.AssignVar(
 			gen.Name("files"),
 			gen.Type("make(map[string][]byte)"),
@@ -84,7 +87,7 @@ func main() {
 
 	dir := filepath.Join(".", "dapassets.go")
 	if err := utils.WriteFile(events, fmtwriter.New(assetGen, true), dir); err != nil {
-		events.Emit(sinks.Error(err).With("dir", dir).
+		events.Emit(stdout.Error(err).With("dir", dir).
 			With("message", "Failed to create new package file: dapassets.go"))
 		panic(err)
 	}

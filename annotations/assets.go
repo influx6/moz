@@ -72,8 +72,8 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 				gen.Import("github.com/influx6/moz/utils", ""),
 				gen.Import("github.com/influx6/faux/vfiles", ""),
 				gen.Import("github.com/influx6/faux/fmtwriter", ""),
-				gen.Import("github.com/influx6/faux/sink", ""),
-				gen.Import("github.com/influx6/faux/sink/sinks", ""),
+				gen.Import("github.com/influx6/faux/metrics", ""),
+				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 			),
 			gen.Function(
 				gen.Name("main"),

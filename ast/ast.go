@@ -370,7 +370,6 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 				}
 
 				if item.FileName == "" {
-
 					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
 					annotationFile := fmt.Sprintf(annotationFileFormat, annotation, fileName, "go")
 
@@ -667,7 +666,7 @@ func (a *AnnotationRegistry) GetPackage(annotation string) (PackageAnnotationGen
 	a.ml.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("Annotation @%q not found", annotation)
+		return nil, fmt.Errorf("Package Annotation @%s not found", annotation)
 	}
 
 	return annon, nil
@@ -696,7 +695,7 @@ func (a *AnnotationRegistry) GetInterfaceType(annotation string) (InterfaceAnnot
 	a.ml.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("Annotation @%q not found", annotation)
+		return nil, fmt.Errorf("Interface Annotation @%s not found", annotation)
 	}
 
 	return annon, nil
@@ -725,7 +724,7 @@ func (a *AnnotationRegistry) GetStructType(annotation string) (StructAnnotationG
 	a.ml.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("Annotation @%q not found", annotation)
+		return nil, fmt.Errorf("Struct Annotation @%s not found", annotation)
 	}
 
 	return annon, nil
@@ -755,7 +754,7 @@ func (a *AnnotationRegistry) GetType(annotation string) (TypeAnnotationGenerator
 	a.ml.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("Annotation @%q not found", annotation)
+		return nil, fmt.Errorf("Type Annotation @%s not found", annotation)
 	}
 
 	return annon, nil

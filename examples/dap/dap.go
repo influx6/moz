@@ -10,21 +10,18 @@ import (
 //go:generate moz annotation
 
 // IgnitionFn defines a functiion type for a ignition function.
-//@homa
 type IgnitionFn func(string) string
 
 // Ignitable defines a struct which is used to ignite the package.
-//@buma
 type Ignitable interface {
 	Ignite() string
 }
 
 // IgnitionDescription defines the description giving to a ignition key.
-//@mongo
 type IgnitionDescription string
 
 // Ignitor defines a struct which is used to ignite the package.
-//@restapi
+//@httpapi
 type Ignitor struct {
 	Name string `json:"name"`
 	Repo Repo   `json:"repo"`

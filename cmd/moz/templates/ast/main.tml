@@ -1,6 +1,6 @@
 // go:generate go run generate.go
 
-events := sink.New(sinks.Stdout{})
+events := metrics.New(stdout.Stdout{})
 
 items, err := vfiles.ParseDir("{{.TargetDir}}", []string{
     {{range .Extensions}}
@@ -61,7 +61,7 @@ assetGen := gen.Package(
 
 dir := filepath.Join(".", "{{.Package}}.go")
 if err := utils.WriteFile(events, fmtwriter.New(assetGen, true), dir); err != nil {
-    events.Emit(sinks.Error(err).With("dir", dir).
+    events.Emit(stdout.Error(err).With("dir", dir).
         With("message", "Failed to create new package file: {{.Package}}.go"))
     panic(err)
 }

@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -64,12 +63,7 @@ var (
 			case rune:
 				return strconv.QuoteRune(bo)
 			default:
-				mo, err := json.Marshal(b)
-				if err != nil {
-					return err.Error()
-				}
-
-				return strconv.Quote(string(mo))
+				return "Unconvertible Type"
 			}
 		},
 		"prefixInt": func(prefix string, b int) string {

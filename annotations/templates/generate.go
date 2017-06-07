@@ -17,15 +17,15 @@ import (
 
 	"github.com/influx6/faux/fmtwriter"
 
-	"github.com/influx6/faux/sink"
+	"github.com/influx6/faux/metrics"
 
-	"github.com/influx6/faux/sink/sinks"
+	"github.com/influx6/faux/metrics/sentries/stdout"
 )
 
 func main() {
 	// go:generate go run generate.go
 
-	events := sink.New(sinks.Stdout{})
+	events := metrics.New(stdout.Stdout{})
 
 	items, err := vfiles.ParseDir("files", []string{})
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 
 	dir := filepath.Join(".", "templates.go")
 	if err := utils.WriteFile(events, fmtwriter.New(assetGen, true), dir); err != nil {
-		events.Emit(sinks.Error(err).With("dir", dir).
+		events.Emit(stdout.Error(err).With("dir", dir).
 			With("message", "Failed to create new package file: templates.go"))
 		panic(err)
 	}
