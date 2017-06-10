@@ -2,6 +2,7 @@ package annotations
 
 import (
 	"fmt"
+	goast "go/ast"
 
 	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/moz"
@@ -16,6 +17,39 @@ var (
 
 // HTTPRestAnnotationGenerator defines a code generator for creating a restful HTTP for a giving struct.
 func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+	var hasPublicID bool
+
+	// Validate we have a `PublicID` field.
+	{
+	fieldLoop:
+		for _, field := range str.Struct.Fields.List {
+			typeIdent, ok := field.Type.(*goast.Ident)
+
+			// if we are not a ast.Ident then skip
+			if !ok {
+				continue
+			}
+
+			// If typeName is not a string, skip.
+			if typeIdent.Name != "string" {
+				continue
+			}
+
+			for _, indent := range field.Names {
+				if indent.Name == "PublicID" {
+					hasPublicID = true
+					break fieldLoop
+				}
+			}
+		}
+	}
+
+	if !hasPublicID {
+		return nil, fmt.Errorf(`Struct has no 'PublicID' field with 'string' type
+		 Add 'PublicID string json:"public_id"' to struct %q
+		`, str.Object.Name.Name)
+	}
+
 	httpGen := gen.Block(
 		gen.Commentary(
 			gen.SourceText(`Package http provides a auto-generated package which contains a http restful CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
@@ -44,13 +78,6 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			),
 		),
 	)
-
-	fields := str.Struct.Fields
-
-	// Validate we have a `PublicID` field.
-	for _, field := range fields.List {
-		fmt.Printf("Field: %#v\n", field)
-	}
 
 	return []gen.WriteDirective{
 		{

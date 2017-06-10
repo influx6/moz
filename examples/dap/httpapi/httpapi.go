@@ -4,11 +4,9 @@
 package httpapi
 
 import (
-	"encoding/json"
-
-	"github.com/influx6/moz/examples/dap"
-
 	"net/http"
+
+	"encoding/json"
 
 	"github.com/dimfeld/httptreemux"
 
@@ -19,6 +17,8 @@ import (
 	httputil "github.com/influx6/faux/httputil"
 
 	"github.com/influx6/faux/metrics/sentries/stdout"
+
+	"github.com/influx6/moz/examples/dap"
 )
 
 // CRUDOperator defines an interface which allows the HTTPApi to divert the final operation of

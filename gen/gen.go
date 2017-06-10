@@ -37,6 +37,7 @@ type WriteDirective struct {
 	Writer   io.WriterTo `ast:"-,!optional"`       // WriteTo which contains the complete content of the file to be written to.
 	Dir      string      `ast:"dir,optional"`      // Relative dir path written into it if not existing.
 	FileName string      `ast:"filename,optional"` // alternative fileName to use for new file.
+	Override bool        `ast:"override"`
 }
 
 //======================================================================================================================

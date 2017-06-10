@@ -150,7 +150,6 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 				log.Emit(stdout.Info("Annotation in Package comments").
 					With("dir", dir).
 					With("annotation", annons).
-					With("documentation", file.Doc).
 					With("comment", comment))
 
 				if len(annons) > 1 {
@@ -200,7 +199,6 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 							log.Emit(stdout.Info("Annotation in Decleration comment %+q", annons).
 								With("dir", dir).
 								With("comment", comment).
-								With("documentation", rdeclr.Doc).
 								With("position", rdeclr.Pos()).
 								With("token", rdeclr.Tok.String()))
 
@@ -327,7 +325,7 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 			wdrs, err := provider.ParseDeclr(pkg)
 			if err != nil {
 				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
-					With("error", err).With("package", pkg.Package))
+					With("error", err.Error()).With("package", pkg.Package))
 				continue
 			}
 
@@ -358,7 +356,7 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
 					log.Emit(stdout.Error("IOError: Unable to create writer directory").
-						With("dir", namedFileDir).With("error", err))
+						With("dir", namedFileDir).With("error", err.Error()))
 					return err
 				}
 
@@ -388,7 +386,7 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 				if err != nil {
 					log.Emit(stdout.Error("IOError: Unable to create file").
 						With("dir", namedFileDir).
-						With("file", newFile).With("error", err))
+						With("file", newFile).With("error", err.Error()))
 					return err
 				}
 
@@ -396,7 +394,7 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 					newFile.Close()
 					log.Emit(stdout.Error("IOError: Unable to write content to file").
 						With("dir", namedFileDir).
-						With("file", newFile).With("error", err))
+						With("file", newFile).With("error", err.Error()))
 					return err
 				}
 

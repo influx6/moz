@@ -23,8 +23,9 @@ type IgnitionDescription string
 // Ignitor defines a struct which is used to ignite the package.
 //@httpapi
 type Ignitor struct {
-	Name string `json:"name"`
-	Repo Repo   `json:"repo"`
+	PublicID string `json:"public_id" toml:"public_id"`
+	Name     string `json:"name" toml:"name"`
+	Repo     Repo   `json:"repo" toml:"repo"`
 }
 
 // Ignite returns the ignited string related to the struct.

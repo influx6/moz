@@ -1,0 +1,6 @@
+// {{.Struct.Object.Name}}DB defines a structure which provide DB CRUD operations 
+// using mongo as the underline db.
+type {{.Struct.Object.Name}}DB struct{
+  Metrics metrics.Metrics   
+  DB db.Mongod
+}
