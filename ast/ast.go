@@ -387,7 +387,7 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 					log.Emit(stdout.Info("Annotation Unresolved: File already exists").With("annotation", item.Annotation).
 						With("dir", namedFileDir).
 						With("package", pkg.Package).With("file", pkg.File).With("generated-file", namedFile))
-					return
+					return nil
 				}
 
 				newFile, err := os.Create(namedFile)
