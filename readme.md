@@ -136,7 +136,7 @@ type Floppy struct {
 ```
 
 
-- Generate a struct with moz
+- Generate main function with moz
 
 ```go
 import "github.com/influx6/moz/gen"
