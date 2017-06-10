@@ -36,7 +36,7 @@ This annotation then are passed by the moz `annotation` CLI tooling which can ge
 
 For example: If we wanted to be able to generate code for database CRUD activities without having to use ORMs or write such code manually, with the Moz annotation code generation ability, we can create a `struct` generator that can use a `@mongo` annotation, which generates mongo CRUD functions which expect such a type and perform the appropriate CRUD operations.
 
-Examples are in the [Example](./examples/dap), which demonstrates use of annotations to code generate other pieces of a code project.
+Examples are in the [Example](./examples/dap) directory, which demonstrates use of annotations to code generate other pieces of a code project.
 
 
 ### How Annotation Code Generation works
