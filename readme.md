@@ -43,7 +43,7 @@ Examples are in the [Example](./examples/dap) directory, which demonstrates use 
 
 Moz provides 4 types of Annotation generators, which are function types which provide the necessary operations to be performed to create the underline series of sources to be generated for each annotation. 
 
-Moz provide the following generators:
+Moz provide the following generators type functions:
 
 #### StructType Code Generators
 
