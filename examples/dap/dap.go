@@ -22,6 +22,8 @@ type IgnitionDescription string
 
 // Ignitor defines a struct which is used to ignite the package.
 //@httpapi
+//@associates(New, NewIgnitor)
+//@associates(Update, NewUpdateIgnitor)
 type Ignitor struct {
 	PublicID string `json:"public_id" toml:"public_id"`
 	Name     string `json:"name" toml:"name"`

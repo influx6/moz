@@ -83,7 +83,10 @@ type InterfaceDeclaration struct {
 	File        string                  `json:"file"`
 	Interface   *ast.InterfaceType      `json:"interface"`
 	Object      *ast.TypeSpec           `json:"object"`
+	Position    token.Pos               `json:"position"`
 	Annotations []AnnotationDeclaration `json:"annotations"`
+	// StructAssociation []StructDeclaration     `json:"struct_associations"`
+	// TypeAssociation   []TypeDeclaration       `json:"type_associations"`
 }
 
 // StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
@@ -96,7 +99,10 @@ type StructDeclaration struct {
 	File        string                  `json:"file"`
 	Struct      *ast.StructType         `json:"struct"`
 	Object      *ast.TypeSpec           `json:"object"`
+	Position    token.Pos               `json:"position"`
 	Annotations []AnnotationDeclaration `json:"annotations"`
+	// StructAssociation []StructDeclaration     `json:"struct_associations"`
+	// TypeAssociation   []TypeDeclaration       `json:"type_associations"`
 }
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
@@ -108,7 +114,10 @@ type TypeDeclaration struct {
 	FilePath    string                  `json:"filepath"`
 	File        string                  `json:"file"`
 	Object      *ast.TypeSpec           `json:"object"`
+	Position    token.Pos               `json:"position"`
 	Annotations []AnnotationDeclaration `json:"annotations"`
+	// StructAssociation []StructDeclaration     `json:"struct_associations"`
+	// TypeAssociation   []TypeDeclaration       `json:"type_associations"`
 }
 
 //===========================================================================================================
@@ -149,8 +158,8 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 				log.Emit(stdout.Info("Annotation in Package comments").
 					With("dir", dir).
-					With("annotation", annons).
-					With("comment", comment))
+					With("annotation", annons[1:]).
+					With("comment", comment.Text))
 
 				if len(annons) > 1 {
 					var arguments []string
@@ -196,9 +205,11 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 							}
 
 							annons := annotation.FindStringSubmatch(text)
-							log.Emit(stdout.Info("Annotation in Decleration comment %+q", annons).
+
+							log.Emit(stdout.Info("Annotation in Decleration comment").
 								With("dir", dir).
-								With("comment", comment).
+								With("comment", comment.Text).
+								With("annotation", annons[1:]).
 								With("position", rdeclr.Pos()).
 								With("token", rdeclr.Tok.String()))
 
@@ -242,7 +253,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "Struct").
-									With("Annotations", annotations).
+									With("Annotations", len(annotations)).
 									With("StructName", obj.Name))
 
 								packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
@@ -261,7 +272,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 							case *ast.InterfaceType:
 								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "Interface").
-									With("Annotations", annotations).
+									With("Annotations", len(annotations)).
 									With("StructName", obj.Name))
 
 								packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
@@ -280,7 +291,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "OtherType").
 									With("Marker", "NonStruct/NonInterface:Type").
-									With("Annotations", annotations).
+									With("Annotations", len(annotations)).
 									With("StructName", obj.Name))
 
 								packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
