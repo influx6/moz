@@ -3,18 +3,19 @@ package annotations
 import (
 	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/moz"
+	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
-	"github.com/influx6/moz/gen/templates"
 )
 
 var (
-	_ = moz.RegisterAnnotation("mongo", MongoAnnotationGenerator)
+	_ = moz.RegisterAnnotation("mongoapi", MongoAnnotationGenerator)
 )
 
 // MongoAnnotationGenerator defines a code generator for struct declarations that generate a
 // mongo CRUD code for the use of mongodb as the underline db store.
 func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+
 	mongoGen := gen.Block(
 		gen.Commentary(
 			gen.SourceText(`Package mongoapi provides a auto-generated package which contains a mongo CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
@@ -32,7 +33,9 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 				gen.SourceText(
 					string(templates.Must("mongo-api.tml")),
 					struct {
-						Struct ast.StructDeclaration
+						Struct     ast.StructDeclaration
+						NewType    string
+						UpdateType string
 					}{
 						Struct: str,
 					},

@@ -246,6 +246,9 @@ func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Reque
 
 //================================================================================================
 
+
+//================================================================================================
+
 // HTTPContextHandler defines a function which is used to service a request with a 
 // context
 type HTTPContextHandler func(ctx context.Context, w http.ResponseWriter, r http.Request)

@@ -73,51 +73,56 @@ type PackageDeclaration struct {
 	Interfaces  []InterfaceDeclaration  `json:"interfaces"`
 }
 
+// AnnotationAssociationDeclaration defines a type which defines an association between
+// a giving annotation and a series of values.
+type AnnotationAssociationDeclaration struct {
+	Annotation string `json:"annotation"`
+	Action     string `json:"action"`
+	TypeName   string `json:"typeName"`
+}
+
 // InterfaceDeclaration defines a type which holds annotation data for a giving interface type declaration.
 type InterfaceDeclaration struct {
-	LineNumber  int                     `json:"line_number"`
-	Column      int                     `json:"column"`
-	Package     string                  `json:"package"`
-	Path        string                  `json:"path"`
-	FilePath    string                  `json:"filepath"`
-	File        string                  `json:"file"`
-	Interface   *ast.InterfaceType      `json:"interface"`
-	Object      *ast.TypeSpec           `json:"object"`
-	Position    token.Pos               `json:"position"`
-	Annotations []AnnotationDeclaration `json:"annotations"`
-	// StructAssociation []StructDeclaration     `json:"struct_associations"`
-	// TypeAssociation   []TypeDeclaration       `json:"type_associations"`
+	LineNumber   int                                `json:"line_number"`
+	Column       int                                `json:"column"`
+	Package      string                             `json:"package"`
+	Path         string                             `json:"path"`
+	FilePath     string                             `json:"filepath"`
+	File         string                             `json:"file"`
+	Interface    *ast.InterfaceType                 `json:"interface"`
+	Object       *ast.TypeSpec                      `json:"object"`
+	Position     token.Pos                          `json:"position"`
+	Annotations  []AnnotationDeclaration            `json:"annotations"`
+	Associations []AnnotationAssociationDeclaration `json:"associations"`
 }
 
 // StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
 type StructDeclaration struct {
-	LineNumber  int                     `json:"line_number"`
-	Column      int                     `json:"column"`
-	Package     string                  `json:"package"`
-	Path        string                  `json:"path"`
-	FilePath    string                  `json:"filepath"`
-	File        string                  `json:"file"`
-	Struct      *ast.StructType         `json:"struct"`
-	Object      *ast.TypeSpec           `json:"object"`
-	Position    token.Pos               `json:"position"`
-	Annotations []AnnotationDeclaration `json:"annotations"`
-	// StructAssociation []StructDeclaration     `json:"struct_associations"`
-	// TypeAssociation   []TypeDeclaration       `json:"type_associations"`
+	LineNumber   int                                `json:"line_number"`
+	Column       int                                `json:"column"`
+	Package      string                             `json:"package"`
+	Path         string                             `json:"path"`
+	FilePath     string                             `json:"filepath"`
+	File         string                             `json:"file"`
+	Struct       *ast.StructType                    `json:"struct"`
+	Object       *ast.TypeSpec                      `json:"object"`
+	Position     token.Pos                          `json:"position"`
+	Annotations  []AnnotationDeclaration            `json:"annotations"`
+	Associations []AnnotationAssociationDeclaration `json:"associations"`
 }
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
 type TypeDeclaration struct {
-	LineNumber  int                     `json:"line_number"`
-	Column      int                     `json:"column"`
-	Package     string                  `json:"package"`
-	Path        string                  `json:"path"`
-	FilePath    string                  `json:"filepath"`
-	File        string                  `json:"file"`
-	Object      *ast.TypeSpec           `json:"object"`
-	Position    token.Pos               `json:"position"`
-	Annotations []AnnotationDeclaration `json:"annotations"`
-	// StructAssociation []StructDeclaration     `json:"struct_associations"`
-	// TypeAssociation   []TypeDeclaration       `json:"type_associations"`
+	LineNumber   int                                `json:"line_number"`
+	Column       int                                `json:"column"`
+	Package      string                             `json:"package"`
+	Path         string                             `json:"path"`
+	FilePath     string                             `json:"filepath"`
+	File         string                             `json:"file"`
+	Object       *ast.TypeSpec                      `json:"object"`
+	Position     token.Pos                          `json:"position"`
+	Annotations  []AnnotationDeclaration            `json:"annotations"`
+	Associations []AnnotationAssociationDeclaration `json:"associations"`
 }
 
 //===========================================================================================================
@@ -144,8 +149,6 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 				packageDeclr.Path = filepath.Dir(relPath)
 				packageDeclr.File = filepath.Base(relPath)
 			}
-
-			// fmt.Printf("Real: %+q\n", packageDeclr)
 
 			for _, comment := range file.Doc.List {
 				text := strings.TrimPrefix(comment.Text, "//")
@@ -190,12 +193,15 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			}
 
 			// Collect and categorize annotations in types and their fields.
+		declrLoop:
 			for _, declr := range file.Decls {
 
 				switch rdeclr := declr.(type) {
 				case *ast.GenDecl:
 
 					var annotations []AnnotationDeclaration
+					var associations []AnnotationAssociationDeclaration
+
 					if rdeclr.Doc != nil {
 						for _, comment := range rdeclr.Doc.List {
 							text := strings.TrimPrefix(comment.Text, "//")
@@ -217,6 +223,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 								var arguments []string
 
 								args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+
 								for _, elem := range strings.Split(args, ",") {
 									elem = strings.TrimSpace(elem)
 
@@ -228,10 +235,44 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									arguments = append(arguments, elem)
 								}
 
-								annotations = append(annotations, AnnotationDeclaration{
-									Name:      annons[1],
-									Arguments: arguments,
-								})
+								switch annons[1] {
+								case "associates":
+									if len(arguments) < 3 {
+										log.Emit(stdout.Error("Association Annotation in Decleration is incomplete: Expects 3 elements").
+											With("dir", dir).
+											With("association", arguments).
+											With("comment", comment.Text).
+											With("annotation", annons[1:]).
+											With("position", rdeclr.Pos()).
+											With("token", rdeclr.Tok.String()))
+
+										continue declrLoop
+									}
+
+									log.Emit(stdout.Info("Association for Annotation in Decleration").
+										With("dir", dir).
+										With("association-annotation", strings.TrimPrefix(arguments[0], "@")).
+										With("association-action", arguments[1]).
+										With("association-typeName", arguments[2]).
+										With("comment", comment.Text).
+										With("annotation", annons[1:]).
+										With("position", rdeclr.Pos()).
+										With("token", rdeclr.Tok.String()))
+
+									associations = append(associations, AnnotationAssociationDeclaration{
+										Action:     arguments[1],
+										TypeName:   arguments[2],
+										Annotation: strings.TrimPrefix(arguments[0], "@"),
+									})
+
+									break
+
+								default:
+									annotations = append(annotations, AnnotationDeclaration{
+										Name:      annons[1],
+										Arguments: arguments,
+									})
+								}
 
 								continue
 							}
@@ -257,15 +298,16 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									With("StructName", obj.Name))
 
 								packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
-									Object:      obj,
-									Struct:      robj,
-									Annotations: annotations,
-									File:        packageDeclr.File,
-									Package:     packageDeclr.Package,
-									Path:        packageDeclr.Path,
-									FilePath:    packageDeclr.FilePath,
-									LineNumber:  tokenPosition.Line,
-									Column:      tokenPosition.Column,
+									Object:       obj,
+									Struct:       robj,
+									Annotations:  annotations,
+									Associations: associations,
+									File:         packageDeclr.File,
+									Package:      packageDeclr.Package,
+									Path:         packageDeclr.Path,
+									FilePath:     packageDeclr.FilePath,
+									LineNumber:   tokenPosition.Line,
+									Column:       tokenPosition.Column,
 								})
 								break
 
@@ -276,15 +318,16 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									With("StructName", obj.Name))
 
 								packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
-									Object:      obj,
-									Interface:   robj,
-									Annotations: annotations,
-									File:        packageDeclr.File,
-									Package:     packageDeclr.Package,
-									Path:        packageDeclr.Path,
-									FilePath:    packageDeclr.FilePath,
-									LineNumber:  tokenPosition.Line,
-									Column:      tokenPosition.Column,
+									Object:       obj,
+									Interface:    robj,
+									Annotations:  annotations,
+									Associations: associations,
+									File:         packageDeclr.File,
+									Package:      packageDeclr.Package,
+									Path:         packageDeclr.Path,
+									FilePath:     packageDeclr.FilePath,
+									LineNumber:   tokenPosition.Line,
+									Column:       tokenPosition.Column,
 								})
 								break
 							default:
@@ -295,14 +338,15 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									With("StructName", obj.Name))
 
 								packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
-									Object:      obj,
-									Annotations: annotations,
-									File:        packageDeclr.File,
-									Package:     packageDeclr.Package,
-									Path:        packageDeclr.Path,
-									FilePath:    packageDeclr.FilePath,
-									LineNumber:  tokenPosition.Line,
-									Column:      tokenPosition.Column,
+									Object:       obj,
+									Annotations:  annotations,
+									Associations: associations,
+									File:         packageDeclr.File,
+									Package:      packageDeclr.Package,
+									Path:         packageDeclr.Path,
+									FilePath:     packageDeclr.FilePath,
+									LineNumber:   tokenPosition.Line,
+									Column:       tokenPosition.Column,
 								})
 							}
 
