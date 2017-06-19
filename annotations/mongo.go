@@ -41,6 +41,53 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 
 	}
 
+	mongoTestGen := gen.Block(
+		gen.Package(
+			gen.Name("mongoapi"),
+			gen.Imports(
+				gen.Import("encoding/json", ""),
+				gen.Import("gopkg.in/mgo.v2", "mgo"),
+				gen.Import("gopkg.in/mgo.v2/bson", ""),
+				gen.Import("github.com/influx6/faux/db/mongo", ""),
+				gen.Import("github.com/influx6/faux/context", ""),
+				gen.Import("github.com/influx6/faux/metrics", ""),
+				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(str.Path, ""),
+			),
+			gen.Block(
+				gen.SourceText(
+					string(templates.Must("mongo-api-test.tml")),
+					struct {
+						Struct       ast.StructDeclaration
+						CreateAction ast.StructDeclaration
+						UpdateAction ast.StructDeclaration
+					}{
+						Struct:       str,
+						CreateAction: createAction,
+						UpdateAction: updateAction,
+					},
+				),
+			),
+		),
+	)
+
+	mongoReadmeGen := gen.Block(
+		gen.Block(
+			gen.SourceText(
+				string(templates.Must("mongo-api-readme.tml")),
+				struct {
+					Struct       ast.StructDeclaration
+					CreateAction ast.StructDeclaration
+					UpdateAction ast.StructDeclaration
+				}{
+					Struct:       str,
+					CreateAction: createAction,
+					UpdateAction: updateAction,
+				},
+			),
+		),
+	)
+
 	mongoGen := gen.Block(
 		gen.Commentary(
 			gen.SourceText(`Package mongoapi provides a auto-generated package which contains a mongo CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
@@ -78,6 +125,18 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 	)
 
 	return []gen.WriteDirective{
+		{
+			Writer:   mongoReadmeGen,
+			FileName: "README.md",
+			Dir:      "mongoapi",
+			// DontOverride: true,
+		},
+		{
+			Writer:   fmtwriter.New(mongoTestGen, true),
+			FileName: "mongoapi_test.go",
+			Dir:      "mongoapi",
+			// DontOverride: true,
+		},
 		{
 			Writer:   fmtwriter.New(mongoGen, true),
 			FileName: "mongoapi.go",

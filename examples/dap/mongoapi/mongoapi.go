@@ -304,7 +304,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 
 	database, session, err := mdb.DB.New()
 	if err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Errorf("Failed to update record").With("public_id", public_id).With("error", err.Error()))
 		return err
 	}
 
@@ -320,14 +320,14 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		query := fields.BSON()
 
 		if err := database.C(mdb.col).Insert(query); err != nil {
-			mdb.metrics.Emit(stdout.Errorf("Failed to create Ignitor record").
+			mdb.metrics.Emit(stdout.Errorf("Failed to update Ignitor record").
 				With("query", query).
 				With("error", err.Error()))
 
 			return err
 		}
 
-		mdb.metrics.Emit(stdout.Notice("Create record").
+		mdb.metrics.Emit(stdout.Notice("Update record").
 			With("query", query).
 			With("error", err.Error()))
 
@@ -338,7 +338,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		query := bson.M(fields.Fields())
 
 		if err := database.C(mdb.col).Insert(query); err != nil {
-			mdb.metrics.Emit(stdout.Errorf("Failed to create Ignitor record").
+			mdb.metrics.Emit(stdout.Errorf("Failed to update Ignitor record").
 				With("query", query).
 				With("error", err.Error()))
 			return err
@@ -351,7 +351,8 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		return nil
 	}
 
-	query := bson.M(map[string]interface{}{
+	query := bson.M{"public_id": publicID}
+	queryData := bson.M(map[string]interface{}{
 
 		"hash": elem.Identity.Hash,
 
@@ -365,14 +366,14 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		},
 	})
 
-	if err := database.C(mdb.col).Insert(query); err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to create Ignitor record").
+	if err := database.C(mdb.col).Update(query, queryData); err != nil {
+		mdb.metrics.Emit(stdout.Errorf("Failed to update Ignitor record").
 			With("query", query).
 			With("error", err.Error()))
 		return err
 	}
 
-	mdb.metrics.Emit(stdout.Notice("Create record").
+	mdb.metrics.Emit(stdout.Notice("Update record").
 		With("query", query).
 		With("error", err.Error()))
 

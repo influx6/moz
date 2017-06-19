@@ -362,7 +362,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 
     database, session, err := mdb.DB.New()
     if err != nil {
-        mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+        mdb.metrics.Emit(stdout.Errorf("Failed to update record").With("public_id", public_id).With("error", err.Error()))
         return err
     }
 
@@ -378,14 +378,14 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         query := fields.BSON()
 
         if err := database.C(mdb.col).Insert(query); err != nil {
-            mdb.metrics.Emit(stdout.Errorf("Failed to create {{.Struct.Object.Name}} record").
+            mdb.metrics.Emit(stdout.Errorf("Failed to update {{.Struct.Object.Name}} record").
             With("query", query).
             With("error", err.Error()))
 
             return err
         }
 
-        mdb.metrics.Emit(stdout.Notice("Create record").
+        mdb.metrics.Emit(stdout.Notice("Update record").
         With("query", query).
         With("error", err.Error()))
 
@@ -396,7 +396,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         query := bson.M(fields.Fields())
 
         if err := database.C(mdb.col).Insert(query); err != nil {
-            mdb.metrics.Emit(stdout.Errorf("Failed to create {{.Struct.Object.Name}} record").
+            mdb.metrics.Emit(stdout.Errorf("Failed to update {{.Struct.Object.Name}} record").
             With("query", query).
             With("error", err.Error()))
             return err
@@ -409,16 +409,17 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         return nil
     }
 
-    query := bson.M({{ map .CreateAction "elem" "bson" "json" }})
+    query := bson.M{"public_id":publicID}
+    queryData := bson.M({{ map .CreateAction "elem" "bson" "json" }})
 
-    if err := database.C(mdb.col).Insert(query); err != nil {
-        mdb.metrics.Emit(stdout.Errorf("Failed to create {{.Struct.Object.Name}} record").
+    if err := database.C(mdb.col).Update(query, queryData); err != nil {
+        mdb.metrics.Emit(stdout.Errorf("Failed to update {{.Struct.Object.Name}} record").
         With("query", query).
         With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(stdout.Notice("Create record").
+    mdb.metrics.Emit(stdout.Notice("Update record").
     With("query", query).
     With("error", err.Error()))
 
