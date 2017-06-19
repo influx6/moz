@@ -1,6 +1,8 @@
 package annotations
 
 import (
+	"text/template"
+
 	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
@@ -15,6 +17,29 @@ var (
 // MongoAnnotationGenerator defines a code generator for struct declarations that generate a
 // mongo CRUD code for the use of mongodb as the underline db store.
 func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+	updateAction := str
+	createAction := str
+
+	switch len(str.Associations) {
+	case 0:
+		updateAction = str
+		createAction = str
+		break
+
+	default:
+		if newAction, ok := str.Associations["New"]; ok {
+			if action, err := ast.FindStructType(pkg, newAction.TypeName); err == nil {
+				createAction = action
+			}
+		}
+
+		if upAction, ok := str.Associations["Update"]; ok {
+			if action, err := ast.FindStructType(pkg, upAction.TypeName); err == nil {
+				updateAction = action
+			}
+		}
+
+	}
 
 	mongoGen := gen.Block(
 		gen.Commentary(
@@ -24,20 +49,28 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 			gen.Name("mongoapi"),
 			gen.Imports(
 				gen.Import("encoding/json", ""),
+				gen.Import("gopkg.in/mgo.v2", "mgo"),
+				gen.Import("gopkg.in/mgo.v2/bson", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
-				gen.SourceText(
+				gen.SourceTextWith(
 					string(templates.Must("mongo-api.tml")),
+					template.FuncMap{
+						"map":     ast.MapOutFields,
+						"hasFunc": ast.HasFunctionFor(pkg),
+					},
 					struct {
-						Struct     ast.StructDeclaration
-						NewType    string
-						UpdateType string
+						Struct       ast.StructDeclaration
+						CreateAction ast.StructDeclaration
+						UpdateAction ast.StructDeclaration
 					}{
-						Struct: str,
+						Struct:       str,
+						CreateAction: createAction,
+						UpdateAction: updateAction,
 					},
 				),
 			),
@@ -49,6 +82,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 			Writer:   fmtwriter.New(mongoGen, true),
 			FileName: "mongoapi.go",
 			Dir:      "mongoapi",
+			// DontOverride: true,
 		},
 	}, nil
 }

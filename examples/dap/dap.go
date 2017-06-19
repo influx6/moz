@@ -23,20 +23,42 @@ type IgnitionDescription string
 // Ignitor defines a struct which is used to ignite the package.
 //@httpapi
 //@mongoapi
-//@associates(@mongoapi, New, NewIgnitor)
-//@associates(@mongoapi, Update, NewUpdateIgnitor)
+//@associates(@mongoapi, New, Ignitor)
+//@associates(@mongoapi, Update, Ignitor)
 type Ignitor struct {
-	PublicID string `json:"public_id" toml:"public_id"`
+	Identity
+	PublicID string `json:"public_id,omitempty" toml:"public_id"`
 	Name     string `json:"name" toml:"name"`
-	Repo     Repo   `json:"repo" toml:"repo"`
-}
-
-// Ignite returns the ignited string related to the struct.
-func (i Ignitor) Ignite() string {
-	return fmt.Sprintf("%s@%s", i.Name, strconv.Quote(i.Repo.URL))
+	Rex      Repo   `json:"rex" toml:"rex"`
 }
 
 // Repo defines a struct which defines a object pointing to a specific repo.
 type Repo struct {
 	URL string `json:"url"`
+}
+
+type Identity struct {
+	Hash string `json:"hash"`
+}
+
+// UpdateIgnitor defines a struct for creating a Ignitor.
+type UpdateIgnitor struct {
+	ID   string
+	Repo string
+}
+
+// NewIgnitor defines a struct for creating a Ignitor.
+type NewIgnitor struct {
+	ID   string
+	Repo string
+}
+
+// Ignite returns the ignited string related to the struct.
+func (i Ignitor) Ignite(in string) string {
+	return fmt.Sprintf("%s@%s", i.Name, strconv.Quote(i.Rex.URL))
+}
+
+// Build run.
+func Build() error {
+	return nil
 }

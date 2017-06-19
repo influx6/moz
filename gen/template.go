@@ -39,6 +39,9 @@ var (
 		"equal": func(b, a interface{}) bool {
 			return b == a
 		},
+		"not": func(b bool) bool {
+			return !!b
+		},
 		"notequal": func(b, a interface{}) bool {
 			return b != a
 		},

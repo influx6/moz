@@ -11,7 +11,7 @@ import (
 
 // TestStructGen validates the generation of a struct.
 func TestStructGen(t *testing.T) {
-	expected := "// Floppy provides a basic function.\n// \n// Demonstration of using floppy API.\n// \n//\n//@Flipo\n//@API\ntype Floppy struct {\n\n    Name string `json:\"name\"` \n\n}"
+	expected := "// Floppy provides a basic function.\n// \n// Demonstration of using floppy API.\n// \n//\n\n//@Flipo\n//@API\ntype Floppy struct {\n\n    Name string `json:\"name\"` \n\n}"
 
 	src := gen.Struct(
 		gen.Name("Floppy"),
@@ -37,7 +37,35 @@ func TestStructGen(t *testing.T) {
 	}
 	tests.Passed("Should have successfully written source output.")
 
-	tests.Info("Source: %+s", bu.String())
+	if bu.String() != expected {
+		tests.Info("Source: %+q", bu.String())
+		tests.Info("Expected: %+q", expected)
+
+		tests.Failed("Should have successfully matched generated output with expected.")
+	}
+	tests.Passed("Should have successfully matched generated output with expected.")
+}
+
+// TestMapGen validates the expected output of a giving map generator.
+func TestMapGen(t *testing.T) {
+	expected := "map[string]interface{}{\n    \n        \"name\": \"alex\",\n    \n        \"type\": 12,\n    \n}"
+
+	src := gen.Map(
+		"string",
+		"interface{}",
+		map[string]io.WriterTo{
+			"type": gen.Name("12"),
+			"name": gen.Name(`"alex"`),
+		},
+	)
+
+	var bu bytes.Buffer
+
+	if _, err := src.WriteTo(&bu); err != nil && err != io.EOF {
+		tests.Failed("Should have successfully written source output: %+q.", err)
+	}
+	tests.Passed("Should have successfully written source output.")
+
 	if bu.String() != expected {
 		tests.Info("Source: %+q", bu.String())
 		tests.Info("Expected: %+q", expected)
@@ -49,9 +77,7 @@ func TestStructGen(t *testing.T) {
 
 // TestFunctionGen validates the expected output of a giving function generator.
 func TestFunctionGen(t *testing.T) {
-	expected := `func main(v int, m string) {
-	fmt.Printf("Welcome to Lola Land");
-}`
+	expected := "\nfunc main(v int, m string)  {\n\tfmt.Printf(\"Welcome to Lola Land\");\n}\n"
 
 	src := gen.Function(
 		gen.Name("main"),
@@ -75,8 +101,6 @@ func TestFunctionGen(t *testing.T) {
 		tests.Failed("Should have successfully written source output: %+q.", err)
 	}
 	tests.Passed("Should have successfully written source output.")
-
-	tests.Info("Source: %+s", bu.String())
 
 	if bu.String() != expected {
 		tests.Info("Source: %+q", bu.String())

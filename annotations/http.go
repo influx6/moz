@@ -84,6 +84,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			Writer:   fmtwriter.New(httpGen, true),
 			FileName: "httpapi.go",
 			Dir:      "httpapi",
+			// DontOverride: true,
 		},
 	}, nil
 }

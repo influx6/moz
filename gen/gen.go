@@ -34,10 +34,10 @@ var (
 // the relative path within which it should be written to.
 // Include are tags which give meta description of the optionality of each field.
 type WriteDirective struct {
-	Writer   io.WriterTo `ast:"-,!optional"`       // WriteTo which contains the complete content of the file to be written to.
-	Dir      string      `ast:"dir,optional"`      // Relative dir path written into it if not existing.
-	FileName string      `ast:"filename,optional"` // alternative fileName to use for new file.
-	Override bool        `ast:"override"`
+	Writer       io.WriterTo `ast:"-,!optional"`       // WriteTo which contains the complete content of the file to be written to.
+	Dir          string      `ast:"dir,optional"`      // Relative dir path written into it if not existing.
+	FileName     string      `ast:"filename,optional"` // alternative fileName to use for new file.
+	DontOverride bool        `ast:"dont_override,optional"`
 }
 
 //======================================================================================================================
@@ -194,17 +194,84 @@ var CommaMapper = MapAny{MapFn: func(to io.Writer, declrs ...io.WriterTo) (int64
 
 //======================================================================================================================
 
+var (
+	defaultMapType = bytes.NewBuffer([]byte("map"))
+)
+
+// MapDeclr defines a type for a map declaration.
+type MapDeclr struct {
+	Type    NameDeclr
+	Value   NameDeclr
+	MapType io.WriterTo
+	Values  map[string]io.WriterTo
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (tx MapDeclr) WriteTo(w io.Writer) (int64, error) {
+	wc := NewWriteCounter(NewNoBOM(w))
+
+	tml, err := ToTemplate("mapDeclr", templates.Must("map.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	values := make(map[string]string)
+
+	var b bytes.Buffer
+
+	for name, item := range tx.Values {
+		b.Reset()
+
+		if _, err := item.WriteTo(&b); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		values[name] = b.String()
+	}
+
+	mapType := io.WriterTo(defaultMapType)
+
+	if tx.MapType != nil {
+		mapType = tx.MapType
+	}
+
+	var mapTypeName bytes.Buffer
+
+	if _, err := mapType.WriteTo(&mapTypeName); IsNotDrainError(err) {
+		return 0, err
+	}
+
+	var bind = struct {
+		MapType string
+		Type    string
+		Value   string
+		Values  map[string]string
+	}{
+		Values:  values,
+		Type:    tx.Type.Name,
+		Value:   tx.Value.Name,
+		MapType: mapTypeName.String(),
+	}
+
+	if err := tml.Execute(wc, bind); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
 // TextDeclr defines a declaration type which takes a giving source text and generate text.Template for it
 // and providing binding and will execute the template to generate it's output
 type TextDeclr struct {
 	Template string
 	Binding  interface{}
+	Funcs    tm.FuncMap
 }
 
-// WriteTo writes to the provided writer the variable declaration.
+// WriteTo writes to the provided writer the text declaration.
 func (tx TextDeclr) WriteTo(w io.Writer) (int64, error) {
 	w = NewNoBOM(w)
-	tml, err := tm.New("textDeclr").Funcs(defaultFuncs).Parse(tx.Template)
+	tml, err := tm.New("textDeclr").Funcs(defaultFuncs).Funcs(tx.Funcs).Parse(tx.Template)
 	if err != nil {
 		return 0, err
 	}
@@ -1131,6 +1198,56 @@ func (v ValueAssignmentDeclr) WriteTo(w io.Writer) (int64, error) {
 
 //======================================================================================================================
 
+// SuffixDeclr defines a declaration which produces a block with the provided prefix.
+type SuffixDeclr struct {
+	Suffix io.WriterTo `json:"-"`
+	Value  io.WriterTo `json:"-"`
+}
+
+// WriteTo writes the giving representation into the provided writer.
+func (b SuffixDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+	wc := NewWriteCounter(w)
+
+	if _, err := b.Value.WriteTo(wc); err != nil && err != io.EOF {
+		return 0, err
+	}
+
+	if b.Suffix != nil {
+		if _, err := b.Suffix.WriteTo(wc); IsNotDrainError(err) {
+			return 0, err
+		}
+	}
+
+	return wc.Written(), nil
+}
+
+// PrefixDeclr defines a declaration which produces a block with the provided prefix.
+type PrefixDeclr struct {
+	Prefix io.WriterTo `json:"-"`
+	Value  io.WriterTo `json:"-"`
+}
+
+// WriteTo writes the giving representation into the provided writer.
+func (b PrefixDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
+	wc := NewWriteCounter(w)
+
+	if b.Prefix != nil {
+		if _, err := b.Prefix.WriteTo(wc); IsNotDrainError(err) {
+			return 0, err
+		}
+	}
+
+	if _, err := b.Value.WriteTo(wc); err != nil && err != io.EOF {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
 // SingleByteBlockDeclr defines a declaration which produces a block byte slice which is written to a writer.
 // declaration writer into it's block char.
 // eg. A BlockDeclr with Char '{{'
@@ -1185,16 +1302,20 @@ func (b ByteBlockDeclr) WriteTo(w io.Writer) (int64, error) {
 	w = NewNoBOM(w)
 	wc := NewWriteCounter(w)
 
-	if _, err := wc.Write(b.BlockBegin); err != nil {
-		return 0, err
+	if b.BlockBegin != nil {
+		if _, err := wc.Write(b.BlockBegin); err != nil {
+			return 0, err
+		}
 	}
 
 	if _, err := b.Block.WriteTo(wc); err != nil && err != io.EOF {
 		return 0, err
 	}
 
-	if _, err := wc.Write(b.BlockEnd); err != nil {
-		return 0, err
+	if b.BlockEnd != nil {
+		if _, err := wc.Write(b.BlockEnd); err != nil {
+			return 0, err
+		}
 	}
 
 	return wc.Written(), nil
@@ -1619,7 +1740,7 @@ func (n AnnotationDeclr) String() string {
 
 // TextBlockDeclr defines a declaration struct for representing a single comment.
 type TextBlockDeclr struct {
-	Block string `json:"text"`
+	Text string `json:"text"`
 }
 
 // WriteTo writes to the provided writer the variable declaration.
@@ -1628,7 +1749,7 @@ func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
 
 	wc := NewWriteCounter(w)
 
-	if _, err := wc.Write([]byte(n.Block)); err != nil {
+	if _, err := wc.Write([]byte(n.Text)); err != nil {
 		return 0, err
 	}
 
@@ -1637,7 +1758,7 @@ func (n TextBlockDeclr) WriteTo(w io.Writer) (int64, error) {
 
 // String returns the internal name associated with the NameDeclr.
 func (n TextBlockDeclr) String() string {
-	return n.Block
+	return n.Text
 }
 
 //======================================================================================================================

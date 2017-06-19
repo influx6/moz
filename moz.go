@@ -15,8 +15,18 @@ import (
 var (
 	//Annotations is a package level registry exposed by moz to provide a central
 	// storage for all annotation registration.
-	Annotations = ast.NewAnnotationRegistry()
+	annotations = ast.NewAnnotationRegistry()
 )
+
+// CopyAnnotations copies all annotations from the provided AnnotationRegistry.
+func CopyAnnotations(registry *ast.AnnotationRegistry) {
+	annotations.Copy(registry, ast.OursOverTheirs)
+}
+
+// CopyAnnotationsTo copies all default annotation to the provided AnnotationRegistry.
+func CopyAnnotationsTo(registry *ast.AnnotationRegistry) {
+	registry.Copy(annotations, ast.OursOverTheirs)
+}
 
 // RegisterAnnotation which adds the generator depending on it's type into the appropriate
 // registry. It only supports  the following generators:
@@ -28,28 +38,28 @@ var (
 func RegisterAnnotation(name string, generator interface{}) bool {
 	switch gen := generator.(type) {
 	case ast.PackageAnnotationGenerator:
-		Annotations.RegisterPackage(name, gen)
+		annotations.RegisterPackage(name, gen)
 		break
 	case func(ast.AnnotationDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		Annotations.RegisterPackage(name, gen)
+		annotations.RegisterPackage(name, gen)
 		break
 	case ast.TypeAnnotationGenerator:
-		Annotations.RegisterType(name, gen)
+		annotations.RegisterType(name, gen)
 		break
 	case func(ast.AnnotationDeclaration, ast.TypeDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		Annotations.RegisterType(name, gen)
+		annotations.RegisterType(name, gen)
 		break
 	case ast.StructAnnotationGenerator:
-		Annotations.RegisterStructType(name, gen)
+		annotations.RegisterStructType(name, gen)
 		break
 	case func(ast.AnnotationDeclaration, ast.StructDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		Annotations.RegisterStructType(name, gen)
+		annotations.RegisterStructType(name, gen)
 		break
 	case ast.InterfaceAnnotationGenerator:
-		Annotations.RegisterInterfaceType(name, gen)
+		annotations.RegisterInterfaceType(name, gen)
 		break
 	case func(ast.AnnotationDeclaration, ast.InterfaceDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		Annotations.RegisterInterfaceType(name, gen)
+		annotations.RegisterInterfaceType(name, gen)
 		break
 	default:
 		panic(fmt.Errorf("Generator type for %q not supported: %#v", name, generator))
@@ -83,7 +93,7 @@ func MustParse(log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) {
 // Parse takes the provided package declarations and the default Annotations registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
 func Parse(log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) error {
-	return ast.Parse(log, Annotations, packageDeclrs...)
+	return ast.Parse(log, annotations, packageDeclrs...)
 }
 
 // MustWriteDirectives calls the WriteDirectives method to attempt to parse the ast.PackageDeclarations

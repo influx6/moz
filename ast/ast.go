@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -28,6 +30,8 @@ var (
 	GoPath     = os.Getenv("GOPATH")
 	GoSrcPath  = filepath.Join(GoPath, "src")
 	annotation = regexp.MustCompile("@(\\w+)(\\(.+\\))?")
+	spaces     = regexp.MustCompile(`/s+`)
+	itag       = regexp.MustCompile(`((\w+):"(\w+|[\w,?\s+\w]+)")`)
 )
 
 // PackageDir turns a given go source file into a appropriate structure which will be
@@ -63,15 +67,108 @@ type AnnotationDeclaration struct {
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
 // giving package.
 type PackageDeclaration struct {
-	Package     string                  `json:"package"`
-	Path        string                  `json:"path"`
-	FilePath    string                  `json:"filepath"`
-	File        string                  `json:"file"`
-	Annotations []AnnotationDeclaration `json:"annotations"`
-	Types       []TypeDeclaration       `json:"types"`
-	Structs     []StructDeclaration     `json:"structs"`
-	Interfaces  []InterfaceDeclaration  `json:"interfaces"`
+	Package     string                            `json:"package"`
+	Path        string                            `json:"path"`
+	FilePath    string                            `json:"filepath"`
+	File        string                            `json:"file"`
+	Annotations []AnnotationDeclaration           `json:"annotations"`
+	Types       []TypeDeclaration                 `json:"types"`
+	Structs     []StructDeclaration               `json:"structs"`
+	Interfaces  []InterfaceDeclaration            `json:"interfaces"`
+	Functions   []FuncDeclaration                 `json:"functions"`
+	ObjectFunc  map[*ast.Object][]FuncDeclaration `json:"object_functions"`
 }
+
+// HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
+func (pkg PackageDeclaration) HasFunctionFor(str StructDeclaration, funcName string) bool {
+	functions := Functions(pkg.FunctionsFor(str.Object.Name.Obj))
+
+	if _, err := functions.Find(funcName); err != nil {
+		return false
+	}
+
+	return true
+}
+
+// FunctionsForName returns a slice of FuncDeclaration for the giving name.
+func (pkg PackageDeclaration) FunctionsForName(objName string) []FuncDeclaration {
+	var funcs []FuncDeclaration
+
+	for obj, list := range pkg.ObjectFunc {
+		if obj.Name != objName {
+			continue
+		}
+
+		funcs = append(funcs, list...)
+	}
+
+	return funcs
+}
+
+// FunctionsFor returns a slice of FuncDeclaration for the giving object.
+func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
+	if funcs, ok := pkg.ObjectFunc[obj]; ok {
+		return funcs
+	}
+
+	var funcs []FuncDeclaration
+
+	for obj, list := range pkg.ObjectFunc {
+		if obj.Name != obj.Name {
+			continue
+		}
+
+		funcs = append(funcs, list...)
+	}
+
+	return funcs
+}
+
+// HasFunctionFor returns true/false if the giving function name exists for the package.
+func HasFunctionFor(pkg PackageDeclaration) func(StructDeclaration, string) bool {
+	return func(str StructDeclaration, funcName string) bool {
+		return pkg.HasFunctionFor(str, funcName)
+	}
+}
+
+//===========================================================================================================
+
+// FuncDeclaration defines a type used to annotate a giving type declaration
+// associated with a ast for a function.
+type FuncDeclaration struct {
+	LineNumber    int            `json:"line_number"`
+	Column        int            `json:"column"`
+	Package       string         `json:"package"`
+	Path          string         `json:"path"`
+	FilePath      string         `json:"filepath"`
+	File          string         `json:"file"`
+	FuncName      string         `json:"funcName"`
+	RecieverName  string         `json:"receiverName"`
+	Position      token.Pos      `json:"position"`
+	FuncDeclr     *ast.FuncDecl  `json:"funcdeclr"`
+	Type          *ast.FuncType  `json:"type"`
+	Reciever      *ast.Object    `json:"receiver"`
+	RecieverIdent *ast.Ident     `json:"receiverIdent"`
+	FuncType      *ast.FieldList `json:"funcType"`
+	Returns       *ast.FieldList `json:"returns"`
+	Arguments     *ast.FieldList `json:"arguments"`
+}
+
+// Functions defines a slice of FuncDeclaration.
+type Functions []FuncDeclaration
+
+// Find returns the giving Function of the giving name.
+func (fnList Functions) Find(name string) (FuncDeclaration, error) {
+	for _, fn := range fnList {
+		if fn.FuncName == name {
+			return fn, nil
+		}
+	}
+
+	return FuncDeclaration{}, fmt.Errorf("Function with %q not found", name)
+}
+
+//===========================================================================================================
 
 // AnnotationAssociationDeclaration defines a type which defines an association between
 // a giving annotation and a series of values.
@@ -83,46 +180,46 @@ type AnnotationAssociationDeclaration struct {
 
 // InterfaceDeclaration defines a type which holds annotation data for a giving interface type declaration.
 type InterfaceDeclaration struct {
-	LineNumber   int                                `json:"line_number"`
-	Column       int                                `json:"column"`
-	Package      string                             `json:"package"`
-	Path         string                             `json:"path"`
-	FilePath     string                             `json:"filepath"`
-	File         string                             `json:"file"`
-	Interface    *ast.InterfaceType                 `json:"interface"`
-	Object       *ast.TypeSpec                      `json:"object"`
-	Position     token.Pos                          `json:"position"`
-	Annotations  []AnnotationDeclaration            `json:"annotations"`
-	Associations []AnnotationAssociationDeclaration `json:"associations"`
+	LineNumber   int                                         `json:"line_number"`
+	Column       int                                         `json:"column"`
+	Package      string                                      `json:"package"`
+	Path         string                                      `json:"path"`
+	FilePath     string                                      `json:"filepath"`
+	File         string                                      `json:"file"`
+	Interface    *ast.InterfaceType                          `json:"interface"`
+	Object       *ast.TypeSpec                               `json:"object"`
+	Position     token.Pos                                   `json:"position"`
+	Annotations  []AnnotationDeclaration                     `json:"annotations"`
+	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
 }
 
 // StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
 type StructDeclaration struct {
-	LineNumber   int                                `json:"line_number"`
-	Column       int                                `json:"column"`
-	Package      string                             `json:"package"`
-	Path         string                             `json:"path"`
-	FilePath     string                             `json:"filepath"`
-	File         string                             `json:"file"`
-	Struct       *ast.StructType                    `json:"struct"`
-	Object       *ast.TypeSpec                      `json:"object"`
-	Position     token.Pos                          `json:"position"`
-	Annotations  []AnnotationDeclaration            `json:"annotations"`
-	Associations []AnnotationAssociationDeclaration `json:"associations"`
+	LineNumber   int                                         `json:"line_number"`
+	Column       int                                         `json:"column"`
+	Package      string                                      `json:"package"`
+	Path         string                                      `json:"path"`
+	FilePath     string                                      `json:"filepath"`
+	File         string                                      `json:"file"`
+	Struct       *ast.StructType                             `json:"struct"`
+	Object       *ast.TypeSpec                               `json:"object"`
+	Position     token.Pos                                   `json:"position"`
+	Annotations  []AnnotationDeclaration                     `json:"annotations"`
+	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
 }
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
 type TypeDeclaration struct {
-	LineNumber   int                                `json:"line_number"`
-	Column       int                                `json:"column"`
-	Package      string                             `json:"package"`
-	Path         string                             `json:"path"`
-	FilePath     string                             `json:"filepath"`
-	File         string                             `json:"file"`
-	Object       *ast.TypeSpec                      `json:"object"`
-	Position     token.Pos                          `json:"position"`
-	Annotations  []AnnotationDeclaration            `json:"annotations"`
-	Associations []AnnotationAssociationDeclaration `json:"associations"`
+	LineNumber   int                                         `json:"line_number"`
+	Column       int                                         `json:"column"`
+	Package      string                                      `json:"package"`
+	Path         string                                      `json:"path"`
+	FilePath     string                                      `json:"filepath"`
+	File         string                                      `json:"file"`
+	Object       *ast.TypeSpec                               `json:"object"`
+	Position     token.Pos                                   `json:"position"`
+	Annotations  []AnnotationDeclaration                     `json:"annotations"`
+	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
 }
 
 //===========================================================================================================
@@ -144,6 +241,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			var packageDeclr PackageDeclaration
 			packageDeclr.Package = pkg.Name
 			packageDeclr.FilePath = path
+			packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
 
 			if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
 				packageDeclr.Path = filepath.Dir(relPath)
@@ -197,10 +295,57 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			for _, declr := range file.Decls {
 
 				switch rdeclr := declr.(type) {
+				case *ast.FuncDecl:
+
+					tokenPosition := tokenFiles.Position(rdeclr.Pos())
+
+					var defFunc FuncDeclaration
+
+					defFunc.FuncDeclr = rdeclr
+					defFunc.Type = rdeclr.Type
+					defFunc.Position = rdeclr.Pos()
+					defFunc.Path = packageDeclr.Path
+					defFunc.File = packageDeclr.File
+					defFunc.FuncName = rdeclr.Name.Name
+					defFunc.Column = tokenPosition.Column
+					defFunc.Package = packageDeclr.Package
+					defFunc.LineNumber = tokenPosition.Line
+					defFunc.FilePath = packageDeclr.FilePath
+
+					if rdeclr.Type != nil {
+						defFunc.Returns = rdeclr.Type.Results
+						defFunc.Arguments = rdeclr.Type.Params
+					}
+
+					if rdeclr.Recv != nil {
+						defFunc.FuncType = rdeclr.Recv
+
+						nameIdent := rdeclr.Recv.List[0]
+
+						if receiverNameType, ok := nameIdent.Type.(*ast.Ident); ok {
+							defFunc.RecieverName = receiverNameType.Name
+							defFunc.Reciever = receiverNameType.Obj
+							defFunc.RecieverIdent = receiverNameType
+
+							if rems, ok := packageDeclr.ObjectFunc[receiverNameType.Obj]; ok {
+								rems = append(rems, defFunc)
+								packageDeclr.ObjectFunc[receiverNameType.Obj] = rems
+							} else {
+								packageDeclr.ObjectFunc[receiverNameType.Obj] = []FuncDeclaration{defFunc}
+							}
+
+							continue declrLoop
+						}
+					}
+
+					packageDeclr.Functions = append(packageDeclr.Functions, defFunc)
+					continue declrLoop
+
 				case *ast.GenDecl:
 
 					var annotations []AnnotationDeclaration
-					var associations []AnnotationAssociationDeclaration
+
+					associations := make(map[string]AnnotationAssociationDeclaration, 0)
 
 					if rdeclr.Doc != nil {
 						for _, comment := range rdeclr.Doc.List {
@@ -259,11 +404,11 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 										With("position", rdeclr.Pos()).
 										With("token", rdeclr.Tok.String()))
 
-									associations = append(associations, AnnotationAssociationDeclaration{
+									associations[arguments[1]] = AnnotationAssociationDeclaration{
 										Action:     arguments[1],
 										TypeName:   arguments[2],
 										Annotation: strings.TrimPrefix(arguments[0], "@"),
-									})
+									}
 
 									break
 
@@ -330,6 +475,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									Column:       tokenPosition.Column,
 								})
 								break
+
 							default:
 								log.Emit(stdout.Info("Annotation in Decleration").
 									With("Type", "OtherType").
@@ -356,8 +502,6 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 					}
 
 				case *ast.BadDecl:
-					// Do Nothing.
-				case *ast.FuncDecl:
 					// Do Nothing.
 				}
 			}
@@ -438,32 +582,37 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 					With("dir", namedFileDir))
 
 				fileStat, err := os.Stat(namedFile)
-				if err == nil && !fileStat.IsDir() && !item.Override {
-					log.Emit(stdout.Info("Annotation Unresolved: File already exists").With("annotation", item.Annotation).
+				if err == nil && !fileStat.IsDir() && item.DontOverride {
+					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must no over-write").With("annotation", item.Annotation).
 						With("dir", namedFileDir).
-						With("package", pkg.Package).With("file", pkg.File).With("generated-file", namedFile))
-					return nil
+						With("package", pkg.Package).
+						With("file", pkg.File).
+						With("generated-file", namedFile))
+
+					continue
 				}
 
 				newFile, err := os.Create(namedFile)
 				if err != nil {
 					log.Emit(stdout.Error("IOError: Unable to create file").
 						With("dir", namedFileDir).
-						With("file", newFile).With("error", err.Error()))
-					return err
+						With("file", namedFile).With("error", err.Error()))
+					continue
 				}
 
 				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
 					newFile.Close()
 					log.Emit(stdout.Error("IOError: Unable to write content to file").
 						With("dir", namedFileDir).
-						With("file", newFile).With("error", err.Error()))
-					return err
+						With("file", namedFile).With("error", err.Error()))
+					continue
 				}
 
 				log.Emit(stdout.Info("Annotation Resolved").With("annotation", item.Annotation).
 					With("dir", namedFileDir).
-					With("package", pkg.Package).With("file", pkg.File).With("generated-file", namedFile))
+					With("package", pkg.Package).
+					With("file", pkg.File).
+					With("generated-file", namedFile))
 
 				newFile.Close()
 			}
@@ -862,3 +1011,272 @@ func (a *AnnotationRegistry) RegisterPackage(annotation string, generator Packag
 }
 
 //===========================================================================================================
+
+// FindStructType defines a function to search a package declaration Structs of a giving typeName.
+func FindStructType(pkg PackageDeclaration, typeName string) (StructDeclaration, error) {
+	for _, elem := range pkg.Structs {
+		if elem.Object.Name.Name == typeName {
+			return elem, nil
+		}
+	}
+
+	return StructDeclaration{}, fmt.Errorf("Struct of type %q not found", typeName)
+}
+
+// FindInterfaceType defines a function to search a package declaration Interface of a giving typeName.
+func FindInterfaceType(pkg PackageDeclaration, typeName string) (InterfaceDeclaration, error) {
+	for _, elem := range pkg.Interfaces {
+		if elem.Object.Name.Name == typeName {
+			return elem, nil
+		}
+	}
+
+	return InterfaceDeclaration{}, fmt.Errorf("Interface of type %q not found", typeName)
+}
+
+// FindType defines a function to search a package declaration Structs of a giving typeName.
+func FindType(pkg PackageDeclaration, typeName string) (TypeDeclaration, error) {
+	for _, elem := range pkg.Types {
+		if elem.Object.Name.Name == typeName {
+			return elem, nil
+		}
+	}
+
+	return TypeDeclaration{}, fmt.Errorf("Non(Struct|Interface) of type %q not found", typeName)
+}
+
+// GetStructSpec attempts to retrieve the TypeSpec and StructType if the value
+// matches this.
+func GetStructSpec(val interface{}) (*ast.TypeSpec, *ast.StructType, error) {
+	rval, ok := val.(*ast.TypeSpec)
+	if !ok {
+		return nil, nil, errors.New("Not ast.TypeSpec type")
+	}
+
+	rstruct, ok := rval.Type.(*ast.StructType)
+	if !ok {
+		return nil, nil, errors.New("Not ast.StructType type for *ast.TypeSpec.Type")
+	}
+
+	return rval, rstruct, nil
+}
+
+//===========================================================================================================
+
+// MapOutFields defines a function to return a map of field name and value
+// pair for the giving struct.
+func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (string, error) {
+	vals, err := MapOutFieldsToMap(item, rootName, tagName, fallback)
+	if err != nil {
+		return "", err
+	}
+
+	var bu bytes.Buffer
+
+	if _, err := gen.Map("string", "interface{}", vals).WriteTo(&bu); err != nil {
+		fmt.Printf("Err: %+q\n", err)
+		return "", err
+	}
+
+	return bu.String(), nil
+}
+
+// MapOutFieldsToMap defines a function to return a map of field name and value
+// pair for the giving struct.
+func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback string) (map[string]io.WriterTo, error) {
+	fields := Fields(GetFields(item))
+
+	wTags := fields.TagFor(tagName)
+	if len(wTags) == 0 {
+		wTags = fields.TagFor(fallback)
+
+		if len(wTags) == 0 {
+			return nil, fmt.Errorf("No tags match for %q and %q fallback for struct %q", tagName, fallback, item.Object.Name)
+		}
+	}
+
+	dm := make(map[string]io.WriterTo)
+
+	embedded := fields.Embedded()
+
+	for _, embed := range embedded {
+		emt, ems, err := GetStructSpec(embed.Type.Decl)
+		if err != nil {
+			return nil, err
+		}
+
+		vals, err := MapOutFieldsToMap(StructDeclaration{
+			Object: emt,
+			Struct: ems,
+		}, fmt.Sprintf("%s.%s", rootName, embed.FieldName), tagName, fallback)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for name, val := range vals {
+			dm[name] = val
+		}
+	}
+
+	// Collect key field names from embedded first
+	for _, tag := range wTags {
+		if tag.Value == "-" {
+			continue
+		}
+
+		if tag.Field.Type != nil {
+			embededType, embedStruct, err := GetStructSpec(tag.Field.Type.Decl)
+			if err != nil {
+				return nil, err
+			}
+
+			flds, err := MapOutFieldsToMap(StructDeclaration{
+				Object: embededType,
+				Struct: embedStruct,
+			}, fmt.Sprintf("%s.%s", rootName, tag.Field.FieldName), tagName, fallback)
+
+			if err != nil {
+				return nil, err
+			}
+
+			dm[tag.Value] = gen.Map("string", "interface{}", flds)
+			continue
+		}
+
+		dm[tag.Value] = gen.Fmt("%s.%s", rootName, tag.Field.FieldName)
+	}
+
+	return dm, nil
+}
+
+//===========================================================================================================
+
+// Fields defines a slice type of FieldDeclaration.
+type Fields []FieldDeclaration
+
+// Embedded defines a function that returns all appropriate TagDeclaration
+// that match the giving tagName
+func (f Fields) Embedded() Fields {
+	var fields Fields
+
+	for _, declr := range f {
+		if declr.Embedded {
+			fields = append(fields, declr)
+		}
+	}
+
+	return fields
+}
+
+// TagFor defines a function that returns all appropriate TagDeclaration
+// that match the giving tagName
+func (f Fields) TagFor(tagName string) []TagDeclaration {
+	var declrs []TagDeclaration
+
+	for _, declr := range f {
+		if dl, err := declr.GetTag(tagName); err == nil {
+			declrs = append(declrs, dl)
+		}
+	}
+
+	return declrs
+}
+
+// FieldDeclaration defines a type to represent a giving struct fields and tags.
+type FieldDeclaration struct {
+	Embedded      bool             `json:"embedded"`
+	FieldName     string           `json:"field_name"`
+	FieldTypeName string           `json:"field_type_name"`
+	Field         *ast.Field       `json:"field"`
+	Type          *ast.Object      `json:"type"`
+	Tags          []TagDeclaration `json:"tags"`
+}
+
+// GetFields returns all fields associated with the giving struct but skips
+func GetFields(str StructDeclaration) []FieldDeclaration {
+	var fields []FieldDeclaration
+
+	for _, item := range str.Struct.Fields.List {
+		typeIdent, ok := item.Type.(*ast.Ident)
+		if !ok {
+			continue
+		}
+
+		var field FieldDeclaration
+
+		field.Field = item
+		field.Type = typeIdent.Obj
+		field.FieldName = typeIdent.Name
+		field.FieldTypeName = typeIdent.Name
+
+		if len(item.Names) == 0 {
+			field.Embedded = true
+
+			fields = append(fields, field)
+			continue
+		}
+
+		fieldName := item.Names[0]
+		field.FieldName = fieldName.Name
+
+		if item.Tag == nil {
+			fields = append(fields, field)
+			continue
+		}
+
+		tags := strings.Split(spaces.ReplaceAllString(item.Tag.Value, " "), " ")
+
+		for _, tag := range tags {
+			if !itag.MatchString(tag) {
+				continue
+			}
+
+			res := itag.FindStringSubmatch(tag)
+			resValue := strings.Split(res[3], ",")
+
+			field.Tags = append(field.Tags, TagDeclaration{
+				Field: field,
+				Base:  res[0],
+				Name:  res[2],
+				Value: resValue[0],
+				Metas: resValue[1:],
+			})
+		}
+
+		fields = append(fields, field)
+	}
+
+	return fields
+}
+
+// GetTag returns the giving tag associated with the name if it exists.
+func (f FieldDeclaration) GetTag(tagName string) (TagDeclaration, error) {
+	for _, tag := range f.Tags {
+		if tag.Name == tagName {
+			return tag, nil
+		}
+	}
+
+	return TagDeclaration{}, fmt.Errorf("Tag for %q not found", tagName)
+}
+
+// TagDeclaration defines a type which represents a giving tag declaration for a provided type.
+type TagDeclaration struct {
+	Name  string           `json:"name"`
+	Value string           `json:"value"`
+	Metas []string         `json:"metas"`
+	Base  string           `json:"base"`
+	Field FieldDeclaration `json:"field"`
+}
+
+// Has returns true/false if the tag.Metas has the given value in the list.
+func (t TagDeclaration) Has(item string) bool {
+	for _, meta := range t.Metas {
+		if meta == item {
+			return true
+		}
+	}
+
+	return false
+}

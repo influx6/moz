@@ -124,10 +124,17 @@ func Value(rn interface{}, converter func(interface{}) string) ValueDeclr {
 	}
 }
 
+// Fmt returns a io.WriteTo which is formated using the fmt.Sprintf.
+func Fmt(txt string, fm ...interface{}) io.WriterTo {
+	return TextBlockDeclr{
+		Text: fmt.Sprintf(txt, fm...),
+	}
+}
+
 // Text returns a new instance of a TextDeclr.
 func Text(txt string) TextBlockDeclr {
 	return TextBlockDeclr{
-		Block: txt,
+		Text: txt,
 	}
 }
 
@@ -155,7 +162,7 @@ func Import(path string, namespace string) ImportItemDeclr {
 
 // AssignMap returns a combination of types that represent a map type.
 func AssignMap(name string, maptype string, mapvalue string) VariableShortAssignmentDeclr {
-	return Var(Name(name), MapValue(maptype, mapvalue))
+	return Var(Name(name), MapValueVar(maptype, mapvalue))
 }
 
 // MapVar returns a combination of types that represent a map type.
@@ -163,14 +170,42 @@ func MapVar(name string, maptype string, mapvalue string) VariableTypeDeclr {
 	return VarType(Name(name), MapType(maptype, mapvalue))
 }
 
-// MapValue returns a combination of types that represent a map type.
-func MapValue(maptype string, mapvalue string) TypeDeclr {
-	return Type(fmt.Sprintf("map[%s]%s{}", maptype, mapvalue))
+// MapValueVar returns a combination of types that represent a map type.
+func MapValueVar(mapType string, mapValue string) TypeDeclr {
+	return Type(fmt.Sprintf("map[%s]%s{}", mapType, mapValue))
+}
+
+// CustomMapValueVar returns a combination of types that represent a map type
+// with its key and value.
+func CustomMapValueVar(mapdefType, mapType string, mapValue string) TypeDeclr {
+	return Type(fmt.Sprintf("%s[%s]%s{}", mapdefType, mapType, mapValue))
 }
 
 // MapType returns a combination of types that represent a map type.
 func MapType(maptype string, mapvalue string) TypeDeclr {
 	return Type(fmt.Sprintf("map[%s]%s", maptype, mapvalue))
+}
+
+// CustomMapType returns a combination of types that represent a map type.
+func CustomMapType(mapdefType, mapType string, mapValue string) TypeDeclr {
+	return Type(fmt.Sprintf("%s[%s]%s", mapdefType, mapType, mapValue))
+}
+
+// Map returns a MapDeclr for creating a map definition with values
+// for the specific key-value pairs
+func Map(mapkeyType string, mapkeyValue string, values map[string]io.WriterTo) MapDeclr {
+	return TMap("map", mapkeyType, mapkeyValue, values)
+}
+
+// TMap returns a MapDeclr for creating a map definition with values
+// for the specific key-value pairs
+func TMap(mapType string, mapkeyType string, mapkeyValue string, values map[string]io.WriterTo) MapDeclr {
+	return MapDeclr{
+		Values:  values,
+		MapType: Name(mapType),
+		Type:    Name(mapkeyType),
+		Value:   Name(mapkeyValue),
+	}
 }
 
 // Type returns a new instance of a TypeDeclr.
@@ -308,10 +343,27 @@ func Function(name NameDeclr, constr ConstructorDeclr, returns io.WriterTo, body
 	}
 }
 
+// SourceWith returns a new instance of a SourceDeclr.
+func SourceWith(tml *template.Template, dfns template.FuncMap, binding interface{}) SourceDeclr {
+	return SourceDeclr{
+		Template: tml.Funcs(defaultFuncs).Funcs(dfns),
+		Binding:  binding,
+	}
+}
+
 // Source returns a new instance of a SourceDeclr.
 func Source(tml *template.Template, binding interface{}) SourceDeclr {
 	return SourceDeclr{
 		Template: tml.Funcs(defaultFuncs),
+		Binding:  binding,
+	}
+}
+
+// SourceTextWith returns a new instance of a TextDeclr.
+func SourceTextWith(tml string, funcs template.FuncMap, binding interface{}) TextDeclr {
+	return TextDeclr{
+		Funcs:    funcs,
+		Template: tml,
 		Binding:  binding,
 	}
 }
@@ -338,17 +390,33 @@ func SuffixByte(end []byte) SingleByteBlockDeclr {
 	}
 }
 
-// Prefix returns a new instance of a SingleBlockDeclr.
-func Prefix(start rune) SingleBlockDeclr {
+// PrefixRune returns a new instance of a SingleBlockDeclr.
+func PrefixRune(start rune) SingleBlockDeclr {
 	return SingleBlockDeclr{
 		Rune: start,
 	}
 }
 
-// Suffix returns a new instance of a SingleBlockDeclr.
-func Suffix(end rune) SingleBlockDeclr {
+// SuffixRune returns a new instance of a SingleBlockDeclr.
+func SuffixRune(end rune) SingleBlockDeclr {
 	return SingleBlockDeclr{
 		Rune: end,
+	}
+}
+
+// Prefix returns a new instance of a PrefixDeclr.
+func Prefix(prefix, val io.WriterTo) PrefixDeclr {
+	return PrefixDeclr{
+		Prefix: prefix,
+		Value:  val,
+	}
+}
+
+// Suffix returns a new instance of a SuffixDelcr.
+func Suffix(suffix, val io.WriterTo) SuffixDeclr {
+	return SuffixDeclr{
+		Suffix: suffix,
+		Value:  val,
 	}
 }
 

@@ -1,0 +1,5 @@
+{{.MapType}}[{{.Type}}]{{.Value}}{
+    {{ range $k, $v :=  .Values }}
+        {{quote $k}}: {{$v}},
+    {{ end }}
+}
