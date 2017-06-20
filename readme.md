@@ -144,11 +144,11 @@ import "github.com/influx6/moz/gen"
 main := gen.Function(
     gen.Name("main"),
     gen.Constructor(
-        gen.VarType(
+        gen.FieldType(
             gen.Name("v"),
             gen.Type("int"),
         ),
-        gen.VarType(
+        gen.FieldType(
             gen.Name("m"),
             gen.Type("string"),
         ),

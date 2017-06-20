@@ -1055,6 +1055,31 @@ type VariableTypeDeclr struct {
 // WriteTo writes to the provided writer the variable declaration.
 func (v VariableTypeDeclr) WriteTo(w io.Writer) (int64, error) {
 	w = NewNoBOM(w)
+	tml, err := ToTemplate("variableDeclr", templates.Must("var-variable-type.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	wc := NewWriteCounter(w)
+
+	if err := tml.Execute(wc, v); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
+// FieldTypeDeclr defines a declaration which produces a variable declaration.
+type FieldTypeDeclr struct {
+	Name NameDeclr `json:"name"`
+	Type TypeDeclr `json:"typename"`
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (v FieldTypeDeclr) WriteTo(w io.Writer) (int64, error) {
+	w = NewNoBOM(w)
 	tml, err := ToTemplate("variableDeclr", templates.Must("variable-type.tml"), nil)
 	if err != nil {
 		return 0, err

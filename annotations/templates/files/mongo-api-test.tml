@@ -1,29 +1,46 @@
-// Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 
-// record with a mongodb.
-func Test{{.Struct.Object.Name}}Create(t *testing.T){
+var (
+    events = metrics.New(stdout.Stdout{})
 
-}
-
-// Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
-// record with a mongodb.
-func Test{{.Struct.Object.Name}}Update(t *testing.T){
-
-}
-
-// Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 
-// record from a mongodb.
-func Test{{.Struct.Object.Name}}Delete(t *testing.T){
-
-}
+    config = mongo.Config{
+        Mode: mgo.Monotonic,
+        User: "<USERNAME>",
+        DB: "DATABASE_NAME",
+        Password: "<PASSWORD>",
+        Host: "MONGO_DB_HOST_ADDR",
+        AuthDB: "AUTH_DATABASE_NAME",
+    }
+)
 
 // TestGet{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}} 
 // record from a mongodb.
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
+    db := mongo.New(config)
+
 
 }
 
 // TestGetAll{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}} 
 // record from a mongodb.
 func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
+
+}
+
+// Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 
+// record with a mongodb.
+func Test{{.Struct.Object.Name}}Create(t *testing.T){
+
+    {{ mapValues .CreateAction true }}
+}
+
+// Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
+// record with a mongodb.
+func Test{{.Struct.Object.Name}}Update(t *testing.T){
+
+    {{ mapValues .UpdateAction true }}
+}
+
+// Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 
+// record from a mongodb.
+func Test{{.Struct.Object.Name}}Delete(t *testing.T){
 
 }

@@ -177,6 +177,8 @@ func (mdb *IgnitorDB) Create(ctx context.Context, elem dap.Ignitor) error {
 
 		"public_id": elem.PublicID,
 
+		"rack": elem.Rack,
+
 		"rex": map[string]interface{}{
 
 			"url": elem.Rex.URL,
@@ -359,6 +361,8 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		"name": elem.Name,
 
 		"public_id": elem.PublicID,
+
+		"rack": elem.Rack,
 
 		"rex": map[string]interface{}{
 

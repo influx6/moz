@@ -1074,7 +1074,6 @@ func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (s
 	var bu bytes.Buffer
 
 	if _, err := gen.Map("string", "interface{}", vals).WriteTo(&bu); err != nil {
-		fmt.Printf("Err: %+q\n", err)
 		return "", err
 	}
 
@@ -1150,17 +1149,162 @@ func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback strin
 	return dm, nil
 }
 
+// MapOutValues defines a function to return a map of field name and associated
+// placeholders as value.
+func MapOutValues(item StructDeclaration, onlyExported bool) (string, error) {
+	var bu bytes.Buffer
+
+	if _, err := MapOutFieldsValues(item, onlyExported, nil).WriteTo(&bu); err != nil {
+		return "", err
+	}
+
+	return bu.String(), nil
+}
+
+// MapOutFieldsValues defines a function to return a map of field name and associated
+// placeholders as value.
+func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.NameDeclr) io.WriterTo {
+	fields := Fields(GetFields(item))
+
+	var writers []io.WriterTo
+
+	if name == nil {
+		tmpName := gen.FmtName("%sVar", strings.ToLower(item.Object.Name.Name))
+
+		name = &tmpName
+
+		vardecl := gen.VarType(
+			tmpName,
+			gen.Type(item.Object.Name.Name),
+		)
+
+		writers = append(writers, vardecl, gen.Text("\n"))
+	}
+
+	normals := fields.Normal()
+	embedded := fields.Embedded()
+
+	handleOtherField := func(embed FieldDeclaration) {
+		// embedName := gen.FmtName("%sVar", strings.ToLower(embed.FieldName))
+
+		// elemDeclr := gen.VarType(
+		// 	embedName,
+		// 	gen.Type(embed.FieldTypeName),
+		// )
+
+		// writers = append(writers, elemDeclr)
+
+		elemValue := gen.AssignValue(
+			gen.FmtName("%s.%s", name.Name, embed.FieldName),
+			gen.Text(DefaultTypeValueString(embed.FieldTypeName)),
+		)
+
+		writers = append(writers, elemValue, gen.Text("\n"))
+	}
+
+	handleStructField := func(embed FieldDeclaration) {
+		embedName := gen.FmtName("%sVar", strings.ToLower(embed.FieldName))
+
+		elemDeclr := gen.VarType(
+			embedName,
+			gen.Type(embed.FieldTypeName),
+		)
+
+		writers = append(writers, elemDeclr)
+
+		if item.Struct != nil {
+			body := MapOutFieldsValues(StructDeclaration{
+				Object: embed.Spec,
+				Struct: embed.Struct,
+			}, onlyExported, &embedName)
+
+			writers = append(writers, body)
+		}
+
+		elemValue := gen.AssignValue(
+			gen.FmtName("%s.%s", name.Name, embed.FieldName),
+			embedName,
+		)
+
+		writers = append(writers, elemValue, gen.Text("\n"))
+	}
+
+	for _, embed := range embedded {
+		if !embed.Exported && onlyExported {
+			continue
+		}
+
+		if embed.IsStruct {
+			handleStructField(embed)
+			continue
+		}
+
+		handleOtherField(embed)
+	}
+
+	for _, normal := range normals {
+		if !normal.Exported && onlyExported {
+			continue
+		}
+
+		if normal.IsStruct {
+			handleStructField(normal)
+			continue
+		}
+
+		handleOtherField(normal)
+	}
+
+	return gen.Block(writers...)
+}
+
+//===========================================================================================================
+
+// DefaultTypeValueString returns the default value string of a giving
+// typeName.
+func DefaultTypeValueString(typeName string) string {
+	switch typeName {
+	case "uint", "uint32", "uint64":
+		return "0"
+	case "int", "int32", "int64":
+		return "0"
+	case "string":
+		return `""`
+	case "rune":
+		return `rune(0)`
+	case "float32", "float64":
+		return "0.0"
+	default:
+		return "nil"
+	}
+}
+
 //===========================================================================================================
 
 // Fields defines a slice type of FieldDeclaration.
 type Fields []FieldDeclaration
 
-// Embedded defines a function that returns all appropriate TagDeclaration
-// that match the giving tagName
-func (f Fields) Embedded() Fields {
+// Normal defines a function that returns all fields which are non-embedded.
+func (flds Fields) Normal() Fields {
 	var fields Fields
 
-	for _, declr := range f {
+	for _, declr := range flds {
+		if declr.Embedded {
+			continue
+		}
+
+		fields = append(fields, declr)
+	}
+
+	return fields
+}
+
+// Embedded defines a function that returns all appropriate Field
+// that match the giving tagName
+func (flds Fields) Embedded() Fields {
+	var fields Fields
+
+	for _, declr := range flds {
 		if declr.Embedded {
 			fields = append(fields, declr)
 		}
@@ -1171,10 +1315,10 @@ func (f Fields) Embedded() Fields {
 
 // TagFor defines a function that returns all appropriate TagDeclaration
 // that match the giving tagName
-func (f Fields) TagFor(tagName string) []TagDeclaration {
+func (flds Fields) TagFor(tagName string) []TagDeclaration {
 	var declrs []TagDeclaration
 
-	for _, declr := range f {
+	for _, declr := range flds {
 		if dl, err := declr.GetTag(tagName); err == nil {
 			declrs = append(declrs, dl)
 		}
@@ -1185,11 +1329,15 @@ func (f Fields) TagFor(tagName string) []TagDeclaration {
 
 // FieldDeclaration defines a type to represent a giving struct fields and tags.
 type FieldDeclaration struct {
+	Exported      bool             `json:"exported"`
 	Embedded      bool             `json:"embedded"`
+	IsStruct      bool             `json:"is_struct"`
 	FieldName     string           `json:"field_name"`
 	FieldTypeName string           `json:"field_type_name"`
 	Field         *ast.Field       `json:"field"`
 	Type          *ast.Object      `json:"type"`
+	Spec          *ast.TypeSpec    `json:"spec"`
+	Struct        *ast.StructType  `json:"struct"`
 	Tags          []TagDeclaration `json:"tags"`
 }
 
@@ -1210,7 +1358,19 @@ func GetFields(str StructDeclaration) []FieldDeclaration {
 		field.FieldName = typeIdent.Name
 		field.FieldTypeName = typeIdent.Name
 
+		if typeIdent.Obj != nil {
+			if spec, ok := typeIdent.Obj.Decl.(*ast.TypeSpec); ok {
+				field.Spec = spec
+
+				if strt, ok := spec.Type.(*ast.StructType); ok {
+					field.Struct = strt
+					field.IsStruct = true
+				}
+			}
+		}
+
 		if len(item.Names) == 0 {
+			field.Exported = true
 			field.Embedded = true
 
 			fields = append(fields, field)
@@ -1219,6 +1379,12 @@ func GetFields(str StructDeclaration) []FieldDeclaration {
 
 		fieldName := item.Names[0]
 		field.FieldName = fieldName.Name
+
+		// fmt.Printf("Exported: %t -> %q : %q\n", fieldName.Name == strings.ToLower(fieldName.Name), fieldName.Name, strings.ToLower(fieldName.Name))
+
+		if typeIdent.Name != strings.ToLower(fieldName.Name) {
+			field.Exported = true
+		}
 
 		if item.Tag == nil {
 			fields = append(fields, field)

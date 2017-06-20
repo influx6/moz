@@ -45,18 +45,25 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 		gen.Package(
 			gen.Name("mongoapi"),
 			gen.Imports(
+				gen.Import("testing", ""),
 				gen.Import("encoding/json", ""),
 				gen.Import("gopkg.in/mgo.v2", "mgo"),
 				gen.Import("gopkg.in/mgo.v2/bson", ""),
-				gen.Import("github.com/influx6/faux/db/mongo", ""),
-				gen.Import("github.com/influx6/faux/context", ""),
+				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
+				gen.Import("github.com/influx6/faux/context", ""),
+				gen.Import("github.com/influx6/faux/db/mongo", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
-				gen.SourceText(
+				gen.SourceTextWith(
 					string(templates.Must("mongo-api-test.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
 					struct {
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration

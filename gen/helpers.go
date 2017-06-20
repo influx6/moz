@@ -215,6 +215,14 @@ func Type(name string) TypeDeclr {
 	}
 }
 
+// FmtName returns a new instance of a NameDeclr aftering passing the string
+// with the values using fmt.
+func FmtName(name string, vals ...interface{}) NameDeclr {
+	return NameDeclr{
+		Name: fmt.Sprintf(name, vals...),
+	}
+}
+
 // Name returns a new instance of a NameDeclr.
 func Name(name string) NameDeclr {
 	return NameDeclr{
@@ -537,6 +545,14 @@ func VarName(name NameDeclr) VariableNameDeclr {
 // VarType returns a new instance of a VariableTypeDeclr.
 func VarType(name NameDeclr, ntype TypeDeclr) VariableTypeDeclr {
 	return VariableTypeDeclr{
+		Name: name,
+		Type: ntype,
+	}
+}
+
+// FieldType returns a new instance of a VariableTypeDeclr.
+func FieldType(name NameDeclr, ntype TypeDeclr) FieldTypeDeclr {
+	return FieldTypeDeclr{
 		Name: name,
 		Type: ntype,
 	}
