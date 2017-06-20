@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -1149,6 +1150,58 @@ func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback strin
 	return dm, nil
 }
 
+// MapOutFieldsToJSON returns the giving map values containing string for the giving
+// output.
+func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (string, error) {
+	fields := Fields(GetFields(item))
+
+	wTags := fields.TagFor(tagName)
+	if len(wTags) == 0 {
+		wTags = fields.TagFor(fallback)
+
+		if len(wTags) == 0 {
+			return "", fmt.Errorf("No tags match for %q and %q fallback for struct %q", tagName, fallback, item.Object.Name)
+		}
+	}
+
+	dm := make(map[string]string)
+
+	// Collect key field names from embedded first
+	for _, tag := range wTags {
+		if tag.Value == "-" {
+			continue
+		}
+
+		if tag.Field.Type != nil {
+			embededType, embedStruct, err := GetStructSpec(tag.Field.Type.Decl)
+			if err != nil {
+				return "", err
+			}
+
+			flds, err := MapOutFieldsToJSON(StructDeclaration{
+				Object: embededType,
+				Struct: embedStruct,
+			}, tagName, fallback)
+
+			if err != nil {
+				return "", err
+			}
+
+			dm[tag.Value] = flds
+			continue
+		}
+
+		dm[tag.Value] = DefaultTypeValueString(strings.ToLower(tag.Field.FieldTypeName))
+	}
+
+	content, err := json.MarshalIndent(dm, "", "\t")
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
 // MapOutValues defines a function to return a map of field name and associated
 // placeholders as value.
 func MapOutValues(item StructDeclaration, onlyExported bool) (string, error) {
@@ -1257,14 +1310,34 @@ func DefaultTypeValueString(typeName string) string {
 	switch typeName {
 	case "uint", "uint32", "uint64":
 		return "0"
-	case "int", "int32", "int64":
-		return "0"
 	case "string":
 		return `""`
 	case "rune":
 		return `rune(0)`
+	case "[]uint":
+		return `[]uint{}`
+	case "[]uint64":
+		return `[]uint64{}`
+	case "[]uint32":
+		return `[]uint32{}`
+	case "[]int":
+		return `[]int{}`
+	case "[]int64":
+		return `[]int64{}`
+	case "[]int32":
+		return `[]int32{}`
+	case "[]bool":
+		return `[]bool{}`
+	case "[]string":
+		return `[]string{}`
+	case "[]byte":
+		return `[]byte{}`
+	case "byte":
+		return `byte(rune(0))`
 	case "float32", "float64":
 		return "0.0"
+	case "int", "int32", "int64":
+		return "0"
 	default:
 		return "nil"
 	}

@@ -1,4 +1,4 @@
-package mongoapi
+package mongoapi_test
 
 import (
 	"testing"

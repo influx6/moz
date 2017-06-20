@@ -43,7 +43,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 
 	mongoTestGen := gen.Block(
 		gen.Package(
-			gen.Name("mongoapi"),
+			gen.Name("mongoapi_test"),
 			gen.Imports(
 				gen.Import("testing", ""),
 				gen.Import("encoding/json", ""),
@@ -55,6 +55,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 				gen.Import("github.com/influx6/faux/db/mongo", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 				gen.Import(str.Path, ""),
+				gen.Import(str.Path+"/mongoapi", ""),
 			),
 			gen.Block(
 				gen.SourceTextWith(
@@ -91,6 +92,39 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 					CreateAction: createAction,
 					UpdateAction: updateAction,
 				},
+			),
+		),
+	)
+
+	mongoJSONGen := gen.Block(
+		gen.Package(
+			gen.Name("mongoapi_test"),
+			gen.Imports(
+				gen.Import("testing", ""),
+				gen.Import("encoding/json", ""),
+				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(str.Path, ""),
+				gen.Import(str.Path+"/mongoapi", ""),
+			),
+			gen.Block(
+				gen.SourceTextWith(
+					string(templates.Must("mongo-api-json.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"mapJSON":   ast.MapOutFieldsToJSON,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
+					struct {
+						Struct       ast.StructDeclaration
+						CreateAction ast.StructDeclaration
+						UpdateAction ast.StructDeclaration
+					}{
+						Struct:       str,
+						CreateAction: createAction,
+						UpdateAction: updateAction,
+					},
+				),
 			),
 		),
 	)
@@ -132,6 +166,12 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 	)
 
 	return []gen.WriteDirective{
+		{
+			Writer:   mongoJSONGen,
+			FileName: "mongojson_test.go",
+			Dir:      "mongoapi",
+			// DontOverride: true,
+		},
 		{
 			Writer:   mongoReadmeGen,
 			FileName: "README.md",
