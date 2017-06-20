@@ -1185,15 +1185,6 @@ func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.Nam
 	embedded := fields.Embedded()
 
 	handleOtherField := func(embed FieldDeclaration) {
-		// embedName := gen.FmtName("%sVar", strings.ToLower(embed.FieldName))
-
-		// elemDeclr := gen.VarType(
-		// 	embedName,
-		// 	gen.Type(embed.FieldTypeName),
-		// )
-
-		// writers = append(writers, elemDeclr)
-
 		elemValue := gen.AssignValue(
 			gen.FmtName("%s.%s", name.Name, embed.FieldName),
 			gen.Text(DefaultTypeValueString(embed.FieldTypeName)),
