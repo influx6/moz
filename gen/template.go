@@ -18,6 +18,9 @@ var (
 		"greaterThanEqual": func(b, a int) bool {
 			return b >= a
 		},
+		"indent": func(b string) string {
+			return strings.Join(strings.Split(b, "\n"), "\n\t")
+		},
 		"lessThanEqual": func(b, a int) bool {
 			return b <= a
 		},

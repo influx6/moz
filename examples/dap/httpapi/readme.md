@@ -9,52 +9,26 @@ The API provides a basic CRUD http API as describe below:
 
 ## Create { POST /Ignitor/ }
 
- Create receives the provided record of the Ignitor type which is delieved the 
- JSON content to the HTTP API. This will in turn return a respective status code.
+Create receives the provided record of the Ignitor type which is delieved the 
+JSON content to the HTTP API. This will in turn return a respective status code.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-            }
-        ```
+```json
+    {
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-            {
-
-    "name": "",
-
-    "public_id": "",
-
-    "rack": 0,
-
-    "rex": {
-
-    "url": "",
-
-},
-
-}`
-        ```
-
-    - Expected Status Code
-
-        Failure: 500
-        Success: 201
-
-
-    - Expected Response Body
-
-        ```json
-            {
+```json
+{
 
     "name": "",
 
@@ -63,48 +37,76 @@ The API provides a basic CRUD http API as describe below:
     "rack": 0,
 
     "rex": {
+	
+	    "url": "",
+	
+	},
 
-    "url": "",
+}
+```
 
-},
+- Expected Status Code
 
-}`
-        ```
+```
+Failure: 500
+Success: 201
+```
+
+- Expected Response Body
+
+```json
+{
+
+    "name": "",
+
+    "public_id": "",
+
+    "rack": 0,
+
+    "rex": {
+	
+	    "url": "",
+	
+	},
+
+}
+```
 
 ## GET /Ignitor/:public_id
 
 Get retrives a giving record of the Ignitor type from the HTTP API returning received result as a JSON
 response. It uses the provided `:public_id` parameter as the paramter to identify the record.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-                :public_id
-            }
-        ```
+```json
+    {
+        :public_id
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-        ```
+```json
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 200
+```
+Failure: 500
+Success: 200
+```
 
+- Expected Response Body
 
-    - Expected Response Body
-
-        ```json
-            {
+```json
+{
 
     "name": "",
 
@@ -113,46 +115,47 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
     "rack": 0,
 
     "rex": {
+	
+	    "url": "",
+	
+	},
 
-    "url": "",
-
-},
-
-}`
-        ```
+}
+```
 
 ## GET /Ignitor/
 
 Get retrives all records of the Ignitor type from the HTTP API.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-            }
-        ```
+```json
+    {
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-        ```
+```json
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 200
+```
+Failure: 500
+Success: 200
+```
 
+- Expected Response Body
 
-    - Expected Response Body
-
-        ```json
-            {
+```json
+{
 
     "name": "",
 
@@ -161,37 +164,37 @@ Get retrives all records of the Ignitor type from the HTTP API.
     "rack": 0,
 
     "rex": {
+	
+	    "url": "",
+	
+	},
 
-    "url": "",
-
-},
-
-}`
-        ```
+}
+```
 
 ## PUT /Ignitor/:public_id
 
 Update attempts to update a giving record of the Ignitor type from the HTTP API returning received result as a JSON
 response. It uses the provided `:public_id` parameter as the paramter to identify the record with the provided JSON request body.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-                :public_id
-            }
-        ```
+```json
+    {
+        :public_id
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-            {
+```json
+{
 
     "name": "",
 
@@ -200,55 +203,59 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
     "rack": 0,
 
     "rex": {
+	
+	    "url": "",
+	
+	},
 
-    "url": "",
+}
+```
 
-},
+- Expected Status Code
 
-}`
-        ```
-
-    - Expected Status Code
-
-        Failure: 500
-        Success: 204
+```
+Failure: 500
+Success: 204
+```
 
 
-    - Expected Response Body
+- Expected Response Body
 
-        ```json
-        ```
+```json
+```
 
 ## DELETE /Ignitor/:public_id
 
 Get deletes a giving record of the Ignitor type from the HTTP API returning received result as a JSON
 response. It uses the provided `:public_id` parameter as the paramter to identify the record.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-                :public_id
-            }
-        ```
+```json
+    {
+        :public_id
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-        ```
+```json
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 204
+```
+Failure: 500
+Success: 204
+```
 
-    - Expected Response Body
+- Expected Response Body
 
-        ```json
-        ```
+```json
+```

@@ -1,5 +1,5 @@
 {
 {{ range $k, $v :=  . }}
-    {{quote $k}}: {{$v}},
+    {{quote $k}}: {{indent $v}},
 {{ end }}
 }

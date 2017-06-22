@@ -26,10 +26,10 @@ var IgnitorJSON = `{
     "rack": 0,
 
     "rex": {
-
-    "url": "",
-
-},
+	
+	    "url": "",
+	
+	},
 
 }`
 
@@ -42,10 +42,10 @@ var IgnitorCreateJSON = `{
     "rack": 0,
 
     "rex": {
-
-    "url": "",
-
-},
+	
+	    "url": "",
+	
+	},
 
 }`
 
@@ -58,9 +58,9 @@ var IgnitorUpdateJSON = `{
     "rack": 0,
 
     "rex": {
-
-    "url": "",
-
-},
+	
+	    "url": "",
+	
+	},
 
 }`

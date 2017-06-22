@@ -29,14 +29,12 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 // record with a mongodb.
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
 
-    {{ mapValues .CreateAction true }}
 }
 
 // Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
 // record with a mongodb.
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
 
-    {{ mapValues .UpdateAction true }}
 }
 
 // Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 

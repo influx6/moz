@@ -9,176 +9,183 @@ The API provides a basic CRUD http API as describe below:
 
 ## Create { POST /{{.Struct.Object.Name}}/ }
 
- Create receives the provided record of the {{.CreateAction.Object.Name}} type which is delieved the 
- JSON content to the HTTP API. This will in turn return a respective status code.
+Create receives the provided record of the {{.CreateAction.Object.Name}} type which is delieved the 
+JSON content to the HTTP API. This will in turn return a respective status code.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-            }
-        ```
+```json
+    {
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-            {{ mapJSON .CreateAction "bson" "json" }}`
-        ```
+```json
+{{ mapJSON .CreateAction "bson" "json" }}
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 201
+```
+Failure: 500
+Success: 201
+```
 
+- Expected Response Body
 
-    - Expected Response Body
-
-        ```json
-            {{ mapJSON .Struct "bson" "json" }}`
-        ```
+```json
+{{ mapJSON .Struct "bson" "json" }}
+```
 
 ## GET /{{.Struct.Object.Name}}/:public_id
 
 Get retrives a giving record of the {{.Struct.Object.Name}} type from the HTTP API returning received result as a JSON
 response. It uses the provided `:public_id` parameter as the paramter to identify the record.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-                :public_id
-            }
-        ```
+```json
+    {
+        :public_id
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-        ```
+```json
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 200
+```
+Failure: 500
+Success: 200
+```
 
+- Expected Response Body
 
-    - Expected Response Body
-
-        ```json
-            {{ mapJSON .CreateAction "bson" "json" }}`
-        ```
+```json
+{{ mapJSON .CreateAction "bson" "json" }}
+```
 
 ## GET /{{.Struct.Object.Name}}/
 
 Get retrives all records of the {{.Struct.Object.Name}} type from the HTTP API.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-            }
-        ```
+```json
+    {
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-        ```
+```json
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 200
+```
+Failure: 500
+Success: 200
+```
 
+- Expected Response Body
 
-    - Expected Response Body
-
-        ```json
-            {{ mapJSON .CreateAction "bson" "json" }}`
-        ```
+```json
+{{ mapJSON .CreateAction "bson" "json" }}
+```
 
 ## PUT /{{.Struct.Object.Name}}/:public_id
 
 Update attempts to update a giving record of the {{.Struct.Object.Name}} type from the HTTP API returning received result as a JSON
 response. It uses the provided `:public_id` parameter as the paramter to identify the record with the provided JSON request body.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-                :public_id
-            }
-        ```
+```json
+    {
+        :public_id
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-            {{ mapJSON .UpdateAction "bson" "json" }}`
-        ```
+```json
+{{ mapJSON .UpdateAction "bson" "json" }}
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 204
+```
+Failure: 500
+Success: 204
+```
 
 
-    - Expected Response Body
+- Expected Response Body
 
-        ```json
-        ```
+```json
+```
 
 ## DELETE /{{.Struct.Object.Name}}/:public_id
 
 Get deletes a giving record of the {{.Struct.Object.Name}} type from the HTTP API returning received result as a JSON
 response. It uses the provided `:public_id` parameter as the paramter to identify the record.
 
-    - Expected Content Type: 
+- Expected Content Type: 
 
-        ```http
-            Content-Type: application/json
-        ```
+```http
+    Content-Type: application/json
+```
 
-    - Expected Request Parameters
+- Expected Request Parameters
 
-        ```json
-            {
-                :public_id
-            }
-        ```
+```json
+    {
+        :public_id
+    }
+```
 
-    - Expected Request Body
+- Expected Request Body
 
-        ```json
-        ```
+```json
+```
 
-    - Expected Status Code
+- Expected Status Code
 
-        Failure: 500
-        Success: 204
+```
+Failure: 500
+Success: 204
+```
 
-    - Expected Response Body
+- Expected Response Body
 
-        ```json
-        ```
+```json
+```
