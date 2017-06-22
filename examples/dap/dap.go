@@ -24,14 +24,16 @@ type IgnitionDescription string
 //@httpapi
 //@mongoapi
 //@associates(@mongoapi, New, Ignitor)
+//@associates(@httpapi, New, Ignitor)
 //@associates(@mongoapi, Update, Ignitor)
+//@associates(@httpapi, Update, Ignitor)
 type Ignitor struct {
 	Identity
 	PublicID string `json:"public_id,omitempty" toml:"public_id"`
 	Name     string `json:"name" toml:"name"`
 	Rex      Repo   `json:"rex" toml:"rex"`
 	Rack     int    `json:"rack"`
-	version  string `json:"-"`
+	version  string
 }
 
 // Repo defines a struct which defines a object pointing to a specific repo.

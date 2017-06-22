@@ -92,12 +92,22 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
-				gen.SourceText(
+				gen.SourceTextWith(
 					string(templates.Must("http-api.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"mapJSON":   ast.MapOutFieldsToJSON,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
 					struct {
-						Struct ast.StructDeclaration
+						Struct       ast.StructDeclaration
+						CreateAction ast.StructDeclaration
+						UpdateAction ast.StructDeclaration
 					}{
-						Struct: str,
+						Struct:       str,
+						CreateAction: createAction,
+						UpdateAction: updateAction,
 					},
 				),
 			),

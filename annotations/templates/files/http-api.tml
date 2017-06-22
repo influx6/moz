@@ -2,10 +2,10 @@
 // the given CRUD request for the {{quote .Struct.Object.Name}} type. This is provided by the user.
 type CRUDOperator interface{
     Delete(context.Context, string) error
-    Create(context.Context, {{.Struct.Package}}.{{.Struct.Object.Name}}) error
     GetAll(context.Context) ([]{{.Struct.Package}}.{{.Struct.Object.Name}}, error)
     Get(context.Context, string) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error)
-    Update(context.Context, string, {{.Struct.Package}}.{{.Struct.Object.Name}}) error
+    Update(context.Context, string, {{.UpdateAction.Package}}.{{.UpdateAction.Object.Name}}) error
+    Create(context.Context, {{.CreateAction.Package}}.{{.CreateAction.Object.Name}}) ({{.Struct.Package}}.{{.Struct.Object.Name}},error)
 }
 
 // HTTPApi defines a struct which holds the http api handlers for providing CRUD 

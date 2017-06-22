@@ -25,10 +25,10 @@ import (
 // the given CRUD request for the Unconvertible Type type. This is provided by the user.
 type CRUDOperator interface {
 	Delete(context.Context, string) error
-	Create(context.Context, dap.Ignitor) error
 	GetAll(context.Context) ([]dap.Ignitor, error)
 	Get(context.Context, string) (dap.Ignitor, error)
 	Update(context.Context, string, dap.Ignitor) error
+	Create(context.Context, dap.Ignitor) (dap.Ignitor, error)
 }
 
 // HTTPApi defines a struct which holds the http api handlers for providing CRUD

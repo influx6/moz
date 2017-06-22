@@ -39,7 +39,7 @@ Update stores a given {{.Struct.Object.Name}} type into the mongo db, where the 
 against the API function type for updating a existing record {{.Struct.Object.Name}}.
 
 ```go
-Update(ctx context.Context, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error 
+Update(ctx context.Context, publicID string, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error 
 ```
 
 ## Delete

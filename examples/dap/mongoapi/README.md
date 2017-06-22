@@ -39,7 +39,7 @@ Update stores a given Ignitor type into the mongo db, where the DB API expects t
 against the API function type for updating a existing record Ignitor.
 
 ```go
-Update(ctx context.Context, elem dap.Ignitor) error 
+Update(ctx context.Context, publicID string, elem dap.Ignitor) error 
 ```
 
 ## Delete
