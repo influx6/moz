@@ -18,6 +18,18 @@ var (
 		"greaterThanEqual": func(b, a int) bool {
 			return b >= a
 		},
+		"capitalize": func(b string) string {
+			return strings.ToUpper(b[:0]) + b[1:]
+		},
+		"title": func(b string) string {
+			return strings.ToTitle(b)
+		},
+		"lower": func(b string) string {
+			return strings.ToLower(b)
+		},
+		"upper": func(b string) string {
+			return strings.ToUpper(b)
+		},
 		"indent": func(b string) string {
 			return strings.Join(strings.Split(b, "\n"), "\n\t")
 		},

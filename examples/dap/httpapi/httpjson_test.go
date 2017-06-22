@@ -1,4 +1,4 @@
-package mongoapi_test
+package httpapi_test
 
 var ignitorJSON = `{
 

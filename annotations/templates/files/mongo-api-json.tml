@@ -1,5 +1,5 @@
-var {{.Struct.Object.Name}}JSON = `{{ mapJSON .Struct "bson" "json" }}`
+var {{lower .Struct.Object.Name.Name}}JSON = `{{ mapJSON .Struct "bson" "json" }}`
 
-var {{.Struct.Object.Name}}CreateJSON = `{{ mapJSON .CreateAction "bson" "json" }}`
+var {{lower .Struct.Object.Name.Name}}CreateJSON = `{{ mapJSON .CreateAction "bson" "json" }}`
 
-var {{.Struct.Object.Name}}UpdateJSON = `{{ mapJSON .UpdateAction "bson" "json" }}`
+var {{lower .Struct.Object.Name.Name}}UpdateJSON = `{{ mapJSON .UpdateAction "bson" "json" }}`

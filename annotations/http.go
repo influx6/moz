@@ -21,8 +21,14 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 	updateAction := str
 	createAction := str
 
+	var (
+		isSameCreate = true
+		isSameUpdate = true
+	)
+
 	switch len(str.Associations) {
 	case 0:
+
 		updateAction = str
 		createAction = str
 		break
@@ -30,12 +36,14 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 	default:
 		if newAction, ok := str.Associations["New"]; ok {
 			if action, err := ast.FindStructType(pkg, newAction.TypeName); err == nil {
+				isSameCreate = false
 				createAction = action
 			}
 		}
 
 		if upAction, ok := str.Associations["Update"]; ok {
 			if action, err := ast.FindStructType(pkg, upAction.TypeName); err == nil {
+				isSameUpdate = false
 				updateAction = action
 			}
 		}
@@ -137,10 +145,130 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 		),
 	)
 
+	httpJSONGen := gen.Block(
+		gen.Package(
+			gen.Name("httpapi_test"),
+			gen.Block(
+				gen.SourceTextWith(
+					string(templates.Must("http-api-json.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"mapJSON":   ast.MapOutFieldsToJSON,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
+					struct {
+						Struct       ast.StructDeclaration
+						CreateAction ast.StructDeclaration
+						UpdateAction ast.StructDeclaration
+					}{
+						Struct:       str,
+						CreateAction: createAction,
+						UpdateAction: updateAction,
+					},
+				),
+			),
+		),
+	)
+
+	httpTestGen := gen.Block(
+		gen.Package(
+			gen.Name("httpapi_test"),
+			gen.Imports(
+				gen.Import("testing", ""),
+				gen.Import("encoding/json", ""),
+				gen.Import("net/http", ""),
+				gen.Import("net/httptest", ""),
+				gen.Import("github.com/influx6/faux/tests", ""),
+				gen.Import("github.com/influx6/faux/metrics", ""),
+				gen.Import("github.com/influx6/faux/context", ""),
+				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(str.Path, ""),
+				gen.Import(str.Path+"/mongoapi", ""),
+			),
+			gen.Block(
+				gen.SourceTextWith(
+					string(templates.Must("http-api-test.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
+					struct {
+						Struct       ast.StructDeclaration
+						CreateAction ast.StructDeclaration
+						UpdateAction ast.StructDeclaration
+					}{
+						Struct:       str,
+						CreateAction: createAction,
+						UpdateAction: updateAction,
+					},
+				),
+			),
+		),
+	)
+
+	httpMockGen := gen.Block(
+		gen.Package(
+			gen.Name("httpapi_test"),
+			gen.Imports(
+				gen.Import("testing", ""),
+				gen.Import("encoding/json", ""),
+				gen.Import("golang.com/x/sync/syncmap", ""),
+				gen.Import("github.com/influx6/faux/tests", ""),
+				gen.Import("github.com/influx6/faux/metrics", ""),
+				gen.Import("github.com/influx6/faux/context", ""),
+				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(str.Path, ""),
+			),
+			gen.Block(
+				gen.SourceTextWith(
+					string(templates.Must("http-api-mock.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
+					struct {
+						Struct          ast.StructDeclaration
+						CreateAction    ast.StructDeclaration
+						UpdateAction    ast.StructDeclaration
+						CreateIsSimilar bool
+						UpdateIsSimilar bool
+					}{
+						Struct:          str,
+						CreateAction:    createAction,
+						UpdateAction:    updateAction,
+						CreateIsSimilar: isSameCreate,
+						UpdateIsSimilar: isSameUpdate,
+					},
+				),
+			),
+		),
+	)
+
 	return []gen.WriteDirective{
 		{
 			Writer:   httpReadmeGen,
 			FileName: "readme.md",
+			Dir:      "httpapi",
+			// DontOverride: true,
+		},
+		{
+			Writer:   fmtwriter.New(httpMockGen, true),
+			FileName: "httpapi_mock_test.go",
+			Dir:      "httpapi",
+			// DontOverride: true,
+		},
+		{
+			Writer:   fmtwriter.New(httpTestGen, true),
+			FileName: "httpapi_test.go",
+			Dir:      "httpapi",
+			// DontOverride: true,
+		},
+		{
+			Writer:   fmtwriter.New(httpJSONGen, true),
+			FileName: "httpjson_test.go",
 			Dir:      "httpapi",
 			// DontOverride: true,
 		},

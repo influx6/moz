@@ -99,13 +99,6 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 	mongoJSONGen := gen.Block(
 		gen.Package(
 			gen.Name("mongoapi_test"),
-			gen.Imports(
-				gen.Import("testing", ""),
-				gen.Import("encoding/json", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
-				gen.Import(str.Path, ""),
-				gen.Import(str.Path+"/mongoapi", ""),
-			),
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("mongo-api-json.tml")),
