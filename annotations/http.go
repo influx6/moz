@@ -3,6 +3,7 @@ package annotations
 import (
 	"fmt"
 	goast "go/ast"
+	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/moz"
@@ -17,6 +18,30 @@ var (
 
 // HTTPRestAnnotationGenerator defines a code generator for creating a restful HTTP for a giving struct.
 func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+	updateAction := str
+	createAction := str
+
+	switch len(str.Associations) {
+	case 0:
+		updateAction = str
+		createAction = str
+		break
+
+	default:
+		if newAction, ok := str.Associations["New"]; ok {
+			if action, err := ast.FindStructType(pkg, newAction.TypeName); err == nil {
+				createAction = action
+			}
+		}
+
+		if upAction, ok := str.Associations["Update"]; ok {
+			if action, err := ast.FindStructType(pkg, upAction.TypeName); err == nil {
+				updateAction = action
+			}
+		}
+
+	}
+
 	var hasPublicID bool
 
 	// Validate we have a `PublicID` field.
@@ -68,7 +93,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			),
 			gen.Block(
 				gen.SourceText(
-					string(templates.Must("httpapi.tml")),
+					string(templates.Must("http-api.tml")),
 					struct {
 						Struct ast.StructDeclaration
 					}{
@@ -79,7 +104,36 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 		),
 	)
 
+	httpReadmeGen := gen.Block(
+		gen.Block(
+			gen.SourceTextWith(
+				string(templates.Must("http-api-readme.tml")),
+				template.FuncMap{
+					"map":       ast.MapOutFields,
+					"mapValues": ast.MapOutValues,
+					"mapJSON":   ast.MapOutFieldsToJSON,
+					"hasFunc":   ast.HasFunctionFor(pkg),
+				},
+				struct {
+					Struct       ast.StructDeclaration
+					CreateAction ast.StructDeclaration
+					UpdateAction ast.StructDeclaration
+				}{
+					Struct:       str,
+					CreateAction: createAction,
+					UpdateAction: updateAction,
+				},
+			),
+		),
+	)
+
 	return []gen.WriteDirective{
+		{
+			Writer:   httpReadmeGen,
+			FileName: "readme.md",
+			Dir:      "httpapi",
+			// DontOverride: true,
+		},
 		{
 			Writer:   fmtwriter.New(httpGen, true),
 			FileName: "httpapi.go",

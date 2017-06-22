@@ -18,28 +18,49 @@ import (
 )
 
 var IgnitorJSON = `{
-    {
-	"name": "\"\"",
-	"public_id": "\"\"",
-	"rack": "0",
-	"rex": "{\n\t\"url\": \"\\\"\\\"\"\n}"
-}
+
+    "name": "",
+
+    "public_id": "",
+
+    "rack": 0,
+
+    "rex": {
+
+    "url": "",
+
+},
+
 }`
 
 var IgnitorCreateJSON = `{
-    {
-	"name": "\"\"",
-	"public_id": "\"\"",
-	"rack": "0",
-	"rex": "{\n\t\"url\": \"\\\"\\\"\"\n}"
-}
+
+    "name": "",
+
+    "public_id": "",
+
+    "rack": 0,
+
+    "rex": {
+
+    "url": "",
+
+},
+
 }`
 
 var IgnitorUpdateJSON = `{
-    {
-	"name": "\"\"",
-	"public_id": "\"\"",
-	"rack": "0",
-	"rex": "{\n\t\"url\": \"\\\"\\\"\"\n}"
-}
+
+    "name": "",
+
+    "public_id": "",
+
+    "rack": 0,
+
+    "rex": {
+
+    "url": "",
+
+},
+
 }`

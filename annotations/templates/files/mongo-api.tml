@@ -94,7 +94,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID strin
 // {{.Struct.Package}}.{{.Struct.Object.Name}}.
 // Records using this DB must have a public id value, expressed either by a bson or json tag 
 // on the given {{.Struct.Object.Name}} struct.
-func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.CreateAction.Package}}.{{.CreateAction.Object.Name}}) error {
+func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error {
     m := stdout.Info("{{.Struct.Object.Name}}DB.Create").With("public_id", publicID).Trace("{{.Struct.Object.Name}}DB.Create")
     defer mdb.metrics.Emit(m.End())
 
@@ -350,7 +350,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 // Update uses a record from the db using the public_id and returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag 
 // on the given {{.Struct.Object.Name}} struct.
-func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID string, elem {{.UpdateAction.Package}}.{{.UpdateAction.Object.Name}}) error {
+func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID string, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error {
     m := stdout.Info("{{.Struct.Object.Name}}DB.Update").With("public_id", publicID).Trace("{{.Struct.Object.Name}}DB.Update")
     defer mdb.metrics.Emit(m.End())
 

@@ -131,6 +131,20 @@ func Fmt(txt string, fm ...interface{}) io.WriterTo {
 	}
 }
 
+// JSON returns a new instance of a JSONDeclr.
+func JSON(documents ...io.WriterTo) JSONDeclr {
+	return JSONDeclr{
+		Documents: documents,
+	}
+}
+
+// JSONDocument returns a JSONBlock and uses the contents for the JSON document.
+func JSONDocument(contents map[string]io.WriterTo) JSONBlock {
+	return JSONBlock{
+		Items: contents,
+	}
+}
+
 // Text returns a new instance of a TextDeclr.
 func Text(txt string) TextBlockDeclr {
 	return TextBlockDeclr{

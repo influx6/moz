@@ -1379,6 +1379,89 @@ func (b BlockDeclr) WriteTo(w io.Writer) (int64, error) {
 
 //======================================================================================================================
 
+// JSONBlock defines a block area which is encycled by braces.
+// {
+// 	...
+// }
+type JSONBlock struct {
+	Items map[string]io.WriterTo
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (v JSONBlock) WriteTo(w io.Writer) (int64, error) {
+	wc := NewWriteCounter(NewNoBOM(w))
+
+	tml, err := ToTemplate("jsonBlockDeclr", templates.Must("jsonblock.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	content := make(map[string]string)
+
+	var bu bytes.Buffer
+	for name, item := range v.Items {
+		bu.Reset()
+
+		if _, err := item.WriteTo(&bu); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		content[name] = bu.String()
+	}
+
+	if err := tml.Execute(wc, content); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+// JSONDeclr defines a block area contains other JSONBlocks.
+// {
+// 	  {
+//		...
+// 	   }
+// }
+type JSONDeclr struct {
+	Documents []io.WriterTo
+}
+
+// WriteTo writes to the provided writer the variable declaration.
+func (m JSONDeclr) WriteTo(w io.Writer) (int64, error) {
+	wc := NewWriteCounter(NewNoBOM(w))
+
+	tml, err := ToTemplate("jsonDeclr", templates.Must("json.tml"), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	var contents []string
+
+	var bu bytes.Buffer
+
+	for _, doc := range m.Documents {
+		bu.Reset()
+
+		if _, err := doc.WriteTo(&bu); IsNotDrainError(err) {
+			return 0, err
+		}
+
+		contents = append(contents, bu.String())
+	}
+
+	if err := tml.Execute(wc, struct {
+		Documents []string
+	}{
+		Documents: contents,
+	}); err != nil {
+		return 0, err
+	}
+
+	return wc.Written(), nil
+}
+
+//======================================================================================================================
+
 // ConditionDeclr defines a declaration which produces a variable declaration.
 type ConditionDeclr struct {
 	PreVar   VariableNameDeclr `json:"prevar"`

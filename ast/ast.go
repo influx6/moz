@@ -2,7 +2,6 @@ package ast
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -1153,6 +1152,23 @@ func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback strin
 // MapOutFieldsToJSON returns the giving map values containing string for the giving
 // output.
 func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (string, error) {
+	document, err := MapOutFieldsToJSONWriter(item, tagName, fallback)
+	if err != nil {
+		return "", err
+	}
+
+	var doc bytes.Buffer
+
+	if _, err := document.WriteTo(&doc); err != nil && err != io.EOF {
+		return "", err
+	}
+
+	return doc.String(), nil
+}
+
+// MapOutFieldsToJSONWriter returns the giving map values containing string for the giving
+// output.
+func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) (io.WriterTo, error) {
 	fields := Fields(GetFields(item))
 
 	wTags := fields.TagFor(tagName)
@@ -1160,11 +1176,11 @@ func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (strin
 		wTags = fields.TagFor(fallback)
 
 		if len(wTags) == 0 {
-			return "", fmt.Errorf("No tags match for %q and %q fallback for struct %q", tagName, fallback, item.Object.Name)
+			return nil, fmt.Errorf("No tags match for %q and %q fallback for struct %q", tagName, fallback, item.Object.Name)
 		}
 	}
 
-	dm := make(map[string]string)
+	documents := make(map[string]io.WriterTo)
 
 	// Collect key field names from embedded first
 	for _, tag := range wTags {
@@ -1175,31 +1191,26 @@ func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (strin
 		if tag.Field.Type != nil {
 			embededType, embedStruct, err := GetStructSpec(tag.Field.Type.Decl)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 
-			flds, err := MapOutFieldsToJSON(StructDeclaration{
+			document, err := MapOutFieldsToJSONWriter(StructDeclaration{
 				Object: embededType,
 				Struct: embedStruct,
 			}, tagName, fallback)
 
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 
-			dm[tag.Value] = flds
+			documents[tag.Value] = document
 			continue
 		}
 
-		dm[tag.Value] = DefaultTypeValueString(strings.ToLower(tag.Field.FieldTypeName))
+		documents[tag.Value] = gen.Text(DefaultTypeValueString(strings.ToLower(tag.Field.FieldTypeName)))
 	}
 
-	content, err := json.MarshalIndent(dm, "", "\t")
-	if err != nil {
-		return "", err
-	}
-
-	return string(content), nil
+	return gen.JSONDocument(documents), nil
 }
 
 // MapOutValues defines a function to return a map of field name and associated
