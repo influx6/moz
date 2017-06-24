@@ -155,7 +155,7 @@ Success: 200
 - Expected Response Body
 
 ```json
-{
+[{
 
     "name": "",
 
@@ -169,7 +169,7 @@ Success: 200
 	
 	},
 
-}
+}]
 ```
 
 ## PUT /Ignitor/:public_id

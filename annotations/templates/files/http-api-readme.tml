@@ -113,7 +113,7 @@ Success: 200
 - Expected Response Body
 
 ```json
-{{ mapJSON .CreateAction "bson" "json" }}
+[{{ mapJSON .CreateAction "bson" "json" }}]
 ```
 
 ## PUT /{{.Struct.Object.Name}}/:public_id

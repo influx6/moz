@@ -10,7 +10,7 @@ var (
         AuthDB: "AUTH_DATABASE_NAME",
     }
 
-    testCol = "{{lower .Struct.Object.Name}}_test_collection"
+    testCol = "{{lower .Struct.Object.Name.Name}}_test_collection"
 )
 
 // TestGet{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}} 
@@ -67,14 +67,14 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 
     records, err := api.GetAll(ctx)
     if err != nil {
-        tests.Failed("Successfully retrieved all records for {{.struct.object.name}} from db: %+q.", err)
+        tests.Failed("Successfully retrieved all records for {{.Struct.Object.Name}} from db: %+q.", err)
     }
-    tests.Passed("Successfully retrieved all records for {{.struct.object.name}} from db.")
+    tests.Passed("Successfully retrieved all records for {{.Struct.Object.Name}} from db.")
 
     if len(records) == 0 {
-        tests.Failed("Successfully retrieved atleast 1 record for {{.struct.object.name}} from db.")
+        tests.Failed("Successfully retrieved atleast 1 record for {{.Struct.Object.Name}} from db.")
     }
-    tests.Passed("Successfully retrieved atleast 1 record for {{.struct.object.name}} from db.")
+    tests.Passed("Successfully retrieved atleast 1 record for {{.Struct.Object.Name}} from db.")
 }
 
 // Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 

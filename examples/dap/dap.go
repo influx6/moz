@@ -36,6 +36,11 @@ type Ignitor struct {
 	version  string
 }
 
+// UpdateIgnitorWith returns a new Ignitor from the provided updater.
+func UpdateIgnitorWith(up UpdateIgnitor) Ignitor {
+	return Ignitor{}
+}
+
 // Repo defines a struct which defines a object pointing to a specific repo.
 type Repo struct {
 	URL string `json:"url"`
@@ -46,6 +51,7 @@ type Identity struct {
 }
 
 // UpdateIgnitor defines a struct for creating a Ignitor.
+//@user(@httpapi, UpdateIgnitorWith)
 type UpdateIgnitor struct {
 	ID   string
 	Repo string

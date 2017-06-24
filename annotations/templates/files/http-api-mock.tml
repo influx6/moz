@@ -12,7 +12,7 @@ func NewMockAPIOperator() *MockAPIOperator {
 }
 
 // Delete provides the operation to remove a giving record identified by ID.
-func (m *MockAPIOperator) Delete(context.Context, publicID string) error {
+func (m *MockAPIOperator) Delete(ctx context.Context, publicID string) error {
     if _, has := m.store.Load(publicID); !has {
         return fmt.Errorf("Record does not exists with id %q", publicID)
     }
@@ -22,7 +22,7 @@ func (m *MockAPIOperator) Delete(context.Context, publicID string) error {
 }
 
 // GetAll returns a slice of all available record of type {{.Struct.Package}}.{{.Struct.Object.Name}}.
-func (m *MockAPIOperator) GetAll(context.Context) ([]{{.Struct.Package}}.{{.Struct.Object.Name}}, error) {
+func (m *MockAPIOperator) GetAll(ctx context.Context) ([]{{.Struct.Package}}.{{.Struct.Object.Name}}, error) {
     var records []{{.Struct.Package}}.{{.Struct.Object.Name}}
 
     m.store.Range(func(k, v interface{}) bool {
@@ -37,7 +37,7 @@ func (m *MockAPIOperator) GetAll(context.Context) ([]{{.Struct.Package}}.{{.Stru
 }
 
 // Get retrieves a record based on the provided publicID.
-func (m *MockAPIOperator) Get(context.Context, publicID string) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error){
+func (m *MockAPIOperator) Get(ctx context.Context, publicID string) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error){
     elem, found := m.store.Load(publicID)
     if !found{
         return nil, fmt.Errorf("Record does not exists with id %q", publicID)
@@ -47,11 +47,40 @@ func (m *MockAPIOperator) Get(context.Context, publicID string) ({{.Struct.Packa
 }
 
 // Update updates a giving record with the given new value.
-func (m *MockAPIOperator) Update(context.Context, publicID string, elem {{.UpdateAction.Package}}.{{.UpdateAction.Object.Name}}) error{
+func (m *MockAPIOperator) Update(ctx context.Context, publicID string, elem {{.UpdateAction.Package}}.{{.UpdateAction.Object.Name}}) error{
+{{ if .UpdateIsSimilar }}
+    m.store.Store(publicID, elem)
+    return nil
+{{ else }}
+    nowElem, ok := m.store.Load(publicID).({{.Struct.Package}}.{{.Struct.Object.Name}}) 
+    if !ok {
+        return errors.New("Not found/invalid type")
+    }
+    
+    newElem, err := MockCU.Update{{.Struct.Object.Name}}(ctx, nowElem, elem)
+    if err != nil {
+        return err
+    }
 
+    m.store.Store(newElem.PublicID, newElem)
+
+    return nil
+{{ end }}
 }
 
 // Create adds a new record into the giving record store.
-func (m *MockAPIOperator) Create(context.Context, elem {{.CreateAction.Package}}.{{.CreateAction.Object.Name}}) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error){
+func (m *MockAPIOperator) Create(ctx context.Context, elem {{.CreateAction.Package}}.{{.CreateAction.Object.Name}}) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error){
+{{ if .CreateIsSimilar }}
+    m.store.Store(elem.PublicID, elem)
+    return elem, nil
+{{ else }}
+    newElem, err := MockCU.Create{{.Struct.Object.Name}}(ctx, elem)
+    if err != nil {
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
 
+    m.store.Store(newElem.PublicID, newElem)
+
+    return newElem, nil
+{{ end }}
 }

@@ -1,0 +1,23 @@
+// MockCU defines a package level variable to access a instance of a mockCU.
+var MockCU  mockCU
+
+// mockCU provides a struct which contains methods to create and update {{.Struct.Object.Name}};
+type mockCU struct{}
+
+// Update{{.Struct.Object.Name}} updates a exiting {{.Struct.Package}}.{{.Struct.Object.Name}} record with the given update item.
+func(mockCU) Update(ctx context.Context, record {{.Struct.Package}}.{{.Struct.Object.Name}}, updater {{.UpdateAction.Package}}.{{.UpdateAction.Object.Name}}) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error){
+    
+    // TODO(developer):
+    // Override function contents with what should happen.
+
+    return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, errors.New("Not Implemented")
+}
+
+// Create{{.Struct.Object.Name}} creates a new {{.Struct.Package}}.{{.Struct.Object.Name}} record from the given create type.
+func(mockCU) Create{{.Struct.Object.Name}}(ctx context.Context, elem {{.CreateAction.Package}}.{{.CreateAction.Object.Name}}) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error) {
+
+    // TODO(developer):
+    // Override function contents with what should happen.
+
+    return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, errors.New("Not Implemented")
+}

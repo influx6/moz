@@ -6,17 +6,22 @@ This package provides a list of annotations which provide code generation for sp
 ## All (Supported/To-Be Supported) Annotations
 
 - @assets
+
 *@assets* provides a package-level annotation for generating a sub-package which will allow you to quickly generate a internal go file within that sub-package to contain all files associated with a given set of extensions as part of a go file. It provides a tear-down `bind-data` where all sources are copied as part of a registery for access.
 
 Example can be found in `Dap` package: [Dap](../examples/dap)
 
 - @oauth (*Pending*)
+
 *@oauth* provides a package-level annotation for generating a OAuth http based API, which provides all necessary calls for the authentication and authorization using OAuth providing services.
 
+
 - @httpapi
+
 *@httpapi* provides a struct-level annotation for generating a http based CRUD API, which provides all necessary calls for the creation, update, removal and retreival of that given struct. This provides a means to quickly generate out a very quick API with basic API readme, that describes each endpoint.
 
 - @mongoapi (*Pending*)
+
 *@mongoapi* provides a struct-level annotation for generating a mongo based CRUD API for saving a giving type of Struct into a mongo database. This provides a simple and elegant approach where the details of a struct declaration and it's tags defined the name for the record within the record to be saved.
 
 The `@mongoapi` annotation provides an associative annotation which helps customize specific areas of a it's code generation:
@@ -33,6 +38,7 @@ The `@mongoapi` annotation provides an associative annotation which helps custom
 This two types above are declared with an `@associates` annotation, which will dictate the struct to be presented to either the `Create` and `Update` methods as the struct type to be giving to the function to retrieve the update values from. Generally if not declared the default struct type which the `@mongoapi` annotation is declared on.
 
 - @sqlapi (*Pending*)
+
 *@sqlapi* provides a struct-level annotation for generating a SQL based CRUD API for saving a giving type of Struct into a SQL database. This provides a simple and elegant approach where the details of a struct declaration and it's tags defined the name for the record within the record to be saved.
 
 The `@sqlapi` annotation provides an associative annotation which helps customize specific areas of a it's code generation:

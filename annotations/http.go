@@ -36,14 +36,20 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 	default:
 		if newAction, ok := str.Associations["New"]; ok {
 			if action, err := ast.FindStructType(pkg, newAction.TypeName); err == nil {
-				isSameCreate = false
+				if action.Object != str.Object {
+					isSameCreate = false
+				}
+
 				createAction = action
 			}
 		}
 
 		if upAction, ok := str.Associations["Update"]; ok {
 			if action, err := ast.FindStructType(pkg, upAction.TypeName); err == nil {
-				isSameUpdate = false
+				if action.Object != str.Object {
+					isSameUpdate = false
+				}
+
 				updateAction = action
 			}
 		}
@@ -212,6 +218,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 		gen.Package(
 			gen.Name("httpapi_test"),
 			gen.Imports(
+				gen.Import("errors", ""),
 				gen.Import("testing", ""),
 				gen.Import("encoding/json", ""),
 				gen.Import("golang.com/x/sync/syncmap", ""),
@@ -247,12 +254,57 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 		),
 	)
 
+	httpMockHelperGen := gen.Block(
+		gen.Package(
+			gen.Name("httpapi_test"),
+			gen.Imports(
+				gen.Import("errors", ""),
+				gen.Import("testing", ""),
+				gen.Import("encoding/json", ""),
+				gen.Import("github.com/influx6/faux/tests", ""),
+				gen.Import("github.com/influx6/faux/metrics", ""),
+				gen.Import("github.com/influx6/faux/context", ""),
+				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(str.Path, ""),
+			),
+			gen.Block(
+				gen.SourceTextWith(
+					string(templates.Must("http-api-mock-functions.tml")),
+					template.FuncMap{
+						"map":       ast.MapOutFields,
+						"mapValues": ast.MapOutValues,
+						"hasFunc":   ast.HasFunctionFor(pkg),
+					},
+					struct {
+						Struct          ast.StructDeclaration
+						CreateAction    ast.StructDeclaration
+						UpdateAction    ast.StructDeclaration
+						CreateIsSimilar bool
+						UpdateIsSimilar bool
+					}{
+						Struct:          str,
+						CreateAction:    createAction,
+						UpdateAction:    updateAction,
+						CreateIsSimilar: isSameCreate,
+						UpdateIsSimilar: isSameUpdate,
+					},
+				),
+			),
+		),
+	)
+
 	return []gen.WriteDirective{
 		{
 			Writer:   httpReadmeGen,
 			FileName: "readme.md",
 			Dir:      "httpapi",
 			// DontOverride: true,
+		},
+		{
+			Writer:       fmtwriter.New(httpMockHelperGen, true),
+			FileName:     "httpapi_mock_cu_test.go",
+			Dir:          "httpapi",
+			DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(httpMockGen, true),
