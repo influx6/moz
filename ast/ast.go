@@ -1417,7 +1417,7 @@ func RandomDataTypeValue(typeName string) string {
 	case "bool":
 		return fmt.Sprintf("%t", rand.Int63n(1) == 0)
 	case "string":
-		return fake.CharactersN(10)
+		return fmt.Sprintf("%q", fake.FullName())
 	case "rune":
 		return fmt.Sprintf("'%x'", fake.CharactersN(1))
 	case "byte":
