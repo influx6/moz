@@ -1,5 +1,6 @@
 {
-{{ range .Documents }}
-    {{.}},
+{{ $len := subtract (len .Documents) 1 }}
+{{ range $ind, $item := .Documents }}
+    {{ if lessThan $ind $len}}{{$item}},{{else}}{{$item}}{{end}}
 {{ end }}
 }

@@ -1,5 +1,6 @@
 {
-{{ range $k, $v :=  . }}
-    {{quote $k}}: {{indent $v}},
+{{ $len := subtract (len .) 1 }}
+{{ range $ind, $item := . }}
+    {{ if lessThan $ind $len}}{{$item}},{{else}}{{$item}}{{end}}
 {{ end }}
 }

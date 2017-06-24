@@ -33,17 +33,22 @@ func (m *MockAPIOperator) GetAll(ctx context.Context) ([]{{.Struct.Package}}.{{.
         return true
     })
 
-    return records
+    return records, nil
 }
 
 // Get retrieves a record based on the provided publicID.
 func (m *MockAPIOperator) Get(ctx context.Context, publicID string) ({{.Struct.Package}}.{{.Struct.Object.Name}}, error){
     elem, found := m.store.Load(publicID)
     if !found{
-        return nil, fmt.Errorf("Record does not exists with id %q", publicID)
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, fmt.Errorf("Record does not exists with id %q", publicID)
     }
 
-    return elem, nil
+    rElem, ok := elem.({{.Struct.Package}}.{{.Struct.Object.Name}})
+    if !ok {
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, errors.New("Record does not match type")
+    }
+
+    return rElem, nil
 }
 
 // Update updates a giving record with the given new value.

@@ -9,7 +9,7 @@ func loadJSONFor(content string) ({{.Struct.Package}}.{{.Struct.Object.Name}}, e
 	var elem {{.Struct.Package}}.{{.Struct.Object.Name}}
 
 	if err := json.Unmarshal([]byte(content), &elem); err != nil {
-		return nil, err
+		return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
 	}
 
 	return elem, nil

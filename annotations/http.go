@@ -91,11 +91,12 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 
 	httpGen := gen.Block(
 		gen.Commentary(
-			gen.SourceText(`Package http provides a auto-generated package which contains a http restful CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
+			gen.SourceText(`Package httpapi provides a auto-generated package which contains a http restful CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
 		),
 		gen.Package(
 			gen.Name("httpapi"),
 			gen.Imports(
+				gen.Import("fmt", ""),
 				gen.Import("net/http", ""),
 				gen.Import("encoding/json", ""),
 				gen.Import("github.com/dimfeld/httptreemux", ""),
@@ -181,10 +182,12 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 		gen.Package(
 			gen.Name("httpapi_test"),
 			gen.Imports(
+				gen.Import("fmt", ""),
+				gen.Import("bytes", ""),
 				gen.Import("testing", ""),
 				gen.Import("encoding/json", ""),
 				gen.Import("net/http", ""),
-				gen.Import("net/httptest", ""),
+				gen.Import("net/http/httptest", ""),
 				gen.Import("github.com/dimfeld/httptreemux", ""),
 				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),

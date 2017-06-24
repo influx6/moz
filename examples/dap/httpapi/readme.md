@@ -30,17 +30,19 @@ JSON content to the HTTP API. This will in turn return a respective status code.
 ```json
 {
 
-    "name": "",
 
-    "public_id": "",
-
-    "rack": 0,
-
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0,
+
+    "public_id":	"",
+
+    "name":	""
 
 }
 ```
@@ -57,17 +59,19 @@ Success: 201
 ```json
 {
 
-    "name": "",
 
-    "public_id": "",
+    "rack":	0,
 
-    "rack": 0,
+    "public_id":	"",
 
-    "rex": {
+    "name":	"",
+
+    "rex":	{
 	
-	    "url": "",
 	
-	},
+	    "url":	""
+	
+	}
 
 }
 ```
@@ -108,17 +112,19 @@ Success: 200
 ```json
 {
 
-    "name": "",
 
-    "public_id": "",
+    "public_id":	"",
 
-    "rack": 0,
+    "name":	"",
 
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0
 
 }
 ```
@@ -157,17 +163,19 @@ Success: 200
 ```json
 [{
 
-    "name": "",
 
-    "public_id": "",
+    "rack":	0,
 
-    "rack": 0,
+    "public_id":	"",
 
-    "rex": {
+    "name":	"",
+
+    "rex":	{
 	
-	    "url": "",
 	
-	},
+	    "url":	""
+	
+	}
 
 }]
 ```
@@ -196,17 +204,19 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
 ```json
 {
 
-    "name": "",
 
-    "public_id": "",
+    "public_id":	"",
 
-    "rack": 0,
+    "name":	"",
 
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0
 
 }
 ```

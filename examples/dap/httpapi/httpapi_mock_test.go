@@ -1,6 +1,7 @@
 package httpapi_test
 
 import (
+	"errors"
 	"fmt"
 
 	"golang.org/x/sync/syncmap"
@@ -45,17 +46,22 @@ func (m *MockAPIOperator) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
 		return true
 	})
 
-	return records
+	return records, nil
 }
 
 // Get retrieves a record based on the provided publicID.
 func (m *MockAPIOperator) Get(ctx context.Context, publicID string) (dap.Ignitor, error) {
 	elem, found := m.store.Load(publicID)
 	if !found {
-		return nil, fmt.Errorf("Record does not exists with id %q", publicID)
+		return dap.Ignitor{}, fmt.Errorf("Record does not exists with id %q", publicID)
 	}
 
-	return elem, nil
+	rElem, ok := elem.(dap.Ignitor)
+	if !ok {
+		return dap.Ignitor{}, errors.New("Record does not match type")
+	}
+
+	return rElem, nil
 }
 
 // Update updates a giving record with the given new value.

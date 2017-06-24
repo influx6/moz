@@ -1,15 +1,17 @@
 package httpapi_test
 
 import (
-	"bytes"
 	"fmt"
+
+	"bytes"
+
 	"testing"
 
 	"encoding/json"
 
 	"net/http"
 
-	"net/httptest"
+	"net/http/httptest"
 
 	"github.com/dimfeld/httptreemux"
 
@@ -60,14 +62,14 @@ func TestGetAllIgnitor(t *testing.T) {
 	}
 	tests.Passed("Should have successfully created request Ignitor record.")
 
-	res := httptest.NewRecoder()
+	res := httptest.NewRecorder()
 
 	tree.ServeHTTP(res, req)
 
-	if res.StatusCode != http.StatusCreated {
-		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	if res.Code != http.StatusOK {
+		tests.Failed("Should have received status code %d from response.", res.Code)
 	}
-	tests.Passed("Should have received created status code %d from response.", http.StatusNoContent)
+	tests.Passed("Should have received status code %d from response.", http.StatusOK)
 
 	if res.Body.Len() == 0 {
 		tests.Failed("Should have successfully received response body.")
@@ -106,14 +108,14 @@ func TestGetIgnitor(t *testing.T) {
 	}
 	tests.Passed("Should have successfully created request Ignitor record.")
 
-	res := httptest.NewRecoder()
+	res := httptest.NewRecorder()
 
 	tree.ServeHTTP(res, req)
 
-	if res.StatusCode != http.StatusOK {
-		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	if res.Code != http.StatusOK {
+		tests.Failed("Should have received status code %d from response.", res.Code)
 	}
-	tests.Passed("Should have received created status code %d from response.", http.StatusNoContent)
+	tests.Passed("Should have received status code %d from response.", http.StatusOK)
 
 	if res.Body.Len() == 0 {
 		tests.Failed("Should have successfully received response body.")
@@ -132,8 +134,6 @@ func TestIgnitorCreate(t *testing.T) {
 	// Register routes with router group.
 	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
 
-	ctx := context.New()
-
 	var body bytes.Buffer
 	body.WriteString(ignitorCreateJSON)
 
@@ -143,14 +143,14 @@ func TestIgnitorCreate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully created request Ignitor record.")
 
-	res := httptest.NewRecoder()
+	res := httptest.NewRecorder()
 
 	tree.ServeHTTP(res, req)
 
-	if res.StatusCode != http.StatusCreated {
-		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	if res.Code != http.StatusCreated {
+		tests.Failed("Should have received status code %d from response.", res.Code)
 	}
-	tests.Passed("Should have received created status code %d from response.", http.StatusCreated)
+	tests.Passed("Should have received status code %d from response.", http.StatusCreated)
 
 	if res.Body.Len() == 0 {
 		tests.Failed("Should have successfully received response body.")
@@ -169,8 +169,6 @@ func TestIgnitorUpdate(t *testing.T) {
 	// Register routes with router group.
 	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
 
-	ctx := context.New()
-
 	var body bytes.Buffer
 	body.WriteString(ignitorCreateJSON)
 
@@ -180,14 +178,14 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully created request Ignitor record.")
 
-	res := httptest.NewRecoder()
+	res := httptest.NewRecorder()
 
 	tree.ServeHTTP(res, req)
 
-	if res.StatusCode != http.StatusCreated {
-		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	if res.Code != http.StatusCreated {
+		tests.Failed("Should have received status code %d from response.", res.Code)
 	}
-	tests.Passed("Should have received created status code %d from response.", http.StatusCreated)
+	tests.Passed("Should have received status code %d from response.", http.StatusCreated)
 
 	if res.Body.Len() == 0 {
 		tests.Failed("Should have successfully received response body.")
@@ -200,11 +198,11 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully loaded JSON.")
 
-	elem.Name = "Bobby Vasquez"
+	elem.Name = "Debra Flores"
 
 	var bu bytes.Buffer
 
-	if err := json.NewEncoder(&bu).Encode(elm); err != nil {
+	if err := json.NewEncoder(&bu).Encode(elem); err != nil {
 		tests.Failed("Should have successfully encoded Ignitor:  %+q.", err)
 	}
 	tests.Passed("Should have successfully encoded Ignitor.")
@@ -215,14 +213,14 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully created request Ignitor record.")
 
-	res = httptest.NewRecoder()
+	res = httptest.NewRecorder()
 
 	tree.ServeHTTP(res, req)
 
-	if res.StatusCode != http.StatusNoContent {
-		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	if res.Code != http.StatusNoContent {
+		tests.Failed("Should have received status code %d from response.", res.Code)
 	}
-	tests.Passed("Should have received created status code %d from response.", http.StatusNoContent)
+	tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }
 
 // TestIgnitorDelete validates the removal of a Ignitor
@@ -256,12 +254,12 @@ func TestIgnitorDelete(t *testing.T) {
 	}
 	tests.Passed("Should have successfully created request Ignitor record.")
 
-	res := httptest.NewRecoder()
+	res := httptest.NewRecorder()
 
 	tree.ServeHTTP(res, req)
 
-	if res.StatusCode != http.StatusNoContent {
-		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	if res.Code != http.StatusNoContent {
+		tests.Failed("Should have received status code %d from response.", res.Code)
 	}
-	tests.Passed("Should have received created status code %d from response.", res.StatusNoContent)
+	tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }

@@ -99,6 +99,28 @@ var (
 		"divide": func(a, b int) int {
 			return a / b
 		},
+		"len": func(b interface{}) int {
+			switch bo := b.(type) {
+			case []string:
+				return len(bo)
+			case string:
+				return len(bo)
+			case []int:
+				return len(bo)
+			case []bool:
+				return len(bo)
+			case []int64:
+				return len(bo)
+			case []float32:
+				return len(bo)
+			case []float64:
+				return len(bo)
+			case []byte:
+				return len(bo)
+			default:
+				return 0
+			}
+		},
 		"percentage": func(a, b float64) float64 {
 			return (a / b) * 100
 		},

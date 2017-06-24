@@ -8,49 +8,55 @@ import (
 
 var ignitorJSON = `{
 
-    "name": "",
 
-    "public_id": "",
+    "public_id":	"",
 
-    "rack": 0,
+    "name":	"",
 
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0
 
 }`
 
 var ignitorCreateJSON = `{
 
-    "name": "",
 
-    "public_id": "",
+    "public_id":	"",
 
-    "rack": 0,
+    "name":	"",
 
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0
 
 }`
 
 var ignitorUpdateJSON = `{
 
-    "name": "",
 
-    "public_id": "",
+    "public_id":	"",
 
-    "rack": 0,
+    "name":	"",
 
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0
 
 }`
 
@@ -59,7 +65,7 @@ func loadJSONFor(content string) (dap.Ignitor, error) {
 	var elem dap.Ignitor
 
 	if err := json.Unmarshal([]byte(content), &elem); err != nil {
-		return nil, err
+		return dap.Ignitor{}, err
 	}
 
 	return elem, nil

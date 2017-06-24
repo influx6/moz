@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -1396,7 +1397,7 @@ func (v JSONBlock) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 
-	content := make(map[string]string)
+	var content []string
 
 	var bu bytes.Buffer
 	for name, item := range v.Items {
@@ -1406,7 +1407,7 @@ func (v JSONBlock) WriteTo(w io.Writer) (int64, error) {
 			return 0, err
 		}
 
-		content[name] = bu.String()
+		content = append(content, fmt.Sprintf("%q:	%s", name, strings.Join(strings.Split(bu.String(), "\n"), "\n\t")))
 	}
 
 	if err := tml.Execute(wc, content); err != nil {

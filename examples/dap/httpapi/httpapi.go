@@ -1,9 +1,11 @@
-// Package http provides a auto-generated package which contains a http restful CRUD API for the specific Ignitor struct in package dap.
+// Package httpapi provides a auto-generated package which contains a http restful CRUD API for the specific Ignitor struct in package dap.
 //
 //
 package httpapi
 
 import (
+	"fmt"
+
 	"net/http"
 
 	"encoding/json"
@@ -24,36 +26,37 @@ import (
 // RegisterRouteGroup registers the giving route into the provided httptreemux function with the
 // provided router and prefixed path.
 func RegisterRouteGroup(grp *httptreemux.Group, api *HTTPApi, version string, resource string) {
-	grp.Get(fmt.Sprintf("%s/%s", version, resource), WrapTreemux(api.GetAll))
-	grp.Post(fmt.Sprintf("%s/%s", version, resource), WrapTreemux(api.Create))
+	grp.GET(fmt.Sprintf("/%s/%s", version, resource), WrapTreemux(api.GetAll))
+	grp.GET(fmt.Sprintf("/%s/%s/:public_id", version, resource), WrapTreemux(api.Get))
 
-	grp.Get(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Get))
-	grp.Put(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Update))
-	grp.Delete(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Delete))
+	grp.POST(fmt.Sprintf("/%s/%s", version, resource), WrapTreemux(api.Create))
+
+	grp.PUT(fmt.Sprintf("/%s/%s/:public_id", version, resource), WrapTreemux(api.Update))
+	grp.DELETE(fmt.Sprintf("/%s/%s/:public_id", version, resource), WrapTreemux(api.Delete))
 }
 
 // RegisterRoute registers the giving route into the provided httptreemux function with the
 // provided router and prefixed path.
 func RegisterRoute(router *httptreemux.TreeMux, api *HTTPApi, version string, resource string) {
-	router.Get(fmt.Sprintf("%s/%s", version, resource), WrapTreemux(api.GetAll))
-	router.Get(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Get))
+	router.GET(fmt.Sprintf("/%s/%s", version, resource), WrapTreemux(api.GetAll))
+	router.GET(fmt.Sprintf("/%s/%s/:public_id", version, resource), WrapTreemux(api.Get))
 
-	router.Post(fmt.Sprintf("%s/%s", version, resource), WrapTreemux(api.Create))
+	router.POST(fmt.Sprintf("/%s/%s", version, resource), WrapTreemux(api.Create))
 
-	router.Put(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Update))
-	router.Delete(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Delete))
+	router.PUT(fmt.Sprintf("/%s/%s/:public_id", version, resource), WrapTreemux(api.Update))
+	router.DELETE(fmt.Sprintf("/%s/%s/:public_id", version, resource), WrapTreemux(api.Delete))
 }
 
 //================================================================================================
 
 // HTTPContextHandler defines a function which is used to service a request with a
 // context
-type HTTPContextHandler func(ctx context.Context, w http.ResponseWriter, r http.Request)
+type HTTPContextHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 
 // WrapTreemux defines the function to meet the httptreemux.Handler interface to appropriately
 // parse all request to the appropriate handler.
-func WrapTreemux(fn HTTPContextHandler) httptreemux.Handler {
-	return func(w http.ResponseWriter, r http.Request, params map[string]interface{}) {
+func WrapTreemux(fn HTTPContextHandler) httptreemux.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, params map[string]string) {
 		ctx := context.From(r.Context())
 
 		for name, value := range params {
@@ -66,8 +69,8 @@ func WrapTreemux(fn HTTPContextHandler) httptreemux.Handler {
 
 // HTTPParams provides a function which returns a http.Handler which calls httputil.Params
 // to collect parameters from a request into a context.
-func HTTPParams(fn HTTPContextHandler) http.Handler {
-	return func(w http.ResponseWriter, r http.Request) {
+func HTTPParams(fn HTTPContextHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.From(r.Context())
 
 		httputil.Params(ctx, r, 0)
@@ -99,7 +102,7 @@ type HTTPApi struct {
 
 // New returns a new HTTPApi instance using the provided operator and
 // metric.
-func New(m metrics.Metric, operator APIOperator) *HTTPApi {
+func New(m metrics.Metrics, operator APIOperator) *HTTPApi {
 	return &HTTPApi{
 		operator: operator,
 		metrics:  m,
@@ -112,8 +115,8 @@ func New(m metrics.Metric, operator APIOperator) *HTTPApi {
 // Method: POST
 // BODY: JSON
 //
-func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Request) {
-	w.Headers().Set("Content-Type", "application/json")
+func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	api.metrics.Emit(stdout.Info("Create request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
@@ -121,13 +124,13 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Re
 
 	var incoming dap.Ignitor
 
-	if err := json.NewDecoder(w).Decode(&incoming); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
+	if err := json.NewDecoder(r.Body).Decode(&incoming); err != nil {
+		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Fields{
 			"error": err,
 			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to decode json body"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to decode json body"), http.StatusInternalServerError)
 		return
 	}
 
@@ -138,24 +141,24 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Re
 
 	response, err := api.operator.Create(ctx, incoming)
 	if err != nil {
-		api.metrics.Emit(stdout.Error("Failed to create record").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("Failed to create record").WithFields(metrics.Fields{
 			"error": err,
 			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to create dap.Ignitor object"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to create dap.Ignitor object"), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to write response body").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("Failed to write response body").WithFields(metrics.Fields{
 			"error": err,
 			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to write response of dap.Ignitor object"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to write response of dap.Ignitor object"), http.StatusInternalServerError)
 		return
 	}
 }
@@ -166,33 +169,43 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Re
 // Method: PUT
 // BODY: JSON
 //
-func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r http.Request) {
-	w.Headers().Set("Content-Type", "application/json")
+func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	api.metrics.Emit(stdout.Info("Update request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
 	}))
 
-	publicID, ok := ctx.Get("public_id")
+	publicIDVal, ok := ctx.Get("public_id")
 	if !ok {
-		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Fields{
 			"url": r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("No public_id provided in params"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("No public_id provided in params"), http.StatusBadRequest)
+		return
+	}
+
+	publicID, ok := publicIDVal.(string)
+	if !ok {
+		api.metrics.Emit(stdout.Error("public_id param is not a string").WithFields(metrics.Fields{
+			"url": r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Sprintf("public_id param is not a string"), http.StatusBadRequest)
 		return
 	}
 
 	var incoming dap.Ignitor
 
-	if err := json.NewDecoder(w).Decode(&incoming); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
+	if err := json.NewDecoder(r.Body).Decode(&incoming); err != nil {
+		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Fields{
 			"error":     err,
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to decode json body"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to decode json body"), http.StatusInternalServerError)
 		return
 	}
 
@@ -203,13 +216,13 @@ func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r http.Re
 	}))
 
 	if err := api.operator.Update(ctx, publicID, incoming); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Fields{
 			"error":     err,
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to update record of dap.Ignitor object"), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to update record of dap.Ignitor object"), http.StatusInternalServerError)
 		return
 	}
 
@@ -221,18 +234,28 @@ func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r http.Re
 // Route: /{Route}/:public_id
 // Method: DELETE
 //
-func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r http.Request) {
+func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	api.metrics.Emit(stdout.Info("Delete request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
 	}))
 
-	publicID, ok := ctx.Get("public_id")
+	publicIDVal, ok := ctx.Get("public_id")
 	if !ok {
-		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Fields{
 			"url": r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("No public_id provided in params"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("No public_id provided in params"), http.StatusBadRequest)
+		return
+	}
+
+	publicID, ok := publicIDVal.(string)
+	if !ok {
+		api.metrics.Emit(stdout.Error("public_id param is not a string").WithFields(metrics.Fields{
+			"url": r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Sprintf("public_id param is not a string"), http.StatusBadRequest)
 		return
 	}
 
@@ -241,14 +264,14 @@ func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r http.Re
 		"public_id": publicID,
 	}))
 
-	if err := api.metrics.Delete(ctx, publicID); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to delete dap.Ignitor record").WithFields(metrics.Field{
+	if err := api.operator.Delete(ctx, publicID); err != nil {
+		api.metrics.Emit(stdout.Error("Failed to delete dap.Ignitor record").WithFields(metrics.Fields{
 			"error":     err,
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to delete record"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to delete record"), http.StatusBadRequest)
 		return
 
 	}
@@ -261,41 +284,53 @@ func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r http.Re
 // Route: /{Route}/:public_id
 // Method: GET
 // RESPONSE-BODY: JSON
-func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Request) {
-	w.Headers().Set("Content-Type", "application/json")
+func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	api.metrics.Emit(stdout.Info("Get request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
 	}))
 
-	publicID, ok := ctx.Get("public_id")
+	publicIDVal, ok := ctx.Get("public_id")
 	if !ok {
-		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Fields{
 			"url": r.URL.String(),
-		})).Error(w, fmt.Error("No public_id provided in params"), http.StatusBadRequest)
+		}))
+
+		http.Error(w, fmt.Sprintf("No public_id provided in params"), http.StatusBadRequest)
+		return
+	}
+
+	publicID, ok := publicIDVal.(string)
+	if !ok {
+		api.metrics.Emit(stdout.Error("public_id param is not a string").WithFields(metrics.Fields{
+			"url": r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Sprintf("public_id param is not a string"), http.StatusBadRequest)
 		return
 	}
 
 	requested, err := api.operator.Get(ctx, publicID)
 	if err != nil {
-		api.metrics.Emit(stdout.Error("Failed to get dap.Ignitor record").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("Failed to get dap.Ignitor record").WithFields(metrics.Fields{
 			"error":     err,
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to retrieve record"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to retrieve record"), http.StatusBadRequest)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(requested); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to get serialized dap.Ignitor record to response writer").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("Failed to get serialized dap.Ignitor record to response writer").WithFields(metrics.Fields{
 			"error":     err,
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to write response params"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to write response params"), http.StatusBadRequest)
 		return
 	}
 
@@ -307,8 +342,8 @@ func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Reque
 // Route: /{Route}/
 // Method: GET
 // RESPONSE-BODY: JSON
-func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r http.Request) {
-	w.Headers().Set("Content-Type", "application/json")
+func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	api.metrics.Emit(stdout.Info("GetAll request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
@@ -316,24 +351,22 @@ func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r http.Re
 
 	requested, err := api.operator.GetAll(ctx)
 	if err != nil {
-		api.metrics.Emit(stdout.Error("Failed to get all dap.Ignitor record").WithFields(metrics.Field{
-			"error":     err,
-			"public_id": publicID,
-			"url":       r.URL.String(),
+		api.metrics.Emit(stdout.Error("Failed to get all dap.Ignitor record").WithFields(metrics.Fields{
+			"error": err,
+			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to retrieve all records"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to retrieve all records"), http.StatusBadRequest)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(requested); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to get serialized dap.Ignitor record to response writer").WithFields(metrics.Field{
-			"error":     err,
-			"public_id": publicID,
-			"url":       r.URL.String(),
+		api.metrics.Emit(stdout.Error("Failed to get serialized dap.Ignitor record to response writer").WithFields(metrics.Fields{
+			"error": err,
+			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to write response"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to write response"), http.StatusBadRequest)
 		return
 	}
 

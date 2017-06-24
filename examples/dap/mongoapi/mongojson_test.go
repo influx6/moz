@@ -2,49 +2,55 @@ package mongoapi_test
 
 var ignitorJSON = `{
 
-    "name": "",
 
-    "public_id": "",
+    "public_id":	"",
 
-    "rack": 0,
+    "name":	"",
 
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0
 
 }`
 
 var ignitorCreateJSON = `{
 
-    "name": "",
 
-    "public_id": "",
-
-    "rack": 0,
-
-    "rex": {
+    "rex":	{
 	
-	    "url": "",
+	
+	    "url":	""
 	
 	},
+
+    "rack":	0,
+
+    "public_id":	"",
+
+    "name":	""
 
 }`
 
 var ignitorUpdateJSON = `{
 
-    "name": "",
 
-    "public_id": "",
+    "rack":	0,
 
-    "rack": 0,
+    "public_id":	"",
 
-    "rex": {
+    "name":	"",
+
+    "rex":	{
 	
-	    "url": "",
 	
-	},
+	    "url":	""
+	
+	}
 
 }`
 
@@ -53,7 +59,7 @@ func loadJSONFor(content string) (dap.Ignitor, error) {
 	var elem dap.Ignitor
 
 	if err := json.Unmarshal([]byte(content), &elem); err != nil {
-		return nil, err
+		return dap.Ignitor{}, err
 	}
 
 	return elem, nil
