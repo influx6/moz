@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/icrowley/fake"
 	"github.com/influx6/faux/metrics"
 	"github.com/influx6/faux/metrics/sentries/stdout"
 	"github.com/influx6/moz/gen"
@@ -1080,6 +1082,89 @@ func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (s
 	return bu.String(), nil
 }
 
+// FieldNameFor defines a function to return actual name of field name tag name.
+func FieldNameFor(item StructDeclaration, tag string, tagFieldName string) string {
+	fields := Fields(GetFields(item))
+
+	wTags := fields.TagFor(tag)
+
+	// Collect key field names from embedded first
+	for _, tag := range wTags {
+		if tag.Value != tagFieldName {
+			continue
+		}
+
+		return tag.Field.FieldName
+	}
+
+	return ""
+}
+
+// AssignDefaultValue will get the fieldName for a giving tag and tagVal and return	a string of giving
+// variable name with fieldName equal to default value.
+func AssignDefaultValue(item StructDeclaration, tag string, tagVal string, varName string) (string, error) {
+	fieldName, defaultVal, err := DefaultFieldValueFor(item, tag, tagVal)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s.%s = %s", varName, fieldName, defaultVal), nil
+}
+
+// DefaultFieldValueFor defines a function to return a field default value.
+func DefaultFieldValueFor(item StructDeclaration, tag string, tagVal string) (string, string, error) {
+	fields := Fields(GetFields(item))
+
+	wTags := fields.TagFor(tag)
+
+	// Collect key field names from embedded first
+	for _, tag := range wTags {
+		if tag.Value != tagVal {
+			continue
+		}
+
+		return tag.Field.FieldName, RandomFieldValue(tag.Field), nil
+	}
+
+	return "", "", fmt.Errorf("Field for tag value %q not found", tagVal)
+}
+
+// RandomFieldAssign generates a random Field of a giving struct and returns a variable assignment
+// declaration with the types default value.
+func RandomFieldAssign(item StructDeclaration, varName string, tag string, exceptions ...string) (string, error) {
+	randomFieldVal, _, err := RandomFieldWithExcept(item, tag, exceptions...)
+	if err != nil {
+		return "", err
+	}
+
+	return AssignDefaultValue(item, tag, randomFieldVal, varName)
+}
+
+// RandomFieldWithExcept defines a function to return a random field name which is not
+// included in the exceptions set.
+func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...string) (string, string, error) {
+	fields := Fields(GetFields(item))
+
+	wTags := fields.TagFor(tag)
+
+	// Collect key field names from embedded first
+	{
+	ml:
+		for _, tag := range wTags {
+			for _, exception := range exceptions {
+				if tag.Value == exception {
+					continue ml
+				}
+			}
+
+			return tag.Value, tag.Field.FieldName, nil
+		}
+
+	}
+
+	return "", "", errors.New("All tags match exceptions")
+}
+
 // MapOutFieldsToMap defines a function to return a map of field name and value
 // pair for the giving struct.
 func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback string) (map[string]io.WriterTo, error) {
@@ -1313,7 +1398,38 @@ func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.Nam
 	return gen.Block(writers...)
 }
 
-//===========================================================================================================
+// RandomFieldValue returns the default value for a giving field.
+func RandomFieldValue(fld FieldDeclaration) string {
+	return RandomDataTypeValue(fld.FieldTypeName)
+}
+
+// DefaultFieldValue returns the default value for a giving field.
+func DefaultFieldValue(fld FieldDeclaration) string {
+	return DefaultTypeValueString(fld.FieldTypeName)
+}
+
+// RandomDataTypeValue returns the default value string of a giving
+// typeName.
+func RandomDataTypeValue(typeName string) string {
+	switch typeName {
+	case "uint", "uint32", "uint64":
+		return fmt.Sprintf("%d", rand.Uint64())
+	case "bool":
+		return fmt.Sprintf("%t", rand.Int63n(1) == 0)
+	case "string":
+		return fake.CharactersN(10)
+	case "rune":
+		return fmt.Sprintf("'%x'", fake.CharactersN(1))
+	case "byte":
+		return fmt.Sprintf("'%x'", fake.CharactersN(1))
+	case "float32", "float64":
+		return fmt.Sprintf("%.4f", rand.Float64())
+	case "int", "int32", "int64":
+		return fmt.Sprintf("%d", rand.Int63())
+	default:
+		return DefaultTypeValueString(typeName)
+	}
+}
 
 // DefaultTypeValueString returns the default value string of a giving
 // typeName.
@@ -1321,6 +1437,8 @@ func DefaultTypeValueString(typeName string) string {
 	switch typeName {
 	case "uint", "uint32", "uint64":
 		return "0"
+	case "bool":
+		return `false`
 	case "string":
 		return `""`
 	case "rune":

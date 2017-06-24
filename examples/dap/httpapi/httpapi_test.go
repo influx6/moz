@@ -1,43 +1,267 @@
 package httpapi_test
 
 import (
+	"bytes"
+	"fmt"
 	"testing"
+
+	"encoding/json"
+
+	"net/http"
+
+	"net/httptest"
+
+	"github.com/dimfeld/httptreemux"
+
+	"github.com/influx6/faux/tests"
 
 	"github.com/influx6/faux/metrics"
 
+	"github.com/influx6/faux/context"
+
 	"github.com/influx6/faux/metrics/sentries/stdout"
+
+	"github.com/influx6/moz/examples/dap/httpapi"
 )
 
 var (
-	events = metrics.New(stdout.Stdout{})
+	events  = metrics.New(stdout.Stdout{})
+	version = "v1"
 )
 
-// TestGetIgnitor validates the retrieval of a Ignitor
+// TestGetAllIgnitor validates the retrieval of a Ignitor
 // record from httpapi.
-func TestGetIgnitor(t *testing.T) {
+func TestGetAllIgnitor(t *testing.T) {
+	tree := httptreemux.New()
 
+	db := NewMockAPIOperator()
+	api := httpapi.New(events, db)
+
+	// Register routes with router group.
+	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+
+	elem, err := loadJSONFor(ignitorCreateJSON)
+	if err != nil {
+		tests.Failed("Should have successfully loaded JSON: ignitorCreateJSON : %+q.", err)
+	}
+	tests.Passed("Should have successfully loaded JSON: ignitorCreateJSON.")
+
+	ctx := context.New()
+
+	elem, err = db.Create(ctx, elem)
+	if err != nil {
+		tests.Failed("Should have successfully saved Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully saved Ignitor record.")
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("api/%s/ignitors", version), nil)
+	if err != nil {
+		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully created request Ignitor record.")
+
+	res := httptest.NewRecoder()
+
+	tree.ServeHTTP(res, req)
+
+	if res.StatusCode != http.StatusCreated {
+		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	}
+	tests.Passed("Should have received created status code %d from response.", http.StatusNoContent)
+
+	if res.Body.Len() == 0 {
+		tests.Failed("Should have successfully received response body.")
+	}
+	tests.Passed("Should have successfully received response body.")
 }
 
-// TestGetAllIgnitor validates the retrieval of all Ignitor
+// TestGetIgnitor validates the retrieval of all Ignitor
 // record from a httpapi.
-func TestGetAllIgnitor(t *testing.T) {
+func TestGetIgnitor(t *testing.T) {
+	tree := httptreemux.New()
 
+	db := NewMockAPIOperator()
+	api := httpapi.New(events, db)
+
+	// Register routes with router group.
+	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+
+	elem, err := loadJSONFor(ignitorCreateJSON)
+	if err != nil {
+		tests.Failed("Should have successfully loaded JSON: ignitorCreateJSON : %+q.", err)
+	}
+	tests.Passed("Should have successfully loaded JSON: ignitorCreateJSON.")
+
+	ctx := context.New()
+
+	elem, err = db.Create(ctx, elem)
+	if err != nil {
+		tests.Failed("Should have successfully saved Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully saved Ignitor record.")
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), nil)
+	if err != nil {
+		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully created request Ignitor record.")
+
+	res := httptest.NewRecoder()
+
+	tree.ServeHTTP(res, req)
+
+	if res.StatusCode != http.StatusOK {
+		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	}
+	tests.Passed("Should have received created status code %d from response.", http.StatusNoContent)
+
+	if res.Body.Len() == 0 {
+		tests.Failed("Should have successfully received response body.")
+	}
+	tests.Passed("Should have successfully received response body.")
 }
 
 // TestIgnitorCreate validates the creation of a Ignitor
 // record with a httpapi.
 func TestIgnitorCreate(t *testing.T) {
+	tree := httptreemux.New()
 
+	db := NewMockAPIOperator()
+	api := httpapi.New(events, db)
+
+	// Register routes with router group.
+	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+
+	ctx := context.New()
+
+	var body bytes.Buffer
+	body.WriteString(ignitorCreateJSON)
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("api/%s/ignitors", version), &body)
+	if err != nil {
+		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully created request Ignitor record.")
+
+	res := httptest.NewRecoder()
+
+	tree.ServeHTTP(res, req)
+
+	if res.StatusCode != http.StatusCreated {
+		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	}
+	tests.Passed("Should have received created status code %d from response.", http.StatusCreated)
+
+	if res.Body.Len() == 0 {
+		tests.Failed("Should have successfully received response body.")
+	}
+	tests.Passed("Should have successfully received response body.")
 }
 
 // TestIgnitorUpdate validates the update of a Ignitor
 // record with a httpapi.
 func TestIgnitorUpdate(t *testing.T) {
+	tree := httptreemux.New()
 
+	db := NewMockAPIOperator()
+	api := httpapi.New(events, db)
+
+	// Register routes with router group.
+	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+
+	ctx := context.New()
+
+	var body bytes.Buffer
+	body.WriteString(ignitorCreateJSON)
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("api/%s/ignitors", version), &body)
+	if err != nil {
+		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully created request Ignitor record.")
+
+	res := httptest.NewRecoder()
+
+	tree.ServeHTTP(res, req)
+
+	if res.StatusCode != http.StatusCreated {
+		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	}
+	tests.Passed("Should have received created status code %d from response.", http.StatusCreated)
+
+	if res.Body.Len() == 0 {
+		tests.Failed("Should have successfully received response body.")
+	}
+	tests.Passed("Should have successfully received response body.")
+
+	elem, err := loadJSONFor(res.Body.String())
+	if err != nil {
+		tests.Failed("Should have successfully loaded JSON:  %+q.", err)
+	}
+	tests.Passed("Should have successfully loaded JSON.")
+
+	elem.Name = mol6vpcv4o
+
+	var bu bytes.Buffer
+
+	if err := json.NewEncoder(&bu).Encode(elm); err != nil {
+		tests.Failed("Should have successfully encoded Ignitor:  %+q.", err)
+	}
+	tests.Passed("Should have successfully encoded Ignitor.")
+
+	req, err = http.NewRequest("PUT", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), &body)
+	if err != nil {
+		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully created request Ignitor record.")
+
+	res = httptest.NewRecoder()
+
+	tree.ServeHTTP(res, req)
+
+	if res.StatusCode != http.StatusNoContent {
+		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	}
+	tests.Passed("Should have received created status code %d from response.", http.StatusNoContent)
 }
 
 // TestIgnitorDelete validates the removal of a Ignitor
 // record from a httpapi.
 func TestIgnitorDelete(t *testing.T) {
+	tree := httptreemux.New()
 
+	db := NewMockAPIOperator()
+	api := httpapi.New(events, db)
+
+	// Register routes with router group.
+	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+
+	elem, err := loadJSONFor(ignitorCreateJSON)
+	if err != nil {
+		tests.Failed("Should have successfully loaded JSON: ignitorCreateJSON : %+q.", err)
+	}
+	tests.Passed("Should have successfully loaded JSON: ignitorCreateJSON.")
+
+	ctx := context.New()
+
+	elem, err = db.Create(ctx, elem)
+	if err != nil {
+		tests.Failed("Should have successfully saved Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully saved Ignitor record.")
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), nil)
+	if err != nil {
+		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
+	}
+	tests.Passed("Should have successfully created request Ignitor record.")
+
+	res := httptest.NewRecoder()
+
+	tree.ServeHTTP(res, req)
+
+	if res.StatusCode != http.StatusNoContent {
+		tests.Failed("Should have received created status code %d from response.", res.StatusCode)
+	}
+	tests.Passed("Should have received created status code %d from response.", res.StatusNoContent)
 }

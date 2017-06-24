@@ -185,12 +185,13 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 				gen.Import("encoding/json", ""),
 				gen.Import("net/http", ""),
 				gen.Import("net/httptest", ""),
+				gen.Import("github.com/dimfeld/httptreemux", ""),
 				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 				gen.Import(str.Path, ""),
-				gen.Import(str.Path+"/mongoapi", ""),
+				gen.Import(str.Path+"/httpapi", ""),
 			),
 			gen.Block(
 				gen.SourceTextWith(
@@ -199,6 +200,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
 						"hasFunc":   ast.HasFunctionFor(pkg),
+						"randField": ast.RandomFieldAssign,
 					},
 					struct {
 						Struct       ast.StructDeclaration
@@ -221,7 +223,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 				gen.Import("errors", ""),
 				gen.Import("testing", ""),
 				gen.Import("encoding/json", ""),
-				gen.Import("golang.com/x/sync/syncmap", ""),
+				gen.Import("golang.org/x/sync/syncmap", ""),
 				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),

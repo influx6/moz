@@ -3,7 +3,7 @@ package httpapi_test
 import (
 	"fmt"
 
-	"golang.com/x/sync/syncmap"
+	"golang.org/x/sync/syncmap"
 
 	"github.com/influx6/faux/context"
 

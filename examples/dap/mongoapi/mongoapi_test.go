@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"encoding/json"
-
 	mgo "gopkg.in/mgo.v2"
 
 	"github.com/influx6/faux/tests"
@@ -182,15 +180,4 @@ func TestIgnitorDelete(t *testing.T) {
 		tests.Failed("Successfully removed record for Ignitor into db: %+q.", err)
 	}
 	tests.Passed("Successfully removed record for Ignitor into db.")
-}
-
-// loadJSONFor returns a new instance of a Ignitor from the provide json content.
-func loadJSONForIgnitor(content string) (Ignitor, error) {
-	var elem Ignitor
-
-	if err := json.Unmarshal([]byte(content), &elem); err != nil {
-		return nil, err
-	}
-
-	return elem, nil
 }

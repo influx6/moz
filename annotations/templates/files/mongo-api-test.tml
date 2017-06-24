@@ -160,14 +160,3 @@ func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     }
     tests.Passed("Successfully removed record for {{.Struct.Object.Name}} into db.")
 }
-
-// loadJSONFor returns a new instance of a {{.Struct.Object.Name}} from the provide json content.
-func loadJSONFor{{.Struct.Object.Name}}(content string) ({{.Struct.Object.Name}}, error){
-    var elem {{.Struct.Object.Name}}
-
-    if err := json.Unmarshal([]byte(content), &elem); err != nil {
-        return nil, err
-    }
-
-    return elem, nil
-}

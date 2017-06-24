@@ -32,6 +32,18 @@ func RegisterRouteGroup(grp *httptreemux.Group, api *HTTPApi, version string, re
 	grp.Delete(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Delete))
 }
 
+// RegisterRoute registers the giving route into the provided httptreemux function with the
+// provided router and prefixed path.
+func RegisterRoute(router *httptreemux.TreeMux, api *HTTPApi, version string, resource string) {
+	router.Get(fmt.Sprintf("%s/%s", version, resource), WrapTreemux(api.GetAll))
+	router.Get(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Get))
+
+	router.Post(fmt.Sprintf("%s/%s", version, resource), WrapTreemux(api.Create))
+
+	router.Put(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Update))
+	router.Delete(fmt.Sprintf("%s/%s/:public_id", version, resource), WrapTreemux(api.Delete))
+}
+
 //================================================================================================
 
 // HTTPContextHandler defines a function which is used to service a request with a
@@ -47,6 +59,18 @@ func WrapTreemux(fn HTTPContextHandler) httptreemux.Handler {
 		for name, value := range params {
 			ctx.Set(name, value)
 		}
+
+		fn(ctx, w, r)
+	}
+}
+
+// HTTPParams provides a function which returns a http.Handler which calls httputil.Params
+// to collect parameters from a request into a context.
+func HTTPParams(fn HTTPContextHandler) http.Handler {
+	return func(w http.ResponseWriter, r http.Request) {
+		ctx := context.From(r.Context())
+
+		httputil.Params(ctx, r, 0)
 
 		fn(ctx, w, r)
 	}
@@ -89,19 +113,11 @@ func New(m metrics.Metric, operator APIOperator) *HTTPApi {
 // BODY: JSON
 //
 func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Request) {
+	w.Headers().Set("Content-Type", "application/json")
+
 	api.metrics.Emit(stdout.Info("Create request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
 	}))
-
-	if err := httputil.Params(ctx, r, 0); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
-			"error": err,
-			"url":   r.URL.String(),
-		}))
-
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
-		return
-	}
 
 	var incoming dap.Ignitor
 
@@ -122,7 +138,7 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Re
 
 	response, err := api.operator.Create(ctx, incoming)
 	if err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
+		api.metrics.Emit(stdout.Error("Failed to create record").WithFields(metrics.Field{
 			"error": err,
 			"url":   r.URL.String(),
 		}))
@@ -139,7 +155,7 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Re
 			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to create dap.Ignitor object"), http.StatusInternalServerError)
+		http.Error(w, fmt.Error("Failed to write response of dap.Ignitor object"), http.StatusInternalServerError)
 		return
 	}
 }
@@ -151,19 +167,11 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r http.Re
 // BODY: JSON
 //
 func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r http.Request) {
+	w.Headers().Set("Content-Type", "application/json")
+
 	api.metrics.Emit(stdout.Info("Update request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
 	}))
-
-	if err := httputil.Params(ctx, r, 0); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
-			"error": err,
-			"url":   r.URL.String(),
-		}))
-
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
-		return
-	}
 
 	publicID, ok := ctx.Get("public_id")
 	if !ok {
@@ -201,7 +209,7 @@ func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r http.Re
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to create dap.Ignitor object"), http.StatusInternalServerError)
+		http.Error(w, fmt.Error("Failed to update record of dap.Ignitor object"), http.StatusInternalServerError)
 		return
 	}
 
@@ -218,16 +226,6 @@ func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r http.Re
 		"url": r.URL.String(),
 	}))
 
-	if err := httputil.Params(ctx, r, 0); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
-			"error": err,
-			"url":   r.URL.String(),
-		}))
-
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
-		return
-	}
-
 	publicID, ok := ctx.Get("public_id")
 	if !ok {
 		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Field{
@@ -243,14 +241,14 @@ func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r http.Re
 		"public_id": publicID,
 	}))
 
-	if err := api.metrics.Delete(publicID); err != nil {
+	if err := api.metrics.Delete(ctx, publicID); err != nil {
 		api.metrics.Emit(stdout.Error("Failed to delete dap.Ignitor record").WithFields(metrics.Field{
 			"error":     err,
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
+		http.Error(w, fmt.Error("Failed to delete record"), http.StatusBadRequest)
 		return
 
 	}
@@ -264,19 +262,11 @@ func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r http.Re
 // Method: GET
 // RESPONSE-BODY: JSON
 func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Request) {
+	w.Headers().Set("Content-Type", "application/json")
+
 	api.metrics.Emit(stdout.Info("Get request received").WithFields(metrics.Fields{
 		"url": r.URL.String(),
 	}))
-
-	if err := httputil.Params(ctx, r, 0); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Field{
-			"error": err,
-			"url":   r.URL.String(),
-		}))
-
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
-		return
-	}
 
 	publicID, ok := ctx.Get("public_id")
 	if !ok {
@@ -286,7 +276,7 @@ func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Reque
 		return
 	}
 
-	requested, err := api.operator.Get(publicID)
+	requested, err := api.operator.Get(ctx, publicID)
 	if err != nil {
 		api.metrics.Emit(stdout.Error("Failed to get dap.Ignitor record").WithFields(metrics.Field{
 			"error":     err,
@@ -294,7 +284,7 @@ func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Reque
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
+		http.Error(w, fmt.Error("Failed to retrieve record"), http.StatusBadRequest)
 		return
 	}
 
@@ -305,7 +295,45 @@ func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r http.Reque
 			"url":       r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Error("Failed to parse params"), http.StatusBadRequest)
+		http.Error(w, fmt.Error("Failed to write response params"), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// GetAll receives an http request to return all Unconvertible Type records.
+//
+// Route: /{Route}/
+// Method: GET
+// RESPONSE-BODY: JSON
+func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r http.Request) {
+	w.Headers().Set("Content-Type", "application/json")
+
+	api.metrics.Emit(stdout.Info("GetAll request received").WithFields(metrics.Fields{
+		"url": r.URL.String(),
+	}))
+
+	requested, err := api.operator.GetAll(ctx)
+	if err != nil {
+		api.metrics.Emit(stdout.Error("Failed to get all dap.Ignitor record").WithFields(metrics.Field{
+			"error":     err,
+			"public_id": publicID,
+			"url":       r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Error("Failed to retrieve all records"), http.StatusBadRequest)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(requested); err != nil {
+		api.metrics.Emit(stdout.Error("Failed to get serialized dap.Ignitor record to response writer").WithFields(metrics.Field{
+			"error":     err,
+			"public_id": publicID,
+			"url":       r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Error("Failed to write response"), http.StatusBadRequest)
 		return
 	}
 
