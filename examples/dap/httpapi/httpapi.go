@@ -161,6 +161,11 @@ func (api *HTTPApi) Create(ctx context.Context, w http.ResponseWriter, r *http.R
 		http.Error(w, fmt.Sprintf("Failed to write response of dap.Ignitor object"), http.StatusInternalServerError)
 		return
 	}
+
+	api.metrics.Emit(stdout.Info("Response Delivered").WithFields(metrics.Fields{
+		"url":    r.URL.String(),
+		"status": http.StatusCreated,
+	}))
 }
 
 // Update receives an http request to create a new Unconvertible Type.
@@ -199,8 +204,8 @@ func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 	var incoming dap.Ignitor
 
 	if err := json.NewDecoder(r.Body).Decode(&incoming); err != nil {
-		api.metrics.Emit(stdout.Error("Failed to parse params and url.Values").WithFields(metrics.Fields{
-			"error":     err,
+		api.metrics.Emit(stdout.Error("Failed to decode request body").WithFields(metrics.Fields{
+			"error":     err.Error(),
 			"public_id": publicID,
 			"url":       r.URL.String(),
 		}))
@@ -227,6 +232,12 @@ func (api *HTTPApi) Update(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+
+	api.metrics.Emit(stdout.Info("Response Delivered").WithFields(metrics.Fields{
+		"url":       r.URL.String(),
+		"public_id": publicID,
+		"status":    http.StatusNoContent,
+	}))
 }
 
 // Delete receives an http request to create a new Unconvertible Type.
@@ -277,6 +288,12 @@ func (api *HTTPApi) Delete(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+
+	api.metrics.Emit(stdout.Info("Response Delivered").WithFields(metrics.Fields{
+		"url":       r.URL.String(),
+		"public_id": publicID,
+		"status":    http.StatusNoContent,
+	}))
 }
 
 // Get receives an http request to create a new Unconvertible Type.
@@ -335,6 +352,12 @@ func (api *HTTPApi) Get(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusOK)
+
+	api.metrics.Emit(stdout.Info("Response Delivered").WithFields(metrics.Fields{
+		"url":       r.URL.String(),
+		"public_id": publicID,
+		"status":    http.StatusOK,
+	}))
 }
 
 // GetAll receives an http request to return all Unconvertible Type records.
@@ -366,11 +389,16 @@ func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r *http.R
 			"url":   r.URL.String(),
 		}))
 
-		http.Error(w, fmt.Sprintf("Failed to write response"), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to write response"), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+
+	api.metrics.Emit(stdout.Info("Response Delivered").WithFields(metrics.Fields{
+		"url":    r.URL.String(),
+		"status": http.StatusOK,
+	}))
 }
 
 //================================================================================================

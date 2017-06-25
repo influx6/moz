@@ -56,7 +56,7 @@ func TestGetAllIgnitor(t *testing.T) {
 	}
 	tests.Passed("Should have successfully saved Ignitor record.")
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("api/%s/ignitors", version), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors", version), nil)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -67,7 +67,7 @@ func TestGetAllIgnitor(t *testing.T) {
 	tree.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
-		tests.Failed("Should have received status code %d from response.", res.Code)
+		tests.Failed("Should have received status code %d from response but got %d.", http.StatusOK, res.Code)
 	}
 	tests.Passed("Should have received status code %d from response.", http.StatusOK)
 
@@ -102,7 +102,7 @@ func TestGetIgnitor(t *testing.T) {
 	}
 	tests.Passed("Should have successfully saved Ignitor record.")
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -113,7 +113,7 @@ func TestGetIgnitor(t *testing.T) {
 	tree.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
-		tests.Failed("Should have received status code %d from response.", res.Code)
+		tests.Failed("Should have received status code %d from response but got %d.", http.StatusOK, res.Code)
 	}
 	tests.Passed("Should have received status code %d from response.", http.StatusOK)
 
@@ -137,7 +137,7 @@ func TestIgnitorCreate(t *testing.T) {
 	var body bytes.Buffer
 	body.WriteString(ignitorCreateJSON)
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("api/%s/ignitors", version), &body)
+	req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -148,7 +148,7 @@ func TestIgnitorCreate(t *testing.T) {
 	tree.ServeHTTP(res, req)
 
 	if res.Code != http.StatusCreated {
-		tests.Failed("Should have received status code %d from response.", res.Code)
+		tests.Failed("Should have received status code %d from response but got %d.", http.StatusCreated, res.Code)
 	}
 	tests.Passed("Should have received status code %d from response.", http.StatusCreated)
 
@@ -172,7 +172,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	var body bytes.Buffer
 	body.WriteString(ignitorCreateJSON)
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("api/%s/ignitors", version), &body)
+	req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -183,7 +183,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	tree.ServeHTTP(res, req)
 
 	if res.Code != http.StatusCreated {
-		tests.Failed("Should have received status code %d from response.", res.Code)
+		tests.Failed("Should have received status code %d from response but got %d.", http.StatusCreated, res.Code)
 	}
 	tests.Passed("Should have received status code %d from response.", http.StatusCreated)
 
@@ -198,7 +198,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully loaded JSON.")
 
-	elem.Name = "Debra Flores"
+	elem.Name = "Mrs. Ms. Miss Anne Coleman"
 
 	var bu bytes.Buffer
 
@@ -207,7 +207,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully encoded Ignitor.")
 
-	req, err = http.NewRequest("PUT", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), &body)
+	req, err = http.NewRequest("PUT", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), &bu)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -218,7 +218,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	tree.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNoContent {
-		tests.Failed("Should have received status code %d from response.", res.Code)
+		tests.Failed("Should have received status code %d from response but got %d.", http.StatusNoContent, res.Code)
 	}
 	tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }
@@ -248,7 +248,7 @@ func TestIgnitorDelete(t *testing.T) {
 	}
 	tests.Passed("Should have successfully saved Ignitor record.")
 
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -259,7 +259,7 @@ func TestIgnitorDelete(t *testing.T) {
 	tree.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNoContent {
-		tests.Failed("Should have received status code %d from response.", res.Code)
+		tests.Failed("Should have received status code %d from response but got %d.", http.StatusNoContent, res.Code)
 	}
 	tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }

@@ -324,10 +324,10 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(httpJSONGen, true),
-			FileName: "httpjson_test.go",
-			Dir:      "httpapi",
-			// DontOverride: true,
+			Writer:       fmtwriter.New(httpJSONGen, true),
+			FileName:     "httpjson_test.go",
+			Dir:          "httpapi",
+			DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(httpGen, true),

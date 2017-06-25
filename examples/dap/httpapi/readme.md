@@ -31,6 +31,10 @@ JSON content to the HTTP API. This will in turn return a respective status code.
 {
 
 
+    "public_id":	"",
+
+    "name":	"",
+
     "rex":	{
 	
 	
@@ -38,11 +42,7 @@ JSON content to the HTTP API. This will in turn return a respective status code.
 	
 	},
 
-    "rack":	0,
-
-    "public_id":	"",
-
-    "name":	""
+    "rack":	0
 
 }
 ```
@@ -60,8 +60,6 @@ Success: 201
 {
 
 
-    "rack":	0,
-
     "public_id":	"",
 
     "name":	"",
@@ -71,7 +69,9 @@ Success: 201
 	
 	    "url":	""
 	
-	}
+	},
+
+    "rack":	0
 
 }
 ```
@@ -113,10 +113,6 @@ Success: 200
 {
 
 
-    "public_id":	"",
-
-    "name":	"",
-
     "rex":	{
 	
 	
@@ -124,7 +120,11 @@ Success: 200
 	
 	},
 
-    "rack":	0
+    "rack":	0,
+
+    "public_id":	"",
+
+    "name":	""
 
 }
 ```
@@ -164,8 +164,6 @@ Success: 200
 [{
 
 
-    "rack":	0,
-
     "public_id":	"",
 
     "name":	"",
@@ -175,7 +173,9 @@ Success: 200
 	
 	    "url":	""
 	
-	}
+	},
+
+    "rack":	0
 
 }]
 ```

@@ -28,7 +28,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     }
     tests.Passed("Should have successfully saved {{.Struct.Object.Name}} record.")
 
-    req, err := http.NewRequest("GET", fmt.Sprintf("api/%s/ignitors", version), nil)
+    req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors", version), nil)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -39,7 +39,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     tree.ServeHTTP(res, req)
 
     if res.Code != http.StatusOK {
-        tests.Failed("Should have received status code %d from response.", res.Code)
+        tests.Failed("Should have received status code %d from response but got %d.",http.StatusOK, res.Code)
     }
     tests.Passed("Should have received status code %d from response.", http.StatusOK)
 
@@ -74,7 +74,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
     }
     tests.Passed("Should have successfully saved {{.Struct.Object.Name}} record.")
 
-    req, err := http.NewRequest("GET", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), nil)
+    req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -85,7 +85,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
     tree.ServeHTTP(res, req)
 
     if res.Code != http.StatusOK {
-        tests.Failed("Should have received status code %d from response.", res.Code)
+        tests.Failed("Should have received status code %d from response but got %d.",http.StatusOK, res.Code)
     }
     tests.Passed("Should have received status code %d from response.", http.StatusOK)
 
@@ -109,7 +109,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
     var body bytes.Buffer
     body.WriteString({{lower .Struct.Object.Name.Name}}CreateJSON)
     
-    req, err := http.NewRequest("POST", fmt.Sprintf("api/%s/ignitors", version), &body)
+    req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -120,7 +120,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
     tree.ServeHTTP(res, req)
 
     if res.Code != http.StatusCreated {
-        tests.Failed("Should have received status code %d from response.", res.Code)
+        tests.Failed("Should have received status code %d from response but got %d.",http.StatusCreated, res.Code)
     }
     tests.Passed("Should have received status code %d from response.", http.StatusCreated)
 
@@ -144,7 +144,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     var body bytes.Buffer
     body.WriteString({{lower .Struct.Object.Name.Name}}CreateJSON)
     
-    req, err := http.NewRequest("POST", fmt.Sprintf("api/%s/ignitors", version), &body)
+    req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -155,7 +155,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     tree.ServeHTTP(res, req)
 
     if res.Code != http.StatusCreated {
-        tests.Failed("Should have received status code %d from response.", res.Code)
+        tests.Failed("Should have received status code %d from response but got %d.",http.StatusCreated, res.Code)
     }
     tests.Passed("Should have received status code %d from response.", http.StatusCreated)
 
@@ -179,7 +179,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     }
     tests.Passed("Should have successfully encoded {{.Struct.Object.Name}}.")
 
-    req, err = http.NewRequest("PUT", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), &body)
+    req, err = http.NewRequest("PUT", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), &bu)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -190,7 +190,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     tree.ServeHTTP(res, req)
 
     if res.Code != http.StatusNoContent {
-        tests.Failed("Should have received status code %d from response.", res.Code)
+        tests.Failed("Should have received status code %d from response but got %d.",http.StatusNoContent, res.Code)
     }
     tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }
@@ -220,7 +220,7 @@ func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     }
     tests.Passed("Should have successfully saved {{.Struct.Object.Name}} record.")
 
-    req, err := http.NewRequest("DELETE", fmt.Sprintf("api/%s/ignitors/%s", version, elem.PublicID), nil)
+    req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -231,7 +231,7 @@ func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     tree.ServeHTTP(res, req)
 
     if res.Code != http.StatusNoContent {
-        tests.Failed("Should have received status code %d from response.", res.Code)
+        tests.Failed("Should have received status code %d from response but got %d.",http.StatusNoContent, res.Code)
     }
     tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }

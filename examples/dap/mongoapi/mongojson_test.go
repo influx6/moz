@@ -3,10 +3,6 @@ package mongoapi_test
 var ignitorJSON = `{
 
 
-    "public_id":	"",
-
-    "name":	"",
-
     "rex":	{
 	
 	
@@ -14,7 +10,11 @@ var ignitorJSON = `{
 	
 	},
 
-    "rack":	0
+    "rack":	0,
+
+    "public_id":	"",
+
+    "name":	""
 
 }`
 
@@ -39,8 +39,6 @@ var ignitorCreateJSON = `{
 var ignitorUpdateJSON = `{
 
 
-    "rack":	0,
-
     "public_id":	"",
 
     "name":	"",
@@ -50,7 +48,9 @@ var ignitorUpdateJSON = `{
 	
 	    "url":	""
 	
-	}
+	},
+
+    "rack":	0
 
 }`
 

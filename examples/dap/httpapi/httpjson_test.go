@@ -9,54 +9,54 @@ import (
 var ignitorJSON = `{
 
 
-    "public_id":	"",
+    "public_id":	"4334343-343432-23232-332322",
 
-    "name":	"",
+    "name":	"Bob Crelly",
 
     "rex":	{
 	
 	
-	    "url":	""
+	    "url":	"http://github.com/wapa/api"
 	
 	},
 
-    "rack":	0
+    "rack":	10
 
 }`
 
 var ignitorCreateJSON = `{
 
 
-    "public_id":	"",
+    "public_id":	"4334343-343432-23232-332322",
 
-    "name":	"",
+    "name":	"Bob Crelly",
 
     "rex":	{
 	
 	
-	    "url":	""
+	    "url":	"http://github.com/wapa/api"
 	
 	},
 
-    "rack":	0
+    "rack":	30
 
 }`
 
 var ignitorUpdateJSON = `{
 
 
-    "public_id":	"",
+    "public_id":	"4334343-343432-23232-332322",
 
-    "name":	"",
+    "name":	"Bob Crelly",
 
     "rex":	{
 	
 	
-	    "url":	""
+	    "url":	"http://github.com/wapa/api"
 	
 	},
 
-    "rack":	0
+    "rack":	40
 
 }`
 
