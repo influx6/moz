@@ -298,18 +298,12 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 		),
 	)
 
-	return []gen.WriteDirective{
+	writers := []gen.WriteDirective{
 		{
 			Writer:   httpReadmeGen,
 			FileName: "readme.md",
 			Dir:      "httpapi",
 			// DontOverride: true,
-		},
-		{
-			Writer:       fmtwriter.New(httpMockHelperGen, true),
-			FileName:     "httpapi_mock_cu_test.go",
-			Dir:          "httpapi",
-			DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(httpMockGen, true),
@@ -335,5 +329,16 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			Dir:      "httpapi",
 			// DontOverride: true,
 		},
-	}, nil
+	}
+
+	if !isSameCreate || !isSameUpdate {
+		writers = append(writers, gen.WriteDirective{
+			Writer:       fmtwriter.New(httpMockHelperGen, true),
+			FileName:     "httpapi_mock_cu_test.go",
+			Dir:          "httpapi",
+			DontOverride: true,
+		})
+	}
+
+	return writers, nil
 }

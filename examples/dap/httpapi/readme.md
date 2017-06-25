@@ -60,8 +60,6 @@ Success: 201
 {
 
 
-    "public_id":	"",
-
     "name":	"",
 
     "rex":	{
@@ -71,7 +69,9 @@ Success: 201
 	
 	},
 
-    "rack":	0
+    "rack":	0,
+
+    "public_id":	""
 
 }
 ```
@@ -113,6 +113,10 @@ Success: 200
 {
 
 
+    "public_id":	"",
+
+    "name":	"",
+
     "rex":	{
 	
 	
@@ -120,11 +124,7 @@ Success: 200
 	
 	},
 
-    "rack":	0,
-
-    "public_id":	"",
-
-    "name":	""
+    "rack":	0
 
 }
 ```
@@ -205,8 +205,6 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
 {
 
 
-    "public_id":	"",
-
     "name":	"",
 
     "rex":	{
@@ -216,7 +214,9 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
 	
 	},
 
-    "rack":	0
+    "rack":	0,
+
+    "public_id":	""
 
 }
 ```
