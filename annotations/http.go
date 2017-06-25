@@ -108,7 +108,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("http-api.tml")),
+					string(templates.Must("httpapi/http-api.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
@@ -132,7 +132,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 	httpReadmeGen := gen.Block(
 		gen.Block(
 			gen.SourceTextWith(
-				string(templates.Must("http-api-readme.tml")),
+				string(templates.Must("httpapi/http-api-readme.tml")),
 				template.FuncMap{
 					"map":       ast.MapOutFields,
 					"mapValues": ast.MapOutValues,
@@ -157,7 +157,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			gen.Name("httpapi_test"),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("http-api-json.tml")),
+					string(templates.Must("httpapi/http-api-json.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
@@ -198,7 +198,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("http-api-test.tml")),
+					string(templates.Must("httpapi/http-api-test.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
@@ -235,7 +235,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("http-api-mock.tml")),
+					string(templates.Must("httpapi/http-api-mock.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
@@ -274,7 +274,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("http-api-mock-functions.tml")),
+					string(templates.Must("httpapi/http-api-mock-functions.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,

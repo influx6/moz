@@ -45,6 +45,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 		gen.Package(
 			gen.Name("mongoapi_test"),
 			gen.Imports(
+				gen.Import("os", ""),
 				gen.Import("testing", ""),
 				gen.Import("encoding/json", ""),
 				gen.Import("gopkg.in/mgo.v2", "mgo"),
@@ -59,7 +60,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("mongo-api-test.tml")),
+					string(templates.Must("mongoapi/mongo-api-test.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
@@ -82,7 +83,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 	mongoReadmeGen := gen.Block(
 		gen.Block(
 			gen.SourceText(
-				string(templates.Must("mongo-api-readme.tml")),
+				string(templates.Must("mongoapi/mongo-api-readme.tml")),
 				struct {
 					Struct       ast.StructDeclaration
 					CreateAction ast.StructDeclaration
@@ -99,9 +100,13 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 	mongoJSONGen := gen.Block(
 		gen.Package(
 			gen.Name("mongoapi_test"),
+			gen.Imports(
+				gen.Import("encoding/json", ""),
+				gen.Import(str.Path, ""),
+			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("mongo-api-json.tml")),
+					string(templates.Must("mongoapi/mongo-api-json.tml")),
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
@@ -139,7 +144,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 			),
 			gen.Block(
 				gen.SourceTextWith(
-					string(templates.Must("mongo-api.tml")),
+					string(templates.Must("mongoapi/mongo-api.tml")),
 					template.FuncMap{
 						"map":     ast.MapOutFields,
 						"hasFunc": ast.HasFunctionFor(pkg),

@@ -1,8 +1,10 @@
 package mongoapi_test
 
 import (
-	"testing"
+	"os"
 	"time"
+
+	"testing"
 
 	mgo "gopkg.in/mgo.v2"
 
@@ -24,11 +26,11 @@ var (
 
 	config = mongo.Config{
 		Mode:     mgo.Monotonic,
-		User:     "<USERNAME>",
-		DB:       "DATABASE_NAME",
-		Password: "<PASSWORD>",
-		Host:     "MONGO_DB_HOST_ADDR",
-		AuthDB:   "AUTH_DATABASE_NAME",
+		DB:       os.Getenv("dap_MONGO_DB"),
+		Host:     os.Getenv("dap_MONGO_HOST"),
+		User:     os.Getenv("dap_MONGO_USER"),
+		AuthDB:   os.Getenv("dap_MONGO_AUTHDB"),
+		Password: os.Getenv("dap_MONGO_PASSWORD"),
 	}
 
 	testCol = "ignitor_test_collection"
@@ -41,7 +43,7 @@ func TestGetIgnitor(t *testing.T) {
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
-	elem, err := loadJSONFor(IgnitorCreateJSON)
+	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
 		tests.Failed("Successfully loaded JSON for Ignitor record: %+q.", err)
 	}
@@ -73,7 +75,7 @@ func TestGetAllIgnitor(t *testing.T) {
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
-	elem, err := loadJSONFor(IgnitorCreateJSON)
+	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
 		tests.Failed("Successfully loaded JSON for Ignitor record: %+q.", err)
 	}
@@ -105,7 +107,7 @@ func TestIgnitorCreate(t *testing.T) {
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
-	elem, err := loadJSONFor(IgnitorCreateJSON)
+	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
 		tests.Failed("Successfully loaded JSON for Ignitor record: %+q.", err)
 	}
@@ -126,7 +128,7 @@ func TestIgnitorUpdate(t *testing.T) {
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
-	elem, err := loadJSONFor(IgnitorCreateJSON)
+	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
 		tests.Failed("Successfully loaded JSON for Ignitor record: %+q.", err)
 	}
@@ -141,7 +143,7 @@ func TestIgnitorUpdate(t *testing.T) {
 
 	elem.Name = "Bob Marley"
 
-	if err := api.Update(ctx, elem); err != nil {
+	if err := api.Update(ctx, elem.PublicID, elem); err != nil {
 		tests.Failed("Successfully updated record for Ignitor into db: %+q.", err)
 	}
 	tests.Passed("Successfully updated record for Ignitor into db.")
@@ -165,7 +167,7 @@ func TestIgnitorDelete(t *testing.T) {
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
-	elem, err := loadJSONFor(IgnitorCreateJSON)
+	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
 		tests.Failed("Successfully loaded JSON for Ignitor record: %+q.", err)
 	}

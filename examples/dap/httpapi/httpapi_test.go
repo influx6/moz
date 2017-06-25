@@ -198,7 +198,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully loaded JSON.")
 
-	elem.Name = "Kathy Howell"
+	elem.Name = "Norma Cunningham"
 
 	var bu bytes.Buffer
 

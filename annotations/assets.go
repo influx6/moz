@@ -81,7 +81,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 				gen.Returns(),
 				gen.Block(
 					gen.SourceText(
-						string(templates.Must("assets.tml")),
+						string(templates.Must("assets/assets.tml")),
 						struct {
 							Extensions       []string
 							TargetDir        string

@@ -3,11 +3,11 @@ var (
 
     config = mongo.Config{
         Mode: mgo.Monotonic,
-        User: "<USERNAME>",
-        DB: "DATABASE_NAME",
-        Password: "<PASSWORD>",
-        Host: "MONGO_DB_HOST_ADDR",
-        AuthDB: "AUTH_DATABASE_NAME",
+        DB: os.Getenv("{{.Struct.Package}}_MONGO_DB"),
+        Host: os.Getenv("{{.Struct.Package}}_MONGO_HOST"),
+        User: os.Getenv("{{.Struct.Package}}_MONGO_USER"),
+        AuthDB: os.Getenv("{{.Struct.Package}}_MONGO_AUTHDB"),
+        Password: os.Getenv("{{.Struct.Package}}_MONGO_PASSWORD"),
     }
 
     testCol = "{{lower .Struct.Object.Name.Name}}_test_collection"
@@ -20,7 +20,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
-    elem, err := loadJSONFor({{.Struct.Object.Name}}CreateJSON)
+    elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
         tests.Failed("Successfully loaded JSON for {{.Struct.Object.Name}} record: %+q.", err)
     }
@@ -52,7 +52,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
-    elem, err := loadJSONFor({{.Struct.Object.Name}}CreateJSON)
+    elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
         tests.Failed("Successfully loaded JSON for {{.Struct.Object.Name}} record: %+q.", err)
     }
@@ -84,7 +84,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
-    elem, err := loadJSONFor({{.Struct.Object.Name}}CreateJSON)
+    elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
         tests.Failed("Successfully loaded JSON for {{.Struct.Object.Name}} record: %+q.", err)
     }
@@ -105,7 +105,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
-    elem, err := loadJSONFor({{.Struct.Object.Name}}CreateJSON)
+    elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
         tests.Failed("Successfully loaded JSON for {{.Struct.Object.Name}} record: %+q.", err)
     }
@@ -120,7 +120,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 
     elem.Name = "Bob Marley"
 
-    if err := api.Update(ctx, elem); err != nil {
+    if err := api.Update(ctx, elem.PublicID, elem); err != nil {
         tests.Failed("Successfully updated record for {{.Struct.Object.Name}} into db: %+q.", err)
     }
     tests.Passed("Successfully updated record for {{.Struct.Object.Name}} into db.")
@@ -144,7 +144,7 @@ func Test{{.Struct.Object.Name}}Delete(t *testing.T){
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
-    elem, err := loadJSONFor({{.Struct.Object.Name}}CreateJSON)
+    elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
         tests.Failed("Successfully loaded JSON for {{.Struct.Object.Name}} record: %+q.", err)
     }

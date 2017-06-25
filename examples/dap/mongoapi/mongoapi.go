@@ -54,11 +54,11 @@ type Mongod interface {
 type IgnitorDB struct {
 	col     string
 	db      Mongod
-	metrics metrics.metrics
+	metrics metrics.Metrics
 }
 
 // New returns a new instance of IgnitorDB.
-func New(col string, m metrics.metrics, mo Mongod) *IgnitorDB {
+func New(col string, m metrics.Metrics, mo Mongod) *IgnitorDB {
 	return &IgnitorDB{
 		db:      mo,
 		col:     col,
@@ -70,43 +70,43 @@ func New(col string, m metrics.metrics, mo Mongod) *IgnitorDB {
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given dap.Ignitor struct.
 func (mdb *IgnitorDB) Delete(ctx context.Context, publicID string) error {
-	m := stdout.Info("IgnitorDB.Delete").With("public_id", publicID).Trace("IgnitorDB.Delete")
+	m := stdout.Info("IgnitorDB.Delete").With("publicID", publicID).Trace("IgnitorDB.Delete")
 	defer mdb.metrics.Emit(m.End())
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
-	database, session, err := mdb.DB.New()
+	database, session, err := mdb.db.New()
 	if err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
 	defer session.Close()
 
 	query := bson.M{
-		"public_id": publicID,
+		"publicID": publicID,
 	}
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
 	if err := database.C(mdb.col).Remove(query); err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").
 			With("query", query).
-			With("public_id", public_id).With("error", err.Error()))
+			With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
 	mdb.metrics.Emit(stdout.Notice("Deleted record").
 		With("query", query).
-		With("public_id", public_id).With("error", err.Error()))
+		With("publicID", publicID).With("error", err.Error()))
 
 	return nil
 }
@@ -116,18 +116,18 @@ func (mdb *IgnitorDB) Delete(ctx context.Context, publicID string) error {
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given Ignitor struct.
 func (mdb *IgnitorDB) Create(ctx context.Context, elem dap.Ignitor) error {
-	m := stdout.Info("IgnitorDB.Create").With("public_id", publicID).Trace("IgnitorDB.Create")
+	m := stdout.Info("IgnitorDB.Create").With("publicID", elem.PublicID).Trace("IgnitorDB.Create")
 	defer mdb.metrics.Emit(m.End())
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to create record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to create record").With("publicID", elem.PublicID).With("error", err.Error()))
 		return err
 	}
 
-	database, session, err := mdb.DB.New()
+	database, session, err := mdb.db.New()
 	if err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").With("publicID", elem.PublicID).With("error", err.Error()))
 		return err
 	}
 
@@ -135,20 +135,20 @@ func (mdb *IgnitorDB) Create(ctx context.Context, elem dap.Ignitor) error {
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to create record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to create record").With("publicID", elem.PublicID).With("error", err.Error()))
 		return err
 	}
 
 	if fields, ok := interface{}(elem).(IgnitorBSON); ok {
 		if err := database.C(mdb.col).Insert(fields.BSON()); err != nil {
-			mdb.metrics.Emit(stdout.Errorf("Failed to create Ignitor record").
-				With("query", query).
+			mdb.metrics.Emit(stdout.Error("Failed to create Ignitor record").
+				With("elem", elem).
 				With("error", err.Error()))
 			return err
 		}
 
 		mdb.metrics.Emit(stdout.Notice("Create record").
-			With("query", query).
+			With("elem", elem).
 			With("error", err.Error()))
 
 		return nil
@@ -156,14 +156,14 @@ func (mdb *IgnitorDB) Create(ctx context.Context, elem dap.Ignitor) error {
 
 	if fields, ok := interface{}(elem).(IgnitorFields); ok {
 		if err := database.C(mdb.col).Insert(bson.M(fields.Fields())); err != nil {
-			mdb.metrics.Emit(stdout.Errorf("Failed to create Ignitor record").
-				With("query", query).
+			mdb.metrics.Emit(stdout.Error("Failed to create Ignitor record").
+				With("elem", elem).
 				With("error", err.Error()))
 			return err
 		}
 
 		mdb.metrics.Emit(stdout.Notice("Create record").
-			With("query", query).
+			With("elem", elem).
 			With("error", err.Error()))
 
 		return nil
@@ -187,12 +187,12 @@ func (mdb *IgnitorDB) Create(ctx context.Context, elem dap.Ignitor) error {
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to create record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to create record").With("publicID", elem.PublicID).With("error", err.Error()))
 		return err
 	}
 
 	if err := database.C(mdb.col).Insert(query); err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to create Ignitor record").
+		mdb.metrics.Emit(stdout.Error("Failed to create Ignitor record").
 			With("query", query).
 			With("error", err.Error()))
 		return err
@@ -214,13 +214,13 @@ func (mdb *IgnitorDB) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to retrieve record").With("error", err.Error()))
-		return err
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve record").With("error", err.Error()))
+		return nil, err
 	}
 
-	database, session, err := mdb.DB.New()
+	database, session, err := mdb.db.New()
 	if err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").With("error", err.Error()))
 		return nil, err
 	}
 
@@ -228,18 +228,16 @@ func (mdb *IgnitorDB) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to retrieve record").With("error", err.Error()))
-		return err
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve record").With("error", err.Error()))
+		return nil, err
 	}
 
-	query := bson.M{
-		"public_id": publicID,
-	}
+	query := bson.M{}
 
 	var items []dap.Ignitor
 
 	if err := database.C(mdb.col).Find(query).All(&items); err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to retrieve all records of Ignitor type from db").
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve all records of Ignitor type from db").
 			With("query", query).
 			With("error", err.Error()))
 
@@ -250,63 +248,65 @@ func (mdb *IgnitorDB) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
 
 }
 
-// Get retrieves a record from the db using the public_id and returns the dap.Ignitor type.
+// Get retrieves a record from the db using the publicID and returns the dap.Ignitor type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given Ignitor struct.
 func (mdb *IgnitorDB) Get(ctx context.Context, publicID string) (dap.Ignitor, error) {
-	m := stdout.Info("IgnitorDB.Get").With("public_id", publicID).Trace("IgnitorDB.Get")
+	m := stdout.Info("IgnitorDB.Get").With("publicID", publicID).Trace("IgnitorDB.Get")
 	defer mdb.metrics.Emit(m.End())
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to retrieve record").With("public_id", public_id).With("error", err.Error()))
-		return err
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve record").With("publicID", publicID).With("error", err.Error()))
+		return dap.Ignitor{}, err
 	}
 
-	database, session, err := mdb.DB.New()
+	database, session, err := mdb.db.New()
 	if err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to delete record").With("public_id", public_id).With("error", err.Error()))
-		return err
+		mdb.metrics.Emit(stdout.Error("Failed to delete record").With("publicID", publicID).With("error", err.Error()))
+		return dap.Ignitor{}, err
 	}
 
 	defer session.Close()
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to retrieve record").With("public_id", public_id).With("error", err.Error()))
-		return err
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve record").With("publicID", publicID).With("error", err.Error()))
+		return dap.Ignitor{}, err
 	}
+
+	query := bson.M{"public_id": publicID}
 
 	var item dap.Ignitor
 
-	if err := database.C(mdb.col).Find(query).All(&items); err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to retrieve all records of Ignitor type from db").
+	if err := database.C(mdb.col).Find(query).One(&item); err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve all records of Ignitor type from db").
 			With("query", query).
 			With("error", err.Error()))
 
-		return nil, err
+		return dap.Ignitor{}, err
 	}
 
 	return item, nil
 
 }
 
-// Update uses a record from the db using the public_id and returns the dap.Ignitor type.
+// Update uses a record from the db using the publicID and returns the dap.Ignitor type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given Ignitor struct.
 func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Ignitor) error {
-	m := stdout.Info("IgnitorDB.Update").With("public_id", publicID).Trace("IgnitorDB.Update")
+	m := stdout.Info("IgnitorDB.Update").With("publicID", publicID).Trace("IgnitorDB.Update")
 	defer mdb.metrics.Emit(m.End())
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to update record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to update record").With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
-	database, session, err := mdb.DB.New()
+	database, session, err := mdb.db.New()
 	if err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to update record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to update record").With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
@@ -314,7 +314,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
-		mdb.metrics.Emit(stdout.Errorf("Failed to update record").With("public_id", public_id).With("error", err.Error()))
+		mdb.metrics.Emit(stdout.Error("Failed to update record").With("publicID", publicID).With("error", err.Error()))
 		return err
 	}
 
@@ -322,7 +322,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		query := fields.BSON()
 
 		if err := database.C(mdb.col).Insert(query); err != nil {
-			mdb.metrics.Emit(stdout.Errorf("Failed to update Ignitor record").
+			mdb.metrics.Emit(stdout.Error("Failed to update Ignitor record").
 				With("query", query).
 				With("error", err.Error()))
 
@@ -340,7 +340,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		query := bson.M(fields.Fields())
 
 		if err := database.C(mdb.col).Insert(query); err != nil {
-			mdb.metrics.Emit(stdout.Errorf("Failed to update Ignitor record").
+			mdb.metrics.Emit(stdout.Error("Failed to update Ignitor record").
 				With("query", query).
 				With("error", err.Error()))
 			return err
@@ -353,7 +353,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 		return nil
 	}
 
-	query := bson.M{"public_id": publicID}
+	query := bson.M{"publicID": publicID}
 	queryData := bson.M(map[string]interface{}{
 
 		"hash": elem.Identity.Hash,
@@ -371,7 +371,7 @@ func (mdb *IgnitorDB) Update(ctx context.Context, publicID string, elem dap.Igni
 	})
 
 	if err := database.C(mdb.col).Update(query, queryData); err != nil {
-		mdb.metrics.Emit(stdout.Errorf("Failed to update Ignitor record").
+		mdb.metrics.Emit(stdout.Error("Failed to update Ignitor record").
 			With("query", query).
 			With("error", err.Error()))
 		return err

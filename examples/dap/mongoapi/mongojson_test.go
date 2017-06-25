@@ -1,7 +1,17 @@
 package mongoapi_test
 
+import (
+     "encoding/json"
+
+
+     "github.com/influx6/moz/examples/dap"
+
+)
+
 var ignitorJSON = `{
 
+
+    "public_id":	"",
 
     "name":	"",
 
@@ -12,16 +22,30 @@ var ignitorJSON = `{
 	
 	},
 
-    "rack":	0,
-
-    "public_id":	""
+    "rack":	0
 
 }`
 
 var ignitorCreateJSON = `{
 
 
-    "rack":	0,
+    "public_id":	"",
+
+    "name":	"",
+
+    "rex":	{
+	
+	
+	    "url":	""
+	
+	},
+
+    "rack":	0
+
+}`
+
+var ignitorUpdateJSON = `{
+
 
     "public_id":	"",
 
@@ -32,25 +56,9 @@ var ignitorCreateJSON = `{
 	
 	    "url":	""
 	
-	}
-
-}`
-
-var ignitorUpdateJSON = `{
-
-
-    "rex":	{
-	
-	
-	    "url":	""
-	
 	},
 
-    "rack":	0,
-
-    "public_id":	"",
-
-    "name":	""
+    "rack":	0
 
 }`
 

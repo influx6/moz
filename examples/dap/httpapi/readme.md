@@ -60,8 +60,6 @@ Success: 201
 {
 
 
-    "name":	"",
-
     "rex":	{
 	
 	
@@ -71,7 +69,9 @@ Success: 201
 
     "rack":	0,
 
-    "public_id":	""
+    "public_id":	"",
+
+    "name":	""
 
 }
 ```
@@ -113,8 +113,6 @@ Success: 200
 {
 
 
-    "public_id":	"",
-
     "name":	"",
 
     "rex":	{
@@ -124,7 +122,9 @@ Success: 200
 	
 	},
 
-    "rack":	0
+    "rack":	0,
+
+    "public_id":	""
 
 }
 ```
