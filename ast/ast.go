@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -1082,7 +1083,40 @@ func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (s
 	return bu.String(), nil
 }
 
-// FieldNameFor defines a function to return actual name of field name tag name.
+// FieldByFieldName defines a function to return actual name of field with the given tag name.
+func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaration, error) {
+	fields := Fields(GetFields(item))
+
+	for _, field := range fields {
+		if field.FieldName != fieldName {
+			continue
+		}
+
+		return field, nil
+	}
+
+	return FieldDeclaration{}, fmt.Errorf("Field name %q for Struct %q", fieldName, item.Object.Name.Name)
+}
+
+// FieldFor defines a function to return actual name of field with the given tag name.
+func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDeclaration, error) {
+	fields := Fields(GetFields(item))
+
+	wTags := fields.TagFor(tag)
+
+	// Collect key field names from embedded first
+	for _, tag := range wTags {
+		if tag.Value != tagFieldName {
+			continue
+		}
+
+		return tag.Field, nil
+	}
+
+	return FieldDeclaration{}, fmt.Errorf("Tag value %q not found in tag %q for Struct %q", tagFieldName, tag, item.Object.Name.Name)
+}
+
+// FieldNameFor defines a function to return actual name of field with the given tag name.
 func FieldNameFor(item StructDeclaration, tag string, tagFieldName string) string {
 	fields := Fields(GetFields(item))
 
@@ -1467,6 +1501,10 @@ func DefaultTypeValueString(typeName string) string {
 		return "0.0"
 	case "int", "int32", "int64":
 		return "0"
+	case "map[string]interface{}":
+		return "map[string]interface{}"
+	case "map[string]string":
+		return "map[string]string{}"
 	default:
 		return "nil"
 	}
@@ -1638,4 +1676,33 @@ func (t TagDeclaration) Has(item string) bool {
 	}
 
 	return false
+}
+
+// ToValueString returns the string representation of a basic go core datatype.
+func ToValueString(val interface{}) string {
+	switch bo := val.(type) {
+	case string:
+		return strconv.Quote(bo)
+	case int:
+		return strconv.Itoa(bo)
+	case int64:
+		return strconv.Itoa(int(bo))
+	case rune:
+		return strconv.QuoteRune(bo)
+	case bool:
+		return strconv.FormatBool(bo)
+	case byte:
+		return strconv.QuoteRune(rune(bo))
+	case float64:
+		return strconv.FormatFloat(bo, 'f', 4, 64)
+	case float32:
+		return strconv.FormatFloat(float64(bo), 'f', 4, 64)
+	default:
+		data, err := json.Marshal(val)
+		if err != nil {
+			return err.Error()
+		}
+
+		return string(data)
+	}
 }
