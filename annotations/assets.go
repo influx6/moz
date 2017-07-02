@@ -91,8 +91,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 							TargetDir:  contentFileName,
 							Extensions: extensions,
 							Package:    pkgName,
-							GenerateTemplate: `{{range $key, $value := .Files}}
-								files[{{quote $key}}] = []byte("{{$value}}")
+							GenerateTemplate: `{{range $key, $value := .Files}}files[{{quote $key}}] = []byte("{{$value}}")
 							{{end}}`,
 						},
 					),
