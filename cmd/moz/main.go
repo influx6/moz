@@ -177,7 +177,7 @@ func assetsCLI(c *cli.Context) {
 	}
 
 	genDir := filepath.Join(rootDir, pkgName+".go")
-	if err := utils.WriteFile(events, fmtwriter.New(genFile, true), genDir); err != nil {
+	if err := utils.WriteFile(events, fmtwriter.New(genFile, true, true), genDir); err != nil {
 		events.Emit(stdout.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory: generate.go"))
@@ -185,7 +185,7 @@ func assetsCLI(c *cli.Context) {
 	}
 
 	dir := filepath.Join(rootDir, "generate.go")
-	if err := utils.WriteFile(events, fmtwriter.New(mainFile, true), dir); err != nil {
+	if err := utils.WriteFile(events, fmtwriter.New(mainFile, true, true), dir); err != nil {
 		events.Emit(stdout.Error(err).With("dir", rootCMD).
 			With("targetDir", rootDir).
 			With("message", "Failed to create new package directory: generate.go"))

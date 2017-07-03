@@ -17,6 +17,8 @@ import (
 	"strings"
 	"sync"
 
+	"runtime"
+
 	"github.com/icrowley/fake"
 	"github.com/influx6/faux/metrics"
 	"github.com/influx6/faux/metrics/sentries/stdout"
@@ -249,6 +251,12 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
 				packageDeclr.Path = filepath.Dir(relPath)
 				packageDeclr.File = filepath.Base(relPath)
+			}
+
+			if runtime.GOOS == "windows" {
+				packageDeclr.Path = filepath.ToSlash(packageDeclr.Path)
+				packageDeclr.File = filepath.ToSlash(packageDeclr.File)
+				packageDeclr.FilePath = filepath.ToSlash(packageDeclr.FilePath)
 			}
 
 			for _, comment := range file.Doc.List {

@@ -1,4 +1,12 @@
-package httpapi_test
+package sqlapi_test
+
+import (
+     "encoding/json"
+
+
+     "github.com/influx6/moz/examples/dap"
+
+)
 
 var ignitorJSON = `{
 
@@ -39,6 +47,8 @@ var ignitorCreateJSON = `{
 var ignitorUpdateJSON = `{
 
 
+    "rack":	0,
+
     "public_id":	"",
 
     "name":	"",
@@ -48,9 +58,7 @@ var ignitorUpdateJSON = `{
 	
 	    "url":	""
 	
-	},
-
-    "rack":	0
+	}
 
 }`
 
@@ -64,3 +72,4 @@ func loadJSONFor(content string) (dap.Ignitor, error) {
 
 	return elem, nil
 }
+

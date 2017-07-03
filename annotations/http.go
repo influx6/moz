@@ -306,25 +306,25 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(httpMockGen, true),
+			Writer:   fmtwriter.New(httpMockGen, true, true),
 			FileName: "httpapi_mock_test.go",
 			Dir:      "httpapi",
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(httpTestGen, true),
+			Writer:   fmtwriter.New(httpTestGen, true, true),
 			FileName: "httpapi_test.go",
 			Dir:      "httpapi",
 			// DontOverride: true,
 		},
 		{
-			Writer:       fmtwriter.New(httpJSONGen, true),
+			Writer:       fmtwriter.New(httpJSONGen, true, true),
 			FileName:     "httpjson_test.go",
 			Dir:          "httpapi",
 			DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(httpGen, true),
+			Writer:   fmtwriter.New(httpGen, true, true),
 			FileName: "httpapi.go",
 			Dir:      "httpapi",
 			// DontOverride: true,
@@ -333,7 +333,7 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 
 	if !isSameCreate || !isSameUpdate {
 		writers = append(writers, gen.WriteDirective{
-			Writer:       fmtwriter.New(httpMockHelperGen, true),
+			Writer:       fmtwriter.New(httpMockHelperGen, true, true),
 			FileName:     "httpapi_mock_cu_test.go",
 			Dir:          "httpapi",
 			DontOverride: true,

@@ -177,13 +177,13 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclar
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(mongoTestGen, true),
+			Writer:   fmtwriter.New(mongoTestGen, true, true),
 			FileName: "mongoapi_test.go",
 			Dir:      "mongoapi",
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(mongoGen, true),
+			Writer:   fmtwriter.New(mongoGen, true, true),
 			FileName: "mongoapi.go",
 			Dir:      "mongoapi",
 			// DontOverride: true,

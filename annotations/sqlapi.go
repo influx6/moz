@@ -178,13 +178,13 @@ func SQLAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclarat
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(sqlTestGen, true),
+			Writer:   fmtwriter.New(sqlTestGen, true, true),
 			FileName: "sqlapi_test.go",
 			Dir:      "sqlapi",
 			// DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(sqlGen, true),
+			Writer:   fmtwriter.New(sqlGen, true, true),
 			FileName: "sqlapi.go",
 			Dir:      "sqlapi",
 			// DontOverride: true,

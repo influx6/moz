@@ -4,7 +4,7 @@
 package mongoapi
 
 import (
-	"fmt"
+	"encoding/json"
 
 	mgo "gopkg.in/mgo.v2"
 
@@ -123,6 +123,67 @@ func (mdb *IgnitorDB) ensureIndex() error {
 		With("collection", mdb.col))
 
 	return nil
+}
+
+// Count attempts to return the total number of record from the db.
+func (mdb *IgnitorDB) Count(ctx context.Context) (int, error) {
+	m := stdout.Info("IgnitorDB.Count").Trace("IgnitorDB.Count")
+	defer mdb.metrics.Emit(m.End())
+
+	if ctx.IsExpired() {
+		err := fmt.Errorf("Context has expired")
+
+		mdb.metrics.Emit(stdout.Error("Failed to get record count").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+		return -1, err
+	}
+
+	if err := mdb.ensureIndex(); err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to apply index").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+
+		return -1, err
+	}
+
+	database, session, err := mdb.db.New()
+	if err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to get record count").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+
+		return -1, err
+	}
+
+	defer session.Close()
+
+	query := bson.M{}
+
+	if ctx.IsExpired() {
+		err := fmt.Errorf("Context has expired")
+		mdb.metrics.Emit(stdout.Error("Failed to get record count").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+
+		return -1, err
+	}
+
+	total, err := database.C(mdb.col).Find(query).Count()
+	if err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to get record count").
+			With("collection", mdb.col).
+			With("query", query).
+			With("error", err.Error()))
+
+		return -1, err
+	}
+
+	mdb.metrics.Emit(stdout.Notice("Deleted record").
+		With("collection", mdb.col).
+		With("query", query))
+
+	return total, err
 }
 
 // Delete attempts to remove the record from the db using the provided publicID.
@@ -300,12 +361,113 @@ func (mdb *IgnitorDB) Create(ctx context.Context, elem dap.Ignitor) error {
 	return nil
 }
 
+// GetAllPerPage retrieves all records from the db and returns a slice of dap.Ignitor type.
+// Records using this DB must have a public id value, expressed either by a bson or json tag
+// on the given Ignitor struct.
+func (mdb *IgnitorDB) GetAllPerPage(ctx context.Context, order string, orderBy string, page int, responsePerPage int) ([]dap.Ignitor, error) {
+	m := stdout.Info("IgnitorDB.GetAll").Trace("IgnitorDB.GetAll")
+	defer mdb.metrics.Emit(m.End())
+
+	switch strings.ToLower(order) {
+	case "dsc", "desc":
+		orderBy = "-" + orderBy
+	}
+
+	if ctx.IsExpired() {
+		err := fmt.Errorf("Context has expired")
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+		return nil, err
+	}
+
+	if err := mdb.ensureIndex(); err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to apply index").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+		return nil, err
+	}
+
+	if page <= 0 && responsePerPage <= 0 {
+		records, err := mdb.GetAll(table, order, orderBy)
+		return records, len(records), err
+	}
+
+	// Get total number of records.
+	totalRecords, err := mdb.Count(ctx)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	var totalWanted, indexToStart int
+
+	if page <= 1 && responsePerPage > 0 {
+		totalWanted = responsePerPage
+		indexToStart = 0
+	} else {
+		totalWanted = responsePerPage * page
+		indexToStart = totalWanted / 2
+
+		if page > 1 {
+			indexToStart++
+		}
+	}
+
+	mdb.metrics.Emit(stdout.Info("DB:Query:GetAllPerPage").WithFields(metrics.Fields{
+		"starting_index":       indexToStart,
+		"total_records_wanted": totalWanted,
+		"order":                order,
+		"orderBy":              orderBy,
+		"page":                 page,
+		"responsePerPage":      responsePerPage,
+	}))
+
+	database, session, err := mdb.db.New()
+	if err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to create session").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+		return nil, err
+	}
+
+	defer session.Close()
+
+	if ctx.IsExpired() {
+		err := fmt.Errorf("Context has expired")
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
+			With("collection", mdb.col).
+			With("error", err.Error()))
+		return nil, err
+	}
+
+	query := bson.M{}
+
+	var items []dap.Ignitor
+
+	if err := database.C(mdb.col).Find(query).Skip(indexToStart).Limit(totalWanted).Sort(orderBy).All(&items); err != nil {
+		mdb.metrics.Emit(stdout.Error("Failed to retrieve all records of Ignitor type from db").
+			With("collection", mdb.col).
+			With("query", query).
+			With("error", err.Error()))
+
+		return nil, err
+	}
+
+	return items, nil
+
+}
+
 // GetAll retrieves all records from the db and returns a slice of dap.Ignitor type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given Ignitor struct.
-func (mdb *IgnitorDB) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
+func (mdb *IgnitorDB) GetAll(ctx context.Context, order, orderBy string) ([]dap.Ignitor, error) {
 	m := stdout.Info("IgnitorDB.GetAll").Trace("IgnitorDB.GetAll")
 	defer mdb.metrics.Emit(m.End())
+
+	switch strings.ToLower(order) {
+	case "dsc", "desc":
+		orderBy = "-" + orderBy
+	}
 
 	if ctx.IsExpired() {
 		err := fmt.Errorf("Context has expired")
@@ -344,7 +506,7 @@ func (mdb *IgnitorDB) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
 
 	var items []dap.Ignitor
 
-	if err := database.C(mdb.col).Find(query).All(&items); err != nil {
+	if err := database.C(mdb.col).Find(query).Sort(orderBy).All(&items); err != nil {
 		mdb.metrics.Emit(stdout.Error("Failed to retrieve all records of Ignitor type from db").
 			With("collection", mdb.col).
 			With("query", query).

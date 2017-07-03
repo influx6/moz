@@ -48,7 +48,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 	)
 
 	directives = append(directives, gen.WriteDirective{
-		Writer:   fmtwriter.New(genFile, true),
+		Writer:   fmtwriter.New(genFile, true, true),
 		FileName: fmt.Sprintf("%s.go", pkgName),
 		Dir:      pkgName,
 	})
@@ -101,7 +101,7 @@ func AssetsAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecl
 	)
 
 	directives = append(directives, gen.WriteDirective{
-		Writer:   fmtwriter.New(mainFile, true),
+		Writer:   fmtwriter.New(mainFile, true, true),
 		FileName: "generate.go",
 		Dir:      pkgName,
 	})

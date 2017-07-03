@@ -23,17 +23,23 @@ import (
 )
 
 func main() {
-	// go:generate go run generate.go
-
 	events := metrics.New(stdout.Stdout{})
 
-	items, err := vfiles.ParseDir("files", []string{})
+	items, err := vfiles.ParseDir("files", []string{
+
+		".tml",
+	})
 	if err != nil {
 		panic(fmt.Sprintf("Failed to walk directory properly: %+q", err))
 	}
 
 	assetGen := gen.Package(
 		gen.Name("templates"),
+		gen.Imports(
+			gen.Import("fmt", ""),
+		),
+		gen.Text("\n"),
+		gen.Text("\n"),
 		gen.AssignVar(
 			gen.Name("files"),
 			gen.Type("make(map[string][]byte)"),

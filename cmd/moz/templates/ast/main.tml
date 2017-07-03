@@ -1,5 +1,3 @@
-// go:generate go run generate.go
-
 events := metrics.New(stdout.Stdout{})
 
 items, err := vfiles.ParseDir("{{.TargetDir}}", []string{
@@ -15,8 +13,10 @@ if err != nil {
 
 assetGen := gen.Package(
     gen.Name("{{.Package}}"),
+    gen.Imports(
+        gen.Import("fmt", ""),
+    ),
     gen.Text("\n"),
-    gen.Text("//go:generate go run generate.go"),
     gen.Text("\n"),
     gen.AssignVar(
         gen.Name("files"),

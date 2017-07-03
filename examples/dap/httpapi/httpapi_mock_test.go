@@ -2,11 +2,20 @@ package httpapi_test
 
 import (
 	"errors"
-	"fmt"
+
+	"testing"
+
+	"encoding/json"
 
 	"golang.org/x/sync/syncmap"
 
+	"github.com/influx6/faux/tests"
+
+	"github.com/influx6/faux/metrics"
+
 	"github.com/influx6/faux/context"
+
+	"github.com/influx6/faux/metrics/sentries/stdout"
 
 	"github.com/influx6/moz/examples/dap"
 )

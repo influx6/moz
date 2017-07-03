@@ -23,6 +23,7 @@ type IgnitionDescription string
 // Ignitor defines a struct which is used to ignite the package.
 //@httpapi
 //@mongoapi
+//@sqlapi
 //@associates(@mongoapi, New, Ignitor)
 //@associates(@httpapi, New, Ignitor)
 //@associates(@mongoapi, Update, Ignitor)

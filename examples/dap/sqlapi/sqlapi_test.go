@@ -1,4 +1,4 @@
-package mongoapi_test
+package sqlapi_test
 
 import (
 	"os"
@@ -7,44 +7,41 @@ import (
 
 	"encoding/json"
 
-	mgo "gopkg.in/mgo.v2"
-
-	"gopkg.in/mgo.v2/bson"
+	"github.com/influx6/faux/db"
 
 	"github.com/influx6/faux/tests"
+
+	"github.com/influx6/faux/db/sql"
 
 	"github.com/influx6/faux/metrics"
 
 	"github.com/influx6/faux/context"
 
-	"github.com/influx6/faux/db/mongo"
-
 	"github.com/influx6/faux/metrics/sentries/stdout"
 
 	"github.com/influx6/moz/examples/dap"
 
-	"github.com/influx6/moz/examples/dap/mongoapi"
+	"github.com/influx6/moz/examples/dap/sqlapi"
 )
 
 var (
 	events = metrics.New(stdout.Stdout{})
 
-	config = mongo.Config{
-		Mode:     mgo.Monotonic,
-		DB:       os.Getenv("dap_MONGO_DB"),
-		Host:     os.Getenv("dap_MONGO_HOST"),
-		User:     os.Getenv("dap_MONGO_USER"),
-		AuthDB:   os.Getenv("dap_MONGO_AUTHDB"),
-		Password: os.Getenv("dap_MONGO_PASSWORD"),
+	config = sql.Config{
+		DB:       os.Getenv("dap_SQL_DB"),
+		Host:     os.Getenv("dap_SQL_HOST"),
+		User:     os.Getenv("dap_SQL_USER"),
+		AuthDB:   os.Getenv("dap_SQL_AUTHDB"),
+		Password: os.Getenv("dap_SQL_PASSWORD"),
 	}
 
 	testCol = "ignitor_test_collection"
 )
 
 // TestGetIgnitor validates the retrieval of a Ignitor
-// record from a mongodb.
+// record from a sqldb.
 func TestGetIgnitor(t *testing.T) {
-	api := mongoapi.New(testCol, events, mongo.New(config))
+	api := sqlapi.New(testCol, events, sql.New(config))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -74,9 +71,9 @@ func TestGetIgnitor(t *testing.T) {
 }
 
 // TestGetAllIgnitor validates the retrieval of all Ignitor
-// record from a mongodb.
+// record from a sqldb.
 func TestGetAllIgnitor(t *testing.T) {
-	api := mongoapi.New(testCol, events, mongo.New(config))
+	api := sqlapi.New(testCol, events, sql.New(config))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -106,9 +103,9 @@ func TestGetAllIgnitor(t *testing.T) {
 }
 
 // TestIgnitorCreate validates the creation of a Ignitor
-// record with a mongodb.
+// record with a sqldb.
 func TestIgnitorCreate(t *testing.T) {
-	api := mongoapi.New(testCol, events, mongo.New(config))
+	api := sqlapi.New(testCol, events, sql.New(config))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -127,9 +124,9 @@ func TestIgnitorCreate(t *testing.T) {
 }
 
 // TestIgnitorUpdate validates the update of a Ignitor
-// record with a mongodb.
+// record with a sqldb.
 func TestIgnitorUpdate(t *testing.T) {
-	api := mongoapi.New(testCol, events, mongo.New(config))
+	api := sqlapi.New(testCol, events, sql.New(config))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -166,9 +163,9 @@ func TestIgnitorUpdate(t *testing.T) {
 }
 
 // TestIgnitorDelete validates the removal of a Ignitor
-// record from a mongodb.
+// record from a sqldb.
 func TestIgnitorDelete(t *testing.T) {
-	api := mongoapi.New(testCol, events, mongo.New(config))
+	api := sqlapi.New(testCol, events, sql.New(config))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
