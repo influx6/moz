@@ -5,6 +5,7 @@ package httpapi
 
 import (
 	"fmt"
+	"strconv"
 
 	"net/http"
 
@@ -85,10 +86,19 @@ func HTTPParams(fn HTTPContextHandler) http.HandlerFunc {
 // the given CRUD request for the Unconvertible Type type. This is provided by the user.
 type APIOperator interface {
 	Delete(context.Context, string) error
-	GetAll(context.Context) ([]dap.Ignitor, error)
 	Get(context.Context, string) (dap.Ignitor, error)
 	Update(context.Context, string, dap.Ignitor) error
 	Create(context.Context, dap.Ignitor) (dap.Ignitor, error)
+	GetAll(context.Context, string, string, int, int) ([]dap.Ignitor, int, error)
+}
+
+// IgnitorRecords defines a type to represent the response given to a request for
+// all records of the type dap.Ignitor.
+type IgnitorRecords struct {
+	Page            int           `json:"page"`
+	ResponsePerPage int           `json:"responsePerPage"`
+	TotalRecords    int           `json:"total_records"`
+	Records         []dap.Ignitor `json:"records"`
 }
 
 //================================================================================================
@@ -372,7 +382,74 @@ func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r *http.R
 		"url": r.URL.String(),
 	}))
 
-	requested, err := api.operator.GetAll(ctx)
+	publicIDVal, ok := ctx.Get("public_id")
+	if !ok {
+		api.metrics.Emit(stdout.Error("No public_id provided in params").WithFields(metrics.Fields{
+			"url": r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Sprintf("No public_id provided in params"), http.StatusBadRequest)
+		return
+	}
+
+	publicID, ok := publicIDVal.(string)
+	if !ok {
+		api.metrics.Emit(stdout.Error("public_id param is not a string").WithFields(metrics.Fields{
+			"url": r.URL.String(),
+		}))
+
+		http.Error(w, fmt.Sprintf("public_id param is not a string"), http.StatusBadRequest)
+		return
+	}
+
+	var order, orderBy string
+
+	if od, ok := ctx.Get("order"); ok {
+		if ordr, ok := od.(string); ok {
+			order = ordr
+		} else {
+			order = "asc"
+		}
+	}
+
+	if od, ok := ctx.Get("orderBy"); ok {
+		if ordr, ok := od.(string); ok {
+			orderBy = ordr
+		} else {
+			orderBy = "asc"
+		}
+	}
+
+	var err error
+	var pageNo, responsePerPage int
+
+	if rpp, ok := ctx.Get("responsePerPage"); ok {
+		responsePerPage, err = strconv.Atoi(rpp.(string))
+		if err != nil {
+			api.metrics.Emit(stdout.Error("Failed to retrieve responserPerPage number details").WithFields(metrics.Fields{
+				"error":     err,
+				"public_id": publicID,
+				"url":       r.URL.String(),
+			}))
+		}
+	} else {
+		responsePerPage = -1
+	}
+
+	if pg, ok := ctx.Get("page"); ok {
+		pageNo, err = strconv.Atoi(pg.(string))
+		if err != nil {
+			api.metrics.Emit(stdout.Error("Failed to retrieve page number details").WithFields(metrics.Fields{
+				"error":     err,
+				"public_id": publicID,
+				"url":       r.URL.String(),
+			}))
+		}
+	} else {
+		pageNo = -1
+	}
+
+	requested, total, err := api.operator.GetAll(ctx, order, orderBy, pageNo, responsePerPage)
 	if err != nil {
 		api.metrics.Emit(stdout.Error("Failed to get all dap.Ignitor record").WithFields(metrics.Fields{
 			"error": err,
@@ -383,7 +460,12 @@ func (api *HTTPApi) GetAll(ctx context.Context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(requested); err != nil {
+	if err := json.NewEncoder(w).Encode(IgnitorRecords{
+		Page:            pageNo,
+		Records:         requested,
+		TotalRecords:    total,
+		ResponsePerPage: responsePerPage,
+	}); err != nil {
 		api.metrics.Emit(stdout.Error("Failed to get serialized dap.Ignitor record to response writer").WithFields(metrics.Fields{
 			"error": err,
 			"url":   r.URL.String(),

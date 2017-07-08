@@ -88,7 +88,39 @@ func TestGetAllIgnitor(t *testing.T) {
 	}
 	tests.Passed("Successfully added record for Ignitor into db.")
 
-	records, err := api.GetAll(ctx)
+	records, _, err := api.GetAllPerPage(ctx, "asc", "public_id", -1, -1)
+	if err != nil {
+		tests.Failed("Successfully retrieved all records for Ignitor from db: %+q.", err)
+	}
+	tests.Passed("Successfully retrieved all records for Ignitor from db.")
+
+	if len(records) == 0 {
+		tests.Failed("Successfully retrieved atleast 1 record for Ignitor from db.")
+	}
+	tests.Passed("Successfully retrieved atleast 1 record for Ignitor from db.")
+}
+
+// TestGetAllIgnitorOrderBy validates the retrieval of all Ignitor
+// record from a mongodb.
+func TestGetAllIgnitor(t *testing.T) {
+	api := mongoapi.New(testCol, events, mongo.New(config))
+
+	ctx := context.New().WithDeadline(10*time.Second, false)
+
+	elem, err := loadJSONFor(ignitorCreateJSON)
+	if err != nil {
+		tests.Failed("Successfully loaded JSON for Ignitor record: %+q.", err)
+	}
+	tests.Passed("Successfully loaded JSON for Ignitor record")
+
+	defer api.Delete(ctx, elem.PublicID)
+
+	if err := api.Create(ctx, elem); err != nil {
+		tests.Failed("Successfully added record for Ignitor into db: %+q.", err)
+	}
+	tests.Passed("Successfully added record for Ignitor into db.")
+
+	records, err := api.GetAllByOrder(ctx, "asc", "public_id")
 	if err != nil {
 		tests.Failed("Successfully retrieved all records for Ignitor from db: %+q.", err)
 	}

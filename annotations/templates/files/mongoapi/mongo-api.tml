@@ -331,7 +331,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 // GetAllPerPage retrieves all records from the db and returns a slice of {{.Struct.Package}}.{{.Struct.Object.Name}} type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag 
 // on the given {{.Struct.Object.Name}} struct.
-func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order string, orderBy string, page int, responsePerPage int)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
+func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order string, orderBy string, page int, responsePerPage int)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}},  int, error) {
     m := stdout.Info("{{.Struct.Object.Name}}DB.GetAll").Trace("{{.Struct.Object.Name}}DB.GetAll")
     defer mdb.metrics.Emit(m.End())
 
@@ -345,18 +345,18 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
         With("collection", mdb.col).
         With("error", err.Error()))
-        return nil, err
+        return nil, -1, err
     }
 
     if err := mdb.ensureIndex(); err != nil {
         mdb.metrics.Emit(stdout.Error("Failed to apply index").
         With("collection", mdb.col).
         With("error", err.Error()))
-        return nil, err
+        return nil, -1, err
     }
 
 	if page <= 0 && responsePerPage <= 0 {
-		records, err := mdb.GetAll(table, order, orderBy)
+		records, err := mdb.GetAllByOrder(ctx, order, orderBy)
 		return records, len(records), err
 	}
 
@@ -394,7 +394,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         mdb.metrics.Emit(stdout.Error("Failed to create session").
         With("collection", mdb.col).
         With("error", err.Error()))
-        return nil, err
+        return nil, -1, err
     }
 
     defer session.Close()
@@ -404,7 +404,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
         With("collection", mdb.col).
         With("error", err.Error()))
-        return nil, err
+        return nil, -1, err
     }
 
     query := bson.M{}
@@ -419,7 +419,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
             With("query", query).
             With("error", err.Error()))
 
-            return nil, err
+            return nil, -1, err
         }
 
         var ritems []{{.Struct.Package}}.{{.Struct.Object.Name}}
@@ -444,7 +444,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
             With("query", query).
             With("error", err.Error()))
 
-            return nil, err
+            return nil, -1, err
         }
 
         var ritems []{{.Struct.Package}}.{{.Struct.Object.Name}}
@@ -460,7 +460,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
                 With("query", query).
                 With("error", err.Error()))
 
-                return nil, err
+                return nil, -1, err
             }
 
             ritems = append(ritems, elem)
@@ -477,18 +477,18 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
             With("query", query).
             With("error", err.Error()))
 
-            return nil, err
+            return nil, -1, err
         }
 
-        return items, nil
+        return items, totalRecords, nil
     {{ end }}
 }
 
-// GetAll retrieves all records from the db and returns a slice of {{.Struct.Package}}.{{.Struct.Object.Name}} type.
+// GetAllByOrder retrieves all records from the db and returns a slice of {{.Struct.Package}}.{{.Struct.Object.Name}} type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag 
 // on the given {{.Struct.Object.Name}} struct.
-func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order, orderBy string)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.GetAll").Trace("{{.Struct.Object.Name}}DB.GetAll")
+func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, orderBy string)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
+    m := stdout.Info("{{.Struct.Object.Name}}DB.GetAllByOrder").Trace("{{.Struct.Object.Name}}DB.GetAllByOrder")
     defer mdb.metrics.Emit(m.End())
 
 	switch strings.ToLower(order) {
@@ -498,6 +498,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order, orderBy
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
+
         mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
         With("collection", mdb.col).
         With("error", err.Error()))
@@ -511,7 +512,6 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order, orderBy
         return nil, err
     }
 
-    
     database, session, err := mdb.db.New()
     if err != nil {
         mdb.metrics.Emit(stdout.Error("Failed to create session").
@@ -524,6 +524,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order, orderBy
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
+
         mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
         With("collection", mdb.col).
         With("error", err.Error()))
@@ -533,7 +534,6 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order, orderBy
     query := bson.M{}
 
     {{ if ( hasFunc .Struct "Consume"  ) }}
-
         var items []map[string]interface{}
 
         if err := database.C(mdb.col).Find(query).Sort(orderBy).All(&items); err != nil {
@@ -591,7 +591,6 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order, orderBy
 
         return ritems, nil
     {{ else }}
-
         var items []{{.Struct.Package}}.{{.Struct.Object.Name}}
 
         if err := database.C(mdb.col).Find(query).Sort(orderBy).All(&items); err != nil {

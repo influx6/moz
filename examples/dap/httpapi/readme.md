@@ -60,18 +60,18 @@ Success: 201
 {
 
 
-    "rack":	0,
-
-    "public_id":	"",
-
-    "name":	"",
-
     "rex":	{
 	
 	
 	    "url":	""
 	
-	}
+	},
+
+    "rack":	0,
+
+    "public_id":	"",
+
+    "name":	""
 
 }
 ```
