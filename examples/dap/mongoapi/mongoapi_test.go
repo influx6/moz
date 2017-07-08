@@ -2,14 +2,11 @@ package mongoapi_test
 
 import (
 	"os"
+	"time"
 
 	"testing"
 
-	"encoding/json"
-
 	mgo "gopkg.in/mgo.v2"
-
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/influx6/faux/tests"
 
@@ -20,8 +17,6 @@ import (
 	"github.com/influx6/faux/db/mongo"
 
 	"github.com/influx6/faux/metrics/sentries/stdout"
-
-	"github.com/influx6/moz/examples/dap"
 
 	"github.com/influx6/moz/examples/dap/mongoapi"
 )

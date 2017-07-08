@@ -37,6 +37,23 @@ var (
 	annotation = regexp.MustCompile("@(\\w+)(\\(.+\\))?")
 	spaces     = regexp.MustCompile(`/s+`)
 	itag       = regexp.MustCompile(`((\w+):"(\w+|[\w,?\s+\w]+)")`)
+
+	ASTTemplatFuncs = map[string]interface{}{
+		"getTag":            GetTag,
+		"fieldFor":          FieldFor,
+		"getFields":         GetFields,
+		"fieldNameFor":      FieldNameFor,
+		"mapoutFields":      MapOutFields,
+		"mapoutValues":      MapOutValues,
+		"fieldByName":       FieldByFieldName,
+		"randomValue":       RandomFieldAssign,
+		"fieldsJSON":        MapOutFieldsToJSON,
+		"stringValueFor":    ToValueString,
+		"defaultValue":      AssignDefaultValue,
+		"randomFieldValue":  RandomFieldValue,
+		"defaultType":       DefaultTypeValueString,
+		"defaultFieldValue": DefaultFieldValue,
+	}
 )
 
 // PackageDir turns a given go source file into a appropriate structure which will be
@@ -1516,6 +1533,11 @@ func DefaultTypeValueString(typeName string) string {
 	default:
 		return "nil"
 	}
+}
+
+// GetTag returns the giving tag associated with the name if it exists.
+func GetTag(f FieldDeclaration, tagName string) (TagDeclaration, error) {
+	return f.GetTag(tagName)
 }
 
 //===========================================================================================================

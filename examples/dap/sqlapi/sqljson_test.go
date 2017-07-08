@@ -47,8 +47,6 @@ var ignitorCreateJSON = `{
 var ignitorUpdateJSON = `{
 
 
-    "rack":	0,
-
     "public_id":	"",
 
     "name":	"",
@@ -58,7 +56,9 @@ var ignitorUpdateJSON = `{
 	
 	    "url":	""
 	
-	}
+	},
+
+    "rack":	0
 
 }`
 

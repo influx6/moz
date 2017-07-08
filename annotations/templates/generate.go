@@ -84,7 +84,7 @@ func main() {
 	)
 
 	dir := filepath.Join(".", "templates.go")
-	if err := utils.WriteFile(events, fmtwriter.New(assetGen, true), dir); err != nil {
+	if err := utils.WriteFile(events, fmtwriter.New(assetGen, true, true), dir); err != nil {
 		events.Emit(stdout.Error(err).With("dir", dir).
 			With("message", "Failed to create new package file: templates.go"))
 		panic(err)

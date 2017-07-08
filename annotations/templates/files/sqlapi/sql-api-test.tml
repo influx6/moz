@@ -2,11 +2,12 @@ var (
     events = metrics.New(stdout.Stdout{})
 
     config = sql.Config{
-        DB: os.Getenv("{{.Struct.Package}}_SQL_DB"),
-        Host: os.Getenv("{{.Struct.Package}}_SQL_HOST"),
+        DBName: os.Getenv("{{.Struct.Package}}_SQL_DB"),
         User: os.Getenv("{{.Struct.Package}}_SQL_USER"),
-        AuthDB: os.Getenv("{{.Struct.Package}}_SQL_AUTHDB"),
-        Password: os.Getenv("{{.Struct.Package}}_SQL_PASSWORD"),
+        DBIP: os.Getenv("{{.Struct.Package}}_SQL_ADDR"),
+        DBPort: os.Getenv("{{.Struct.Package}}_SQL_PORT"),
+        DBDriver: os.Getenv("{{.Struct.Package}}_SQL_Driver"),
+        UserPassword: os.Getenv("{{.Struct.Package}}_SQL_PASSWORD"),
     }
 
     testCol = "{{lower .Struct.Object.Name.Name}}_test_collection"
@@ -15,7 +16,7 @@ var (
 // TestGet{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}} 
 // record from a sqldb.
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
-    api := sqlapi.New(testCol, events, sql.New(config))
+    api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
@@ -47,7 +48,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
 // TestGetAll{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}} 
 // record from a sqldb.
 func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
-    api := sqlapi.New(testCol, events, sql.New(config))
+    api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
@@ -64,7 +65,10 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     }
     tests.Passed("Successfully added record for {{.Struct.Object.Name}} into db.")
 
-    records, err := api.GetAll(ctx)
+    {{ $pfield := fieldByName .Struct "PublicID" }}
+    {{ $ptag := getTag $pfield "sql" }}
+
+    records, _, err := api.GetAll(ctx, "asc","{{$ptag.Value}}", -1, -1)
     if err != nil {
         tests.Failed("Successfully retrieved all records for {{.Struct.Object.Name}} from db: %+q.", err)
     }
@@ -79,7 +83,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 // Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 
 // record with a sqldb.
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
-    api := sqlapi.New(testCol, events, sql.New(config))
+    api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
@@ -100,7 +104,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
 // Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
 // record with a sqldb.
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
-    api := sqlapi.New(testCol, events, sql.New(config))
+    api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 
@@ -139,7 +143,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 // Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 
 // record from a sqldb.
 func Test{{.Struct.Object.Name}}Delete(t *testing.T){
-    api := sqlapi.New(testCol, events, sql.New(config))
+    api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
     ctx := context.New().WithDeadline(10 * time.Second, false)
 

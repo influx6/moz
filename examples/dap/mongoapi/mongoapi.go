@@ -4,7 +4,8 @@
 package mongoapi
 
 import (
-	"encoding/json"
+	"fmt"
+	"strings"
 
 	mgo "gopkg.in/mgo.v2"
 

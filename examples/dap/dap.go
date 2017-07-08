@@ -30,10 +30,10 @@ type IgnitionDescription string
 //@associates(@httpapi, Update, Ignitor)
 type Ignitor struct {
 	Identity
-	PublicID string `json:"public_id,omitempty" toml:"public_id"`
-	Name     string `json:"name" toml:"name"`
-	Rex      Repo   `json:"rex" toml:"rex"`
-	Rack     int    `json:"rack"`
+	PublicID string `json:"public_id,omitempty" sql:"public_id"`
+	Name     string `json:"name" sql:"name"`
+	Rex      Repo   `json:"rex" sql:"rex"`
+	Rack     int    `json:"rack" sql:"rack"`
 	version  string
 }
 
@@ -44,11 +44,11 @@ func UpdateIgnitorWith(up UpdateIgnitor) Ignitor {
 
 // Repo defines a struct which defines a object pointing to a specific repo.
 type Repo struct {
-	URL string `json:"url"`
+	URL string `json:"url" sql:"url"`
 }
 
 type Identity struct {
-	Hash string `json:"hash"`
+	Hash string `json:"hash" sql:"hash"`
 }
 
 // UpdateIgnitor defines a struct for creating a Ignitor.

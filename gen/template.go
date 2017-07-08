@@ -127,6 +127,21 @@ var (
 	}
 )
 
+// ToTemplateFuncs returns a template.FuncMap which is a union of all key and values
+// from the provided map. It does not check for function type and will override any previos
+// key values.
+func ToTemplateFuncs(funcs ...map[string]interface{}) template.FuncMap {
+	tfuncs := make(map[string]interface{})
+
+	for _, item := range funcs {
+		for k, v := range item {
+			tfuncs[k] = v
+		}
+	}
+
+	return template.FuncMap(tfuncs)
+}
+
 // ToTemplate returns a template instance with the giving templ string and functions.
 func ToTemplate(name string, templ string, mx template.FuncMap) (*template.Template, error) {
 	tml, err := template.New(name).Funcs(defaultFuncs).Funcs(mx).Parse(templ)

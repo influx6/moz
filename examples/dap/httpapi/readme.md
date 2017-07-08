@@ -31,6 +31,8 @@ JSON content to the HTTP API. This will in turn return a respective status code.
 {
 
 
+    "public_id":	"",
+
     "name":	"",
 
     "rex":	{
@@ -40,9 +42,7 @@ JSON content to the HTTP API. This will in turn return a respective status code.
 	
 	},
 
-    "rack":	0,
-
-    "public_id":	""
+    "rack":	0
 
 }
 ```
@@ -60,6 +60,8 @@ Success: 201
 {
 
 
+    "rack":	0,
+
     "public_id":	"",
 
     "name":	"",
@@ -69,9 +71,7 @@ Success: 201
 	
 	    "url":	""
 	
-	},
-
-    "rack":	0
+	}
 
 }
 ```
@@ -205,10 +205,6 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
 {
 
 
-    "rack":	0,
-
-    "public_id":	"",
-
     "name":	"",
 
     "rex":	{
@@ -216,7 +212,11 @@ response. It uses the provided `:public_id` parameter as the paramter to identif
 	
 	    "url":	""
 	
-	}
+	},
+
+    "rack":	0,
+
+    "public_id":	""
 
 }
 ```

@@ -2,12 +2,9 @@ package sqlapi_test
 
 import (
 	"os"
+	"time"
 
 	"testing"
-
-	"encoding/json"
-
-	"github.com/influx6/faux/db"
 
 	"github.com/influx6/faux/tests"
 
@@ -19,20 +16,25 @@ import (
 
 	"github.com/influx6/faux/metrics/sentries/stdout"
 
-	"github.com/influx6/moz/examples/dap"
-
 	"github.com/influx6/moz/examples/dap/sqlapi"
+
+	_ "github.com/go-sql-driver/mysql"
+
+	_ "github.com/lib/pq"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
 	events = metrics.New(stdout.Stdout{})
 
 	config = sql.Config{
-		DB:       os.Getenv("dap_SQL_DB"),
-		Host:     os.Getenv("dap_SQL_HOST"),
-		User:     os.Getenv("dap_SQL_USER"),
-		AuthDB:   os.Getenv("dap_SQL_AUTHDB"),
-		Password: os.Getenv("dap_SQL_PASSWORD"),
+		DBName:       os.Getenv("dap_SQL_DB"),
+		User:         os.Getenv("dap_SQL_USER"),
+		DBIP:         os.Getenv("dap_SQL_ADDR"),
+		DBPort:       os.Getenv("dap_SQL_PORT"),
+		DBDriver:     os.Getenv("dap_SQL_Driver"),
+		UserPassword: os.Getenv("dap_SQL_PASSWORD"),
 	}
 
 	testCol = "ignitor_test_collection"
@@ -41,7 +43,7 @@ var (
 // TestGetIgnitor validates the retrieval of a Ignitor
 // record from a sqldb.
 func TestGetIgnitor(t *testing.T) {
-	api := sqlapi.New(testCol, events, sql.New(config))
+	api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -73,7 +75,7 @@ func TestGetIgnitor(t *testing.T) {
 // TestGetAllIgnitor validates the retrieval of all Ignitor
 // record from a sqldb.
 func TestGetAllIgnitor(t *testing.T) {
-	api := sqlapi.New(testCol, events, sql.New(config))
+	api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -90,7 +92,7 @@ func TestGetAllIgnitor(t *testing.T) {
 	}
 	tests.Passed("Successfully added record for Ignitor into db.")
 
-	records, err := api.GetAll(ctx)
+	records, _, err := api.GetAll(ctx, "asc", "public_id", -1, -1)
 	if err != nil {
 		tests.Failed("Successfully retrieved all records for Ignitor from db: %+q.", err)
 	}
@@ -105,7 +107,7 @@ func TestGetAllIgnitor(t *testing.T) {
 // TestIgnitorCreate validates the creation of a Ignitor
 // record with a sqldb.
 func TestIgnitorCreate(t *testing.T) {
-	api := sqlapi.New(testCol, events, sql.New(config))
+	api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -126,7 +128,7 @@ func TestIgnitorCreate(t *testing.T) {
 // TestIgnitorUpdate validates the update of a Ignitor
 // record with a sqldb.
 func TestIgnitorUpdate(t *testing.T) {
-	api := sqlapi.New(testCol, events, sql.New(config))
+	api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 
@@ -165,7 +167,7 @@ func TestIgnitorUpdate(t *testing.T) {
 // TestIgnitorDelete validates the removal of a Ignitor
 // record from a sqldb.
 func TestIgnitorDelete(t *testing.T) {
-	api := sqlapi.New(testCol, events, sql.New(config))
+	api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
 	ctx := context.New().WithDeadline(10*time.Second, false)
 

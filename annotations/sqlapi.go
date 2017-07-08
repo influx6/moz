@@ -56,15 +56,19 @@ func SQLAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclarat
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 				gen.Import(str.Path, ""),
 				gen.Import(str.Path+"/sqlapi", ""),
+				gen.Import("github.com/go-sql-driver/mysql", "_"),
+				gen.Import("github.com/lib/pq", "_"),
+				gen.Import("github.com/mattn/go-sqlite3", "_"),
 			),
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("sqlapi/sql-api-test.tml")),
-					template.FuncMap{
-						"map":       ast.MapOutFields,
-						"mapValues": ast.MapOutValues,
-						"hasFunc":   ast.HasFunctionFor(pkg),
-					},
+					gen.ToTemplateFuncs(
+						ast.ASTTemplatFuncs,
+						template.FuncMap{
+							"hasFunc": ast.HasFunctionFor(pkg),
+						},
+					),
 					struct {
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
@@ -144,12 +148,12 @@ func SQLAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclarat
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("sqlapi/sql-api.tml")),
-					template.FuncMap{
-						"fieldFor":    ast.FieldFor,
-						"map":         ast.MapOutFields,
-						"hasFunc":     ast.HasFunctionFor(pkg),
-						"fieldByName": ast.FieldByFieldName,
-					},
+					gen.ToTemplateFuncs(
+						ast.ASTTemplatFuncs,
+						template.FuncMap{
+							"hasFunc": ast.HasFunctionFor(pkg),
+						},
+					),
 					struct {
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration

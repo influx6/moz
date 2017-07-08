@@ -71,7 +71,7 @@ func main() {
 			Flags:  []cli.Flag{},
 		},
 		{
-			Name:        "annotation",
+			Name:        "generate",
 			Action:      annotationCLI,
 			Description: "Runs the moz parser to parse and generate code for all annotations",
 			Flags:       []cli.Flag{},
