@@ -1,5 +1,7 @@
 // Package dap defines a sample package which is used to test out our annotation parser.
 // @assets(dapassets, ".tml : .js", dappers)
+// @mongo
+//
 package dap
 
 import (
