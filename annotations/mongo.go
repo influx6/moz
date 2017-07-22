@@ -36,7 +36,7 @@ func MongoAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDecla
 			gen.Text(`Package mongoapi provides a auto-generated package which contains a mongo base pkg for db operations.`),
 		),
 		gen.Package(
-			gen.Name("mongoapi"),
+			gen.Name("mongo"),
 			gen.Imports(
 				gen.Import("encoding/json", ""),
 				gen.Import("gopkg.in/mgo.v2", "mgo"),

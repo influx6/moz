@@ -22,7 +22,7 @@ func (m *MockAPIOperator) Delete(ctx context.Context, publicID string) error {
 }
 
 // GetAll returns a slice of all available record of type {{.Struct.Package}}.{{.Struct.Object.Name}}.
-func (m *MockAPIOperator) GetAll(ctx context.Context) ([]{{.Struct.Package}}.{{.Struct.Object.Name}}, error) {
+func (m *MockAPIOperator) GetAll(ctx context.Context, order string, orderBy string, page int, responserPerPage int) ([]{{.Struct.Package}}.{{.Struct.Object.Name}}, int, error) {
     var records []{{.Struct.Package}}.{{.Struct.Object.Name}}
 
     m.store.Range(func(k, v interface{}) bool {
@@ -33,7 +33,7 @@ func (m *MockAPIOperator) GetAll(ctx context.Context) ([]{{.Struct.Package}}.{{.
         return true
     })
 
-    return records, nil
+    return records, len(records), nil
 }
 
 // Get retrieves a record based on the provided publicID.

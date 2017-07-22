@@ -11,23 +11,7 @@ import (
 var ignitorJSON = `{
 
 
-    "rex":	{
-	
-	
-	    "url":	""
-	
-	},
-
-    "rack":	0,
-
     "public_id":	"",
-
-    "name":	""
-
-}`
-
-var ignitorCreateJSON = `{
-
 
     "name":	"",
 
@@ -38,13 +22,11 @@ var ignitorCreateJSON = `{
 	
 	},
 
-    "rack":	0,
-
-    "public_id":	""
+    "rack":	0
 
 }`
 
-var ignitorUpdateJSON = `{
+var ignitorCreateJSON = `{
 
 
     "public_id":	"",
@@ -59,6 +41,24 @@ var ignitorUpdateJSON = `{
 	},
 
     "rack":	0
+
+}`
+
+var ignitorUpdateJSON = `{
+
+
+    "name":	"",
+
+    "rex":	{
+	
+	
+	    "url":	""
+	
+	},
+
+    "rack":	0,
+
+    "public_id":	""
 
 }`
 

@@ -6,13 +6,14 @@ var (
 // TestGetAll{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}} 
 // record from httpapi.
 func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
-	tree := httptreemux.New()
 
     db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -28,7 +29,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     }
     tests.Passed("Should have successfully saved {{.Struct.Object.Name}} record.")
 
-    req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors", version), nil)
+    req, err := http.NewRequest("GET", fmt.Sprintf("/%s/ignitors", version), nil)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -52,13 +53,13 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 // TestGet{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}} 
 // record from a httpapi.
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
-	tree := httptreemux.New()
-
     db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -74,7 +75,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
     }
     tests.Passed("Should have successfully saved {{.Struct.Object.Name}} record.")
 
-    req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
+    req, err := http.NewRequest("GET", fmt.Sprintf("/%s/ignitors/%s", version, elem.PublicID), nil)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -98,18 +99,19 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
 // Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 
 // record with a httpapi.
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
-	tree := httptreemux.New()
 
     db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
     var body bytes.Buffer
     body.WriteString({{lower .Struct.Object.Name.Name}}CreateJSON)
     
-    req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
+    req, err := http.NewRequest("POST", fmt.Sprintf("/%s/ignitors", version), &body)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -133,18 +135,18 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
 // Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
 // record with a httpapi.
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
-	tree := httptreemux.New()
-
     db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
     var body bytes.Buffer
     body.WriteString({{lower .Struct.Object.Name.Name}}CreateJSON)
     
-    req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
+    req, err := http.NewRequest("POST", fmt.Sprintf("/%s/ignitors", version), &body)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -179,7 +181,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     }
     tests.Passed("Should have successfully encoded {{.Struct.Object.Name}}.")
 
-    req, err = http.NewRequest("PUT", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), &bu)
+    req, err = http.NewRequest("PUT", fmt.Sprintf("/%s/ignitors/%s", version, elem.PublicID), &bu)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }
@@ -198,13 +200,14 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 // Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 
 // record from a httpapi.
 func Test{{.Struct.Object.Name}}Delete(t *testing.T){
-	tree := httptreemux.New()
-
     db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
+
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -220,7 +223,7 @@ func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     }
     tests.Passed("Should have successfully saved {{.Struct.Object.Name}} record.")
 
-    req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
+    req, err := http.NewRequest("DELETE", fmt.Sprintf("/%s/ignitors/%s", version, elem.PublicID), nil)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
     }

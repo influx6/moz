@@ -155,6 +155,10 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 	httpJSONGen := gen.Block(
 		gen.Package(
 			gen.Name("httpapi_test"),
+			gen.Imports(
+				gen.Import("encoding/json", ""),
+				gen.Import(str.Path, ""),
+			),
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("httpapi/http-api-json.tml")),

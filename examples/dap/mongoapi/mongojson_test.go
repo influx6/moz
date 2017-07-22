@@ -11,24 +11,6 @@ import (
 var ignitorJSON = `{
 
 
-    "name":	"",
-
-    "rex":	{
-	
-	
-	    "url":	""
-	
-	},
-
-    "rack":	0,
-
-    "public_id":	""
-
-}`
-
-var ignitorCreateJSON = `{
-
-
     "public_id":	"",
 
     "name":	"",
@@ -41,6 +23,24 @@ var ignitorCreateJSON = `{
 	},
 
     "rack":	0
+
+}`
+
+var ignitorCreateJSON = `{
+
+
+    "rex":	{
+	
+	
+	    "url":	""
+	
+	},
+
+    "rack":	0,
+
+    "public_id":	"",
+
+    "name":	""
 
 }`
 

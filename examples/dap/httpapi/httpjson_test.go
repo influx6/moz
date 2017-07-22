@@ -1,11 +1,15 @@
 package httpapi_test
 
+import (
+	"encoding/json"
+
+	"github.com/influx6/moz/examples/dap"
+)
+
 var ignitorJSON = `{
+    "public_id":"34343r343t33433433",
 
-
-    "public_id":	"",
-
-    "name":	"",
+    "name":	"Bob Dynlan",
 
     "rex":	{
 	
@@ -20,10 +24,9 @@ var ignitorJSON = `{
 
 var ignitorCreateJSON = `{
 
+    "public_id":"34343r343t33433433",
 
-    "public_id":	"",
-
-    "name":	"",
+    "name":	"Bob Dynlan",
 
     "rex":	{
 	
@@ -37,11 +40,9 @@ var ignitorCreateJSON = `{
 }`
 
 var ignitorUpdateJSON = `{
+    "public_id":"34343r343t33433433",
 
-
-    "public_id":	"",
-
-    "name":	"",
+    "name":	"Bob Dynlan",
 
     "rex":	{
 	

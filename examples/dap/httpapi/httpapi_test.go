@@ -13,8 +13,7 @@ import (
 
 	"net/http/httptest"
 
-	"github.com/dimfeld/httptreemux"
-
+	"github.com/influx6/faux/httputil"
 	"github.com/influx6/faux/tests"
 
 	"github.com/influx6/faux/metrics"
@@ -34,13 +33,14 @@ var (
 // TestGetAllIgnitor validates the retrieval of a Ignitor
 // record from httpapi.
 func TestGetAllIgnitor(t *testing.T) {
-	tree := httptreemux.New()
 
 	db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
 	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
@@ -56,7 +56,7 @@ func TestGetAllIgnitor(t *testing.T) {
 	}
 	tests.Passed("Should have successfully saved Ignitor record.")
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors", version), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("/%s/ignitors", version), nil)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -80,13 +80,13 @@ func TestGetAllIgnitor(t *testing.T) {
 // TestGetIgnitor validates the retrieval of all Ignitor
 // record from a httpapi.
 func TestGetIgnitor(t *testing.T) {
-	tree := httptreemux.New()
-
 	db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
 	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
@@ -102,7 +102,7 @@ func TestGetIgnitor(t *testing.T) {
 	}
 	tests.Passed("Should have successfully saved Ignitor record.")
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("/%s/ignitors/%s", version, elem.PublicID), nil)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -126,18 +126,19 @@ func TestGetIgnitor(t *testing.T) {
 // TestIgnitorCreate validates the creation of a Ignitor
 // record with a httpapi.
 func TestIgnitorCreate(t *testing.T) {
-	tree := httptreemux.New()
 
 	db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
 	var body bytes.Buffer
 	body.WriteString(ignitorCreateJSON)
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
+	req, err := http.NewRequest("POST", fmt.Sprintf("/%s/ignitors", version), &body)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -161,18 +162,18 @@ func TestIgnitorCreate(t *testing.T) {
 // TestIgnitorUpdate validates the update of a Ignitor
 // record with a httpapi.
 func TestIgnitorUpdate(t *testing.T) {
-	tree := httptreemux.New()
-
 	db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
 	var body bytes.Buffer
 	body.WriteString(ignitorCreateJSON)
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/api/%s/ignitors", version), &body)
+	req, err := http.NewRequest("POST", fmt.Sprintf("/%s/ignitors", version), &body)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -198,7 +199,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully loaded JSON.")
 
-	elem.Name = "Donna Martin"
+	elem.Name = "Roy Scott Jr. Sr. I II III IV V MD DDS PhD DVM"
 
 	var bu bytes.Buffer
 
@@ -207,7 +208,7 @@ func TestIgnitorUpdate(t *testing.T) {
 	}
 	tests.Passed("Should have successfully encoded Ignitor.")
 
-	req, err = http.NewRequest("PUT", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), &bu)
+	req, err = http.NewRequest("PUT", fmt.Sprintf("/%s/ignitors/%s", version, elem.PublicID), &bu)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}
@@ -226,13 +227,13 @@ func TestIgnitorUpdate(t *testing.T) {
 // TestIgnitorDelete validates the removal of a Ignitor
 // record from a httpapi.
 func TestIgnitorDelete(t *testing.T) {
-	tree := httptreemux.New()
-
 	db := NewMockAPIOperator()
+
 	api := httpapi.New(events, db)
+	tree := httputil.NewMuxRouter(nil)
 
 	// Register routes with router group.
-	httpapi.RegisterRouteGroup(tree.NewGroup("/api"), api, version, "ignitors")
+	httpapi.Register(tree, api, version, "ignitors")
 
 	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {
@@ -248,7 +249,7 @@ func TestIgnitorDelete(t *testing.T) {
 	}
 	tests.Passed("Should have successfully saved Ignitor record.")
 
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("/api/%s/ignitors/%s", version, elem.PublicID), nil)
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("/%s/ignitors/%s", version, elem.PublicID), nil)
 	if err != nil {
 		tests.Failed("Should have successfully created request Ignitor record : %+q.", err)
 	}

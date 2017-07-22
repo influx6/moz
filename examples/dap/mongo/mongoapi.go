@@ -1,7 +1,7 @@
 // Package mongoapi provides a auto-generated package which contains a mongo base pkg for db operations.
 //
 //
-package mongoapi
+package mongo
 
 import (
 	"fmt"

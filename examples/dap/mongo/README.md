@@ -43,7 +43,7 @@ func main() {
 	col := "ignitor_collection"
 
 	ctx := context.New()
-	api := mongoapi.New(testCol, events, mongo.New(config))
+	api := mongo.New(testCol, events, mongo.New(config))
 
 	elem, err := loadJSONFor(ignitorCreateJSON)
 	if err != nil {

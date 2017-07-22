@@ -35,7 +35,7 @@ func (m *MockAPIOperator) Delete(ctx context.Context, publicID string) error {
 }
 
 // GetAll returns a slice of all available record of type dap.Ignitor.
-func (m *MockAPIOperator) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
+func (m *MockAPIOperator) GetAll(ctx context.Context, order string, orderBy string, page int, responserPerPage int) ([]dap.Ignitor, int, error) {
 	var records []dap.Ignitor
 
 	m.store.Range(func(k, v interface{}) bool {
@@ -46,7 +46,7 @@ func (m *MockAPIOperator) GetAll(ctx context.Context) ([]dap.Ignitor, error) {
 		return true
 	})
 
-	return records, nil
+	return records, len(records), nil
 }
 
 // Get retrieves a record based on the provided publicID.
