@@ -321,7 +321,6 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			// Collect and categorize annotations in types and their fields.
 		declrLoop:
 			for _, declr := range file.Decls {
-
 				switch rdeclr := declr.(type) {
 				case *ast.FuncDecl:
 
@@ -458,6 +457,12 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 					for _, spec := range rdeclr.Specs {
 						switch obj := spec.(type) {
+						case *ast.ValueSpec:
+							// Handles variable declaration
+							// i.e Spec:
+							// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a00)}, Type:ast.Expr(nil), Values:[]ast.Expr{(*ast.BasicLit)(0xc4200e4a20)}, Comment:(*ast.CommentGroup)(nil)}
+							// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a40)}, Type:(*ast.Ident)(0xc4200e4a60), Values:[]ast.Expr(nil), Comment:(*ast.CommentGroup)(nil)}
+
 						case *ast.TypeSpec:
 
 							tokenPosition := tokenFiles.Position(spec.Pos())

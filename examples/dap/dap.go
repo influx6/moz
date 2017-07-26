@@ -11,6 +11,12 @@ import (
 
 //go:generate moz annotation
 
+var (
+	Iuc = "log"
+
+	Lu string
+)
+
 // IgnitionFn defines a functiion type for a ignition function.
 type IgnitionFn func(string) string
 
