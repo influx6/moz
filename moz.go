@@ -1,7 +1,6 @@
 package moz
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -36,33 +35,8 @@ func CopyAnnotationsTo(registry *ast.AnnotationRegistry) {
 // 4. PackageAnnotationGenerator (see Package http://github.com/influx6/moz/ast.PackageAnnotationGenerator)
 // Any other type will cause the return of an error.
 func RegisterAnnotation(name string, generator interface{}) bool {
-	switch gen := generator.(type) {
-	case ast.PackageAnnotationGenerator:
-		annotations.RegisterPackage(name, gen)
-		break
-	case func(ast.AnnotationDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		annotations.RegisterPackage(name, gen)
-		break
-	case ast.TypeAnnotationGenerator:
-		annotations.RegisterType(name, gen)
-		break
-	case func(ast.AnnotationDeclaration, ast.TypeDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		annotations.RegisterType(name, gen)
-		break
-	case ast.StructAnnotationGenerator:
-		annotations.RegisterStructType(name, gen)
-		break
-	case func(ast.AnnotationDeclaration, ast.StructDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		annotations.RegisterStructType(name, gen)
-		break
-	case ast.InterfaceAnnotationGenerator:
-		annotations.RegisterInterfaceType(name, gen)
-		break
-	case func(ast.AnnotationDeclaration, ast.InterfaceDeclaration, ast.PackageDeclaration) ([]gen.WriteDirective, error):
-		annotations.RegisterInterfaceType(name, gen)
-		break
-	default:
-		panic(fmt.Errorf("Generator type for %q not supported: %#v", name, generator))
+	if err := annotations.Register(name, generator); err != nil {
+		panic(err.Error())
 	}
 
 	return true

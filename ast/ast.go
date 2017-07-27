@@ -1003,6 +1003,44 @@ func (a *AnnotationRegistry) GetType(annotation string) (TypeAnnotationGenerator
 	return annon, nil
 }
 
+// Register which adds the generator depending on it's type into the appropriate
+// registry. It only supports  the following generators:
+// 1. TypeAnnotationGenerator (see Package ast#TypeAnnotationGenerator)
+// 2. StructAnnotationGenerator (see Package ast#StructAnnotationGenerator)
+// 3. InterfaceAnnotationGenerator (see Package ast#InterfaceAnnotationGenerator)
+// 4. PackageAnnotationGenerator (see Package ast#PackageAnnotationGenerator)
+// Any other type will cause the return of an error.
+func (a *AnnotationRegistry) Register(name string, generator interface{}) error {
+	switch gen := generator.(type) {
+	case PackageAnnotationGenerator:
+		a.RegisterPackage(name, gen)
+		return nil
+	case func(AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+		a.RegisterPackage(name, gen)
+		return nil
+	case TypeAnnotationGenerator:
+		a.RegisterType(name, gen)
+		return nil
+	case func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+		a.RegisterType(name, gen)
+		return nil
+	case StructAnnotationGenerator:
+		a.RegisterStructType(name, gen)
+		return nil
+	case func(AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+		a.RegisterStructType(name, gen)
+		return nil
+	case InterfaceAnnotationGenerator:
+		a.RegisterInterfaceType(name, gen)
+		return nil
+	case func(AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+		a.RegisterInterfaceType(name, gen)
+		return nil
+	default:
+		return fmt.Errorf("Generator type for %q not supported: %#v", name, generator)
+	}
+}
+
 // RegisterInterfaceType adds a interface type level annotation generator into the registry.
 func (a *AnnotationRegistry) RegisterInterfaceType(annotation string, generator InterfaceAnnotationGenerator) {
 	annotation = strings.TrimPrefix(annotation, "@")
