@@ -32,11 +32,12 @@ const (
 
 // Contains giving sets of variables exposing sytem GOPATH and GOPATHSRC.
 var (
-	GoPath     = os.Getenv("GOPATH")
-	GoSrcPath  = filepath.Join(GoPath, "src")
-	annotation = regexp.MustCompile("@(\\w+(:\\w+)?)(\\(.+\\))?")
+	GoPath    = os.Getenv("GOPATH")
+	GoSrcPath = filepath.Join(GoPath, "src")
+
 	spaces     = regexp.MustCompile(`/s+`)
 	itag       = regexp.MustCompile(`((\w+):"(\w+|[\w,?\s+\w]+)")`)
+	annotation = regexp.MustCompile("@(\\w+(:\\w+)?)(\\([.\\s\\S]+\\))?")
 
 	ASTTemplatFuncs = map[string]interface{}{
 		"getTag":            GetTag,
