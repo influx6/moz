@@ -34,7 +34,7 @@ const (
 var (
 	GoPath     = os.Getenv("GOPATH")
 	GoSrcPath  = filepath.Join(GoPath, "src")
-	annotation = regexp.MustCompile("@(\\w+)(\\(.+\\))?")
+	annotation = regexp.MustCompile("@(\\w+(:\\w+)?)(\\(.+\\))?")
 	spaces     = regexp.MustCompile(`/s+`)
 	itag       = regexp.MustCompile(`((\w+):"(\w+|[\w,?\s+\w]+)")`)
 
@@ -83,6 +83,7 @@ func PackageFile(file string, mode parser.Mode) (*token.FileSet, *ast.File, erro
 // AnnotationDeclaration defines a annotation type which holds detail about a giving annotation.
 type AnnotationDeclaration struct {
 	Name      string   `json:"name"`
+	Namespace string   `json:"namespace"`
 	Arguments []string `json:"arguments"`
 }
 
@@ -293,7 +294,15 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 					if len(annons) > 1 {
 						var arguments []string
 
-						args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+						var ns, args string
+
+						if len(annons) > 3 {
+							ns = annons[2]
+							args = strings.TrimSuffix(strings.TrimPrefix(annons[3], "("), ")")
+						} else {
+							args = strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+						}
+
 						for _, elem := range strings.Split(args, ",") {
 							elem = strings.TrimSpace(elem)
 
@@ -306,6 +315,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 						}
 
 						packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
+							Namespace: ns,
 							Name:      annons[1],
 							Arguments: arguments,
 						})
@@ -395,7 +405,14 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 							if len(annons) > 1 {
 								var arguments []string
 
-								args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+								var ns, args string
+
+								if len(annons) > 3 {
+									ns = annons[2]
+									args = strings.TrimSuffix(strings.TrimPrefix(annons[3], "("), ")")
+								} else {
+									args = strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+								}
 
 								for _, elem := range strings.Split(args, ",") {
 									elem = strings.TrimSpace(elem)
@@ -442,6 +459,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 								default:
 									annotations = append(annotations, AnnotationDeclaration{
+										Namespace: ns,
 										Name:      annons[1],
 										Arguments: arguments,
 									})
