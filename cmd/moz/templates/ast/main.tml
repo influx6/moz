@@ -13,6 +13,7 @@ if err != nil {
 
 assetGen := gen.Package(
     gen.Name("{{.Package}}"),
+    gen.Text("//go:generate go run generate.go"),
     gen.Imports(
         gen.Import("fmt", ""),
     ),
