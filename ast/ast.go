@@ -259,7 +259,6 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 	for _, pkg := range packages {
 		for path, file := range pkg.Files {
-
 			var packageDeclr PackageDeclaration
 			packageDeclr.Package = pkg.Name
 			packageDeclr.FilePath = path
@@ -276,46 +275,48 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 				packageDeclr.FilePath = filepath.ToSlash(packageDeclr.FilePath)
 			}
 
-			for _, comment := range file.Doc.List {
-				text := strings.TrimPrefix(comment.Text, "//")
+			if file.Doc != nil {
+				for _, comment := range file.Doc.List {
+					text := strings.TrimPrefix(comment.Text, "//")
 
-				if !annotation.MatchString(text) {
-					continue
-				}
+					if !annotation.MatchString(text) {
+						continue
+					}
 
-				annons := annotation.FindStringSubmatch(text)
+					annons := annotation.FindStringSubmatch(text)
 
-				log.Emit(stdout.Info("Annotation in Package comments").
-					With("dir", dir).
-					With("annotation", annons[1:]).
-					With("comment", comment.Text))
+					log.Emit(stdout.Info("Annotation in Package comments").
+						With("dir", dir).
+						With("annotation", annons[1:]).
+						With("comment", comment.Text))
 
-				if len(annons) > 1 {
-					var arguments []string
+					if len(annons) > 1 {
+						var arguments []string
 
-					args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
-					for _, elem := range strings.Split(args, ",") {
-						elem = strings.TrimSpace(elem)
+						args := strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+						for _, elem := range strings.Split(args, ",") {
+							elem = strings.TrimSpace(elem)
 
-						if unquoted, err := strconv.Unquote(elem); err == nil {
-							arguments = append(arguments, unquoted)
-							continue
+							if unquoted, err := strconv.Unquote(elem); err == nil {
+								arguments = append(arguments, unquoted)
+								continue
+							}
+
+							arguments = append(arguments, elem)
 						}
 
-						arguments = append(arguments, elem)
+						packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
+							Name:      annons[1],
+							Arguments: arguments,
+						})
+
+						continue
 					}
 
 					packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
-						Name:      annons[1],
-						Arguments: arguments,
+						Name: annons[1],
 					})
-
-					continue
 				}
-
-				packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
-					Name: annons[1],
-				})
 			}
 
 			// Collect and categorize annotations in types and their fields.
