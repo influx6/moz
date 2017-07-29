@@ -87,6 +87,9 @@ var (
 		"prefixInt": func(prefix string, b int) string {
 			return fmt.Sprintf("%s%d", prefix, b)
 		},
+		"subs": func(word string, b int) string {
+			return word[:b]
+		},
 		"add": func(a, b int) int {
 			return a + b
 		},

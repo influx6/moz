@@ -74,39 +74,3 @@ func TestMapGen(t *testing.T) {
 	}
 	tests.Passed("Should have successfully matched generated output with expected.")
 }
-
-// TestFunctionGen validates the expected output of a giving function generator.
-func TestFunctionGen(t *testing.T) {
-	expected := "\nfunc main(v int, m string)  {\n\tfmt.Printf(\"Welcome to Lola Land\");\n}\n"
-
-	src := gen.Function(
-		gen.Name("main"),
-		gen.Constructor(
-			gen.FieldType(
-				gen.Name("v"),
-				gen.Type("int"),
-			),
-			gen.FieldType(
-				gen.Name("m"),
-				gen.Type("string"),
-			),
-		),
-		gen.Returns(),
-		gen.SourceText(`	fmt.Printf("Welcome to Lola Land");`, nil),
-	)
-
-	var bu bytes.Buffer
-
-	if _, err := src.WriteTo(&bu); err != nil && err != io.EOF {
-		tests.Failed("Should have successfully written source output: %+q.", err)
-	}
-	tests.Passed("Should have successfully written source output.")
-
-	if bu.String() != expected {
-		tests.Info("Source: %+q", bu.String())
-		tests.Info("Expected: %+q", expected)
-
-		tests.Failed("Should have successfully matched generated output with expected.")
-	}
-	tests.Passed("Should have successfully matched generated output with expected.")
-}
