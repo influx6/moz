@@ -25,6 +25,12 @@ type Ignitable interface {
 	Ignite() string
 }
 
+// MofInitable defines a interface for a Mof.
+// @iface
+type MofInitable interface{
+	Crunch() string
+}
+
 // IgnitionDescription defines the description giving to a ignition key.
 type IgnitionDescription string
 

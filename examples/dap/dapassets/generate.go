@@ -37,6 +37,9 @@ func main() {
 
 	assetGen := gen.Package(
 		gen.Name("dapassets"),
+		gen.Text("//go:generate go run generate.go"),
+		gen.Text("\n"),
+		gen.Text("\n"),
 		gen.Imports(
 			gen.Import("fmt", ""),
 		),

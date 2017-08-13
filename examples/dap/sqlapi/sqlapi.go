@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/influx6/faux/db"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/influx6/faux/db/sql"
 	"github.com/influx6/faux/db/sql/tables"

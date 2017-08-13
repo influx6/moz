@@ -1,0 +1,103 @@
+{{$InterfaceName := .InterfaceName }}
+
+{{ range .Methods }}
+// MethodCallFor{{.Name}} defines a type which holds meta-details about the giving calls associated 
+// with the {{$InterfaceName}}.{{.Name}}() method.
+type MethodCallFor{{.Name}} struct{
+    When time.Time
+    Start time.Time
+    End time.Time
+
+    // Argument values.
+    {{ range .Args }}
+    {{capitalize .Name}} {{.Type}}
+    {{end}}
+
+    // Return values.
+    {{ range .Returns }}
+    {{capitalize .Name}} {{.Type}}
+    {{ end}}
+}
+{{ end }}
+
+// {{.InterfaceName}}Snitch is an implementation of the {{.InterfaceName}} which will wrap the 
+// {{.InterfaceName}}Impl and allow you to record all arguments and return values from calls to the 
+// provided implementation which it wraps.
+type {{.InterfaceName}}LittleSnitch struct{
+    Implementer {{.Package.Package}}.{{.InterfaceName}}
+    {{ range .Methods }}
+    {{.Name}}MethodCalls []MethodCallFor{{.Name}}
+    {{ end }}
+}
+
+// New returns a new instance of a {{.InterfaceName}}LittleSnitch for recording.
+func New(impl {{.Package.Package}}.{{.InterfaceName}}) *{{.InterfaceName}}LittleSnitch {
+    var snitch {{.InterfaceName}}LittleSnitch
+    {{ range .Methods }}
+    snitch.{{.Name}}MethodCalls = make([]MethodCallFor{{.Name}}, 0)
+    {{ end }}
+
+    return &snitch
+}
+
+{{ range .Methods }} 
+// {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
+func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
+    var caller MethodCallFor{{.Name}}
+    caller.When = time.Now()
+    caller.Start = caller.When
+
+    {{ range .Args }}
+    caller.{{capitalize .Name}} = {{.Name}}
+    {{ end }}
+
+    {{.ReturnNamesList}} := impl.Implementer.{{.Name}}({{.ArgumentNamesList}})
+
+    {{ range .Returns }}
+    caller.{{capitalize .Name}} = {{.Name}}
+    {{ end }}
+
+    caller.End = time.Now()
+
+    impl.{{.Name}}MethodCalls = append(impl.{{.Name}}MethodCalls, caller)
+
+    return {{.ReturnNamesList}}
+}
+{{ end }}
+
+//==============================================================================================================
+
+// {{.InterfaceName}}MockSnitch defines a function type which implements a struct with the 
+// methods for the {{.InterfaceName}} as fields which allows you provide implementations of 
+// these functions to provide flexible testing.
+type {{.InterfaceName}}MockSnitch struct{
+    {{ range .Methods }}
+    {{.Name}}MethodCalls []MethodCallFor{{.Name}}
+    {{.Name}}Func func({{.ArgumentList}}) ({{.ReturnList}})
+    {{ end }}
+}
+
+{{ range .Methods }} 
+// {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
+func (impl *{{$InterfaceName}}MockSnitch) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
+    var caller MethodCallFor{{.Name}}
+    caller.When = time.Now()
+    caller.Start = caller.When
+
+    {{ range .Args }}
+    caller.{{capitalize .Name}} = {{.Name}}
+    {{ end }}
+
+    {{.ReturnNamesList}} := impl.{{.Name}}Func({{.ArgumentNamesList}})
+
+    {{ range .Returns }}
+    caller.{{capitalize .Name}} = {{.Name}}
+    {{ end }}
+
+    caller.End = time.Now()
+
+    impl.{{.Name}}MethodCalls = append(impl.{{.Name}}MethodCalls, caller)
+
+    return {{.ReturnNamesList}}
+}
+{{ end }}

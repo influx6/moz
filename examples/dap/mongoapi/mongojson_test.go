@@ -11,6 +11,8 @@ import (
 var ignitorJSON = `{
 
 
+    "rack":	0,
+
     "public_id":	"",
 
     "name":	"",
@@ -20,9 +22,7 @@ var ignitorJSON = `{
 	
 	    "url":	""
 	
-	},
-
-    "rack":	0
+	}
 
 }`
 
@@ -47,6 +47,8 @@ var ignitorCreateJSON = `{
 var ignitorUpdateJSON = `{
 
 
+    "rack":	0,
+
     "public_id":	"",
 
     "name":	"",
@@ -56,9 +58,7 @@ var ignitorUpdateJSON = `{
 	
 	    "url":	""
 	
-	},
-
-    "rack":	0
+	}
 
 }`
 

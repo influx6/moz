@@ -57,6 +57,11 @@ var (
 	}
 )
 
+var (
+	// ErrEmptyList defines a error returned for a empty array or slice.
+	ErrEmptyList = errors.New("Slice/List is empty")
+)
+
 // PackageDir turns a given go source file into a appropriate structure which will be
 // used to generate the needed manifests for a resource shell.
 func PackageDir(file string, mode parser.Mode) (*token.FileSet, map[string]*ast.Package, error) {
@@ -216,6 +221,193 @@ type InterfaceDeclaration struct {
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
 }
+
+// ArgType defines a type to represent the information for a giving functions argument or
+// return type declaration.
+type ArgType struct {
+	Name       string
+	Type       string
+	NameObject *ast.Object
+	TypeObject *ast.Object
+}
+
+// FunctionDefinition defines a type to represent the function/method declarations of an
+// interface type.
+type FunctionDefinition struct {
+	Name      string
+	Args      []ArgType
+	Returns   []ArgType
+	Func      *ast.FuncType
+	Interface *ast.InterfaceType
+}
+
+// ArgumentNamesList returns the assignment names for the function arguments.
+func (fd FunctionDefinition) ArgumentNamesList() string {
+	var args []string
+
+	for _, arg := range fd.Args {
+		args = append(args, fmt.Sprintf("%s", arg.Name))
+	}
+
+	return strings.Join(args, ",")
+}
+
+// ReturnNamesList returns the assignment names for the return arguments
+func (fd FunctionDefinition) ReturnNamesList() string {
+	var rets []string
+
+	for _, ret := range fd.Returns {
+		rets = append(rets, fmt.Sprintf("%s", ret.Name))
+	}
+
+	return strings.Join(rets, ",")
+}
+
+// ReturnList returns a string version of the return of the giving function.
+func (fd FunctionDefinition) ReturnList() string {
+	var rets []string
+
+	for _, ret := range fd.Returns {
+		rets = append(rets, fmt.Sprintf("%s", ret.Type))
+	}
+
+	return strings.Join(rets, ",")
+}
+
+// ArgumentList returns a string version of the arguments of the giving function.
+func (fd FunctionDefinition) ArgumentList() string {
+	var args []string
+
+	for _, arg := range fd.Args {
+		args = append(args, fmt.Sprintf("%s %s", arg.Name, arg.Type))
+	}
+
+	return strings.Join(args, ",")
+}
+
+// Methods returns the associated methods for the giving interface.
+func (i InterfaceDeclaration) Methods() []FunctionDefinition {
+	return GetInterfaceFunctions(i.Interface)
+}
+
+// GetIdentName returns the first indent found within the field if it exists.
+func GetIdentName(field *ast.Field) (*ast.Ident, error) {
+	if len(field.Names) == 0 {
+		return nil, ErrEmptyList
+	}
+
+	return field.Names[0], nil
+}
+
+// GetInterfaceFunctions returns a slice of FunctionDefinitions retrieved from the provided
+// interface type object.
+func GetInterfaceFunctions(intr *ast.InterfaceType) []FunctionDefinition {
+	var defs []FunctionDefinition
+
+	var retCounter int
+	var varCounter int
+
+	retCounter++
+	varCounter++
+
+	for _, method := range intr.Methods.List {
+		if len(method.Names) > 0 {
+			nameIdent := method.Names[0]
+			ftype := method.Type.(*ast.FuncType)
+
+			var arguments, returns []ArgType
+
+			for _, result := range ftype.Results.List {
+				typeIdent, ok := result.Type.(*ast.Ident)
+				if !ok {
+					continue
+				}
+
+				var name string
+				var nameObj *ast.Object
+
+				resName, err := GetIdentName(result)
+				switch err != nil {
+				case true:
+					name = fmt.Sprintf("ret%d", retCounter)
+					retCounter++
+				case false:
+					name = resName.Name
+					nameObj = resName.Obj
+				}
+
+				returns = append(returns, ArgType{
+					Name:       name,
+					NameObject: nameObj,
+					Type:       typeIdent.Name,
+					TypeObject: typeIdent.Obj,
+				})
+			}
+
+			for _, param := range ftype.Params.List {
+				typeIdent, ok := param.Type.(*ast.Ident)
+				if !ok {
+					continue
+				}
+
+				var name string
+				var nameObj *ast.Object
+
+				resName, err := GetIdentName(param)
+				switch err != nil {
+				case true:
+					name = fmt.Sprintf("var%d", varCounter)
+					varCounter++
+				case false:
+					name = resName.Name
+					nameObj = resName.Obj
+				}
+
+				arguments = append(arguments, ArgType{
+					Name:       name,
+					NameObject: nameObj,
+					Type:       typeIdent.Name,
+					TypeObject: typeIdent.Obj,
+				})
+			}
+
+			defs = append(defs, FunctionDefinition{
+				Func:      ftype,
+				Interface: intr,
+				Returns:   returns,
+				Args:      arguments,
+				Name:      nameIdent.Name,
+			})
+
+			continue
+		}
+
+		ident, ok := method.Type.(*ast.Ident)
+		if !ok {
+			continue
+		}
+
+		if ident == nil || ident.Obj == nil || ident.Obj.Decl == nil {
+			continue
+		}
+
+		identDecl, ok := ident.Obj.Decl.(*ast.TypeSpec)
+		if !ok {
+			continue
+		}
+
+		identIntr, ok := identDecl.Type.(*ast.InterfaceType)
+		if !ok {
+			continue
+		}
+
+		defs = append(defs, GetInterfaceFunctions(identIntr)...)
+	}
+
+	return defs
+}
+
+//===========================================================================================================
 
 // StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
 type StructDeclaration struct {
