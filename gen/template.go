@@ -87,6 +87,15 @@ var (
 		"prefixInt": func(prefix string, b int) string {
 			return fmt.Sprintf("%s%d", prefix, b)
 		},
+		"stub": func(count int) string {
+			var vals []string
+
+			for i := count; i > 0; i-- {
+				vals = append(vals, "_")
+			}
+
+			return strings.Join(vals, ",")
+		},
 		"subs": func(word string, b int) string {
 			return word[:b]
 		},

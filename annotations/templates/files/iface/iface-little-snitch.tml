@@ -8,6 +8,10 @@ type MethodCallFor{{.Name}} struct{
     Start time.Time
     End time.Time
 
+    // Details of panic if such occurs.
+    PanicStack []byte
+    PanicError interface{}
+
     // Argument values.
     {{ range .Args }}
     {{capitalize .Name}} {{.Type}}
@@ -30,8 +34,8 @@ type {{.InterfaceName}}LittleSnitch struct{
     {{ end }}
 }
 
-// New returns a new instance of a {{.InterfaceName}}LittleSnitch for recording.
-func New(impl {{.Package.Package}}.{{.InterfaceName}}) *{{.InterfaceName}}LittleSnitch {
+// NewLittleSnitch returns a new instance of a {{.InterfaceName}}LittleSnitch for recording.
+func NewLittleSnitch(impl {{.Package.Package}}.{{.InterfaceName}}) *{{.InterfaceName}}LittleSnitch {
     var snitch {{.InterfaceName}}LittleSnitch
     {{ range .Methods }}
     snitch.{{.Name}}MethodCalls = make([]MethodCallFor{{.Name}}, 0)
@@ -44,6 +48,20 @@ func New(impl {{.Package.Package}}.{{.InterfaceName}}) *{{.InterfaceName}}Little
 // {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
 func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
     var caller MethodCallFor{{.Name}}
+
+    defer func(){
+        if err := recover(); err != nil {
+            trace := make([]byte, 1000)
+            trace = trace[:runtime.Stack(trace, all)]
+
+            caller.PanicError = err
+            caller.PanicStack = trace
+        }
+
+        caller.End = time.Now()
+        impl.{{.Name}}MethodCalls = append(impl.{{.Name}}MethodCalls, caller)
+    }()
+
     caller.When = time.Now()
     caller.Start = caller.When
 
@@ -56,10 +74,6 @@ func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList}}) ({{.Ret
     {{ range .Returns }}
     caller.{{capitalize .Name}} = {{.Name}}
     {{ end }}
-
-    caller.End = time.Now()
-
-    impl.{{.Name}}MethodCalls = append(impl.{{.Name}}MethodCalls, caller)
 
     return {{.ReturnNamesList}}
 }
@@ -81,6 +95,20 @@ type {{.InterfaceName}}MockSnitch struct{
 // {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
 func (impl *{{$InterfaceName}}MockSnitch) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
     var caller MethodCallFor{{.Name}}
+
+    defer func(){
+        if err := recover(); err != nil {
+            trace := make([]byte, 1000)
+            trace = trace[:runtime.Stack(trace, all)]
+
+            caller.PanicError = err
+            caller.PanicStack = trace
+        }
+
+        caller.End = time.Now()
+        impl.{{.Name}}MethodCalls = append(impl.{{.Name}}MethodCalls, caller)
+    }()
+
     caller.When = time.Now()
     caller.Start = caller.When
 
@@ -93,10 +121,6 @@ func (impl *{{$InterfaceName}}MockSnitch) {{.Name}}({{.ArgumentList}}) ({{.Retur
     {{ range .Returns }}
     caller.{{capitalize .Name}} = {{.Name}}
     {{ end }}
-
-    caller.End = time.Now()
-
-    impl.{{.Name}}MethodCalls = append(impl.{{.Name}}MethodCalls, caller)
 
     return {{.ReturnNamesList}}
 }

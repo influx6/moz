@@ -1,0 +1,44 @@
+// TestImplementationFor{{.InterfaceName}} defines the test for asserting the behaviour of  
+// the implementation for the {{.InterfaceName}} interface methods.
+func TestImplementationFor{{.InterfaceName}}(t *testing.T){
+    t.Logf("Given the need to validate the behaviour of elements implementing the {{.InterfaceName}} interface")
+    {
+        {{ range .Methods }}
+        testMethodCallFor{{.Name}}(t)
+        {{ end }}
+    }
+}
+
+{{$InterfaceName := .InterfaceName }}
+{{ range .Methods }}
+func testMethodCallFor{{.Name}}(t *testing.T){
+    t.Logf("\tWhen the method {{.Name}} is called {{$InterfaceName}}Impl")
+    {
+        impl := &snitch.{{$InterfaceName}}MockSnitch{
+            {{.Name}}Func: func({{.ArgumentList}}) ({{.ReturnList}}) {
+                // Add implementation logic.
+                panic("Please write your implementation logic in here for {{.Name}}")
+            },
+        }
+
+        // Stub variables for method.
+        // TODO: Replace this stubs with real values for method
+        {{ range .Args}}var {{.Name}} {{.Type}}{{ end }}
+
+        // Call {{.Name}} method with arguments
+        impl.{{.Name}}({{.ArgumentNamesList}})
+
+         if len(impl.{{.Name}}MethodCalls) == 0 {
+             tests.Failed("Should have received new method call record for {{.Name}}.")
+         }
+        tests.Passed("Should have received new method call record for {{.Name}}.")
+
+        lastCall := impl.{{.Name}}MethodCalls[len(impl.{{.Name}}MethodCalls) - 1]
+
+        if lastCall.PanicErr != nil {
+            tests.Failed("Should have successfully executed {{.Name}} method without panic.")
+        }
+        tests.Passed("Should have successfully executed {{.Name}} method without panic.")
+    }
+}
+{{ end }}

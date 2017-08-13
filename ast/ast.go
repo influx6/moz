@@ -93,6 +93,12 @@ type AnnotationDeclaration struct {
 	Arguments []string `json:"arguments"`
 }
 
+// ImportDeclaration defines a type to contain import declaration within a package.
+type ImportDeclaration struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+}
+
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
 // giving package.
 type PackageDeclaration struct {
@@ -100,6 +106,7 @@ type PackageDeclaration struct {
 	Path        string                            `json:"path"`
 	FilePath    string                            `json:"filepath"`
 	File        string                            `json:"file"`
+	Imports     []ImportDeclaration               `json:"imports"`
 	Annotations []AnnotationDeclaration           `json:"annotations"`
 	Types       []TypeDeclaration                 `json:"types"`
 	Structs     []StructDeclaration               `json:"structs"`
@@ -227,6 +234,7 @@ type InterfaceDeclaration struct {
 type ArgType struct {
 	Name       string
 	Type       string
+	Package    string
 	NameObject *ast.Object
 	TypeObject *ast.Object
 }
@@ -318,57 +326,60 @@ func GetInterfaceFunctions(intr *ast.InterfaceType) []FunctionDefinition {
 			var arguments, returns []ArgType
 
 			for _, result := range ftype.Results.List {
-				typeIdent, ok := result.Type.(*ast.Ident)
-				if !ok {
-					continue
+				switch iobj := result.Type.(type) {
+				case *ast.Ident:
+					var name string
+					var nameObj *ast.Object
+
+					resName, err := GetIdentName(result)
+					switch err != nil {
+					case true:
+						name = fmt.Sprintf("var%d", retCounter)
+						retCounter++
+					case false:
+						name = resName.Name
+						nameObj = resName.Obj
+					}
+
+					returns = append(returns, ArgType{
+						Name:       name,
+						NameObject: nameObj,
+						Type:       iobj.Name,
+						TypeObject: iobj.Obj,
+					})
+
+				case *ast.SelectorExpr:
+					fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
 				}
-
-				var name string
-				var nameObj *ast.Object
-
-				resName, err := GetIdentName(result)
-				switch err != nil {
-				case true:
-					name = fmt.Sprintf("ret%d", retCounter)
-					retCounter++
-				case false:
-					name = resName.Name
-					nameObj = resName.Obj
-				}
-
-				returns = append(returns, ArgType{
-					Name:       name,
-					NameObject: nameObj,
-					Type:       typeIdent.Name,
-					TypeObject: typeIdent.Obj,
-				})
 			}
 
 			for _, param := range ftype.Params.List {
-				typeIdent, ok := param.Type.(*ast.Ident)
-				if !ok {
-					continue
+				switch iobj := param.Type.(type) {
+				case *ast.Ident:
+					var name string
+					var nameObj *ast.Object
+
+					resName, err := GetIdentName(param)
+					switch err != nil {
+					case true:
+						name = fmt.Sprintf("var%d", varCounter)
+						varCounter++
+					case false:
+						name = resName.Name
+						nameObj = resName.Obj
+					}
+
+					arguments = append(arguments, ArgType{
+						Name:       name,
+						NameObject: nameObj,
+						Type:       iobj.Name,
+						TypeObject: iobj.Obj,
+					})
+
+				case *ast.SelectorExpr:
+					fmt.Printf("Param: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
 				}
 
-				var name string
-				var nameObj *ast.Object
-
-				resName, err := GetIdentName(param)
-				switch err != nil {
-				case true:
-					name = fmt.Sprintf("var%d", varCounter)
-					varCounter++
-				case false:
-					name = resName.Name
-					nameObj = resName.Obj
-				}
-
-				arguments = append(arguments, ArgType{
-					Name:       name,
-					NameObject: nameObj,
-					Type:       typeIdent.Name,
-					TypeObject: typeIdent.Obj,
-				})
 			}
 
 			defs = append(defs, FunctionDefinition{
@@ -457,6 +468,19 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			packageDeclr.Package = pkg.Name
 			packageDeclr.FilePath = path
 			packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
+
+			for _, imp := range file.Imports {
+				var pkgName string
+
+				if imp.Name != nil {
+					pkgName = imp.Name.Name
+				}
+
+				packageDeclr.Imports = append(packageDeclr.Imports, ImportDeclaration{
+					Name: pkgName,
+					Path: imp.Path.Value,
+				})
+			}
 
 			if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
 				packageDeclr.Path = filepath.Dir(relPath)

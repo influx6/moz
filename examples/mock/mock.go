@@ -1,5 +1,11 @@
 package mock
 
+import (
+	"io"
+
+	toml "github.com/BurntSushi/toml"
+)
+
 // Ignitable defines a struct which is used to ignite the package.
 type Ignitable interface {
 	Ignite() string
@@ -16,5 +22,7 @@ type GPSLoc struct {
 type MofInitable interface {
 	Ignitable
 	Crunch() (cr string)
+	Configuration() toml.Primitive
 	Location(string) (GPSLoc, error)
+	WriterTo(io.Writer) (int64, error)
 }
