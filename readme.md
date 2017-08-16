@@ -42,6 +42,67 @@ For example: If we wanted to be able to generate code for database CRUD activiti
 See the [Example](./examples/) directory, which demonstrates use of annotations to code generate other parts of a project or mock up implementation detail for an interface using annotations.
 
 
+### Example
+
+1. Create a file and add the following contents defining a interface we wish to
+create it's implementation structures by annotating with a `@iface` comment.
+
+```go
+package mock
+
+//go:generate moz generate
+
+import (
+	"io"
+
+	toml "github.com/BurntSushi/toml"
+)
+
+// Ignitable defines a struct which is used to ignite the package.
+type Ignitable interface {
+	Ignite() string
+}
+
+// GPSLoc defines a struct to hold long and lat values for a gps location.
+type GPSLoc struct {
+	Lat  float64
+	Long float64
+}
+
+// MofInitable defines a interface for a Mof.
+// @iface
+type MofInitable interface {
+	Ignitable
+	Crunch() (cr string)
+	Configuration() toml.Primitive
+	Location(string) (GPSLoc, error)
+	WriterTo(io.Writer) (int64, error)
+	Maps(string) (map[string]GPSLoc, error)
+	MapsIn(string) (map[string]*GPSLoc, error)
+	MapsOut(string) (map[*GPSLoc]string, error)
+	Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
+	Close() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string)
+	Bob() chan chan struct{}
+}
+
+```
+
+2. Navigate to where file is stored (We assume it's in your GOPATH) and run
+
+```
+go generate
+```
+
+or
+
+```
+moz generate
+```
+
+The command above will generate all necessary files and packages ready for editing.
+
+See [Mock Example](./examples/mock) for end result.
+
 ### How Annotation Code Generation works
 
 Moz provides 4 types of Annotation generators, which are function types which provide the necessary operations to be performed to create the underline series of sources to be generated for each annotation.
@@ -87,6 +148,7 @@ type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration
 ```
 
 *This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+
 
 
 Code Generation structures
