@@ -36,6 +36,21 @@ func (impl MofInitableImpl) WriterTo(var2 io.Writer) (int64, error) {
 	panic("Not yet implemented")
 }
 
+// Maps implements the MofInitable.Maps() method for the MofInitable.
+func (impl MofInitableImpl) Maps(var3 string) (map[string]GPSLoc, error) {
+	panic("Not yet implemented")
+}
+
+// MapsIn implements the MofInitable.MapsIn() method for the MofInitable.
+func (impl MofInitableImpl) MapsIn(var4 string) (map[string]*GPSLoc, error) {
+	panic("Not yet implemented")
+}
+
+// MapsOut implements the MofInitable.MapsOut() method for the MofInitable.
+func (impl MofInitableImpl) MapsOut(var5 string) (map[*GPSLoc]string, error) {
+	panic("Not yet implemented")
+}
+
 // Drop implements the MofInitable.Drop() method for the MofInitable.
 func (impl MofInitableImpl) Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
 	panic("Not yet implemented")

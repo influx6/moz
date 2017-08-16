@@ -322,7 +322,7 @@ func (fd FunctionDefinition) ArgumentList(asFromOutside bool) string {
 
 	for _, arg := range fd.Args {
 		if asFromOutside {
-			args = append(args, fmt.Sprintf("%s", arg.ExType))
+			args = append(args, fmt.Sprintf("%s %s", arg.Name, arg.ExType))
 			continue
 		}
 

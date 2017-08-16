@@ -35,7 +35,7 @@ func testMethodCallFor{{.Name}}(t *testing.T){
 
         lastCall := impl.{{.Name}}MethodCalls[len(impl.{{.Name}}MethodCalls) - 1]
 
-        if lastCall.PanicErr != nil {
+        if lastCall.PanicError != nil {
             tests.Failed("Should have successfully executed {{.Name}} method without panic.")
         }
         tests.Passed("Should have successfully executed {{.Name}} method without panic.")

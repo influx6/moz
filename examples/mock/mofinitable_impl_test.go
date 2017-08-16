@@ -29,6 +29,12 @@ func TestImplementationForMofInitable(t *testing.T) {
 
 		testMethodCallForWriterTo(t)
 
+		testMethodCallForMaps(t)
+
+		testMethodCallForMapsIn(t)
+
+		testMethodCallForMapsOut(t)
+
 		testMethodCallForDrop(t)
 
 		testMethodCallForClose(t)
@@ -61,7 +67,7 @@ func testMethodCallForIgnite(t *testing.T) {
 
 		lastCall := impl.IgniteMethodCalls[len(impl.IgniteMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Ignite method without panic.")
 		}
 		tests.Passed("Should have successfully executed Ignite method without panic.")
@@ -91,7 +97,7 @@ func testMethodCallForCrunch(t *testing.T) {
 
 		lastCall := impl.CrunchMethodCalls[len(impl.CrunchMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Crunch method without panic.")
 		}
 		tests.Passed("Should have successfully executed Crunch method without panic.")
@@ -121,7 +127,7 @@ func testMethodCallForConfiguration(t *testing.T) {
 
 		lastCall := impl.ConfigurationMethodCalls[len(impl.ConfigurationMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Configuration method without panic.")
 		}
 		tests.Passed("Should have successfully executed Configuration method without panic.")
@@ -132,7 +138,7 @@ func testMethodCallForLocation(t *testing.T) {
 	t.Logf("\tWhen the method Location is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			LocationFunc: func(string) (mock.GPSLoc, error) {
+			LocationFunc: func(var1 string) (mock.GPSLoc, error) {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for Location")
 			},
@@ -152,7 +158,7 @@ func testMethodCallForLocation(t *testing.T) {
 
 		lastCall := impl.LocationMethodCalls[len(impl.LocationMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Location method without panic.")
 		}
 		tests.Passed("Should have successfully executed Location method without panic.")
@@ -163,7 +169,7 @@ func testMethodCallForWriterTo(t *testing.T) {
 	t.Logf("\tWhen the method WriterTo is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			WriterToFunc: func(io.Writer) (int64, error) {
+			WriterToFunc: func(var2 io.Writer) (int64, error) {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for WriterTo")
 			},
@@ -183,10 +189,103 @@ func testMethodCallForWriterTo(t *testing.T) {
 
 		lastCall := impl.WriterToMethodCalls[len(impl.WriterToMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed WriterTo method without panic.")
 		}
 		tests.Passed("Should have successfully executed WriterTo method without panic.")
+	}
+}
+
+func testMethodCallForMaps(t *testing.T) {
+	t.Logf("\tWhen the method Maps is called MofInitableImpl")
+	{
+		impl := &snitch.MofInitableMockSnitch{
+			MapsFunc: func(var3 string) (map[string]mock.GPSLoc, error) {
+				// Add implementation logic.
+				panic("Please write your implementation logic in here for Maps")
+			},
+		}
+
+		// Stub variables for method.
+		// TODO: Replace this stubs with real values for method
+		var var3 string
+
+		// Call Maps method with arguments
+		impl.Maps(var3)
+
+		if len(impl.MapsMethodCalls) == 0 {
+			tests.Failed("Should have received new method call record for Maps.")
+		}
+		tests.Passed("Should have received new method call record for Maps.")
+
+		lastCall := impl.MapsMethodCalls[len(impl.MapsMethodCalls)-1]
+
+		if lastCall.PanicError != nil {
+			tests.Failed("Should have successfully executed Maps method without panic.")
+		}
+		tests.Passed("Should have successfully executed Maps method without panic.")
+	}
+}
+
+func testMethodCallForMapsIn(t *testing.T) {
+	t.Logf("\tWhen the method MapsIn is called MofInitableImpl")
+	{
+		impl := &snitch.MofInitableMockSnitch{
+			MapsInFunc: func(var4 string) (map[string]*mock.GPSLoc, error) {
+				// Add implementation logic.
+				panic("Please write your implementation logic in here for MapsIn")
+			},
+		}
+
+		// Stub variables for method.
+		// TODO: Replace this stubs with real values for method
+		var var4 string
+
+		// Call MapsIn method with arguments
+		impl.MapsIn(var4)
+
+		if len(impl.MapsInMethodCalls) == 0 {
+			tests.Failed("Should have received new method call record for MapsIn.")
+		}
+		tests.Passed("Should have received new method call record for MapsIn.")
+
+		lastCall := impl.MapsInMethodCalls[len(impl.MapsInMethodCalls)-1]
+
+		if lastCall.PanicError != nil {
+			tests.Failed("Should have successfully executed MapsIn method without panic.")
+		}
+		tests.Passed("Should have successfully executed MapsIn method without panic.")
+	}
+}
+
+func testMethodCallForMapsOut(t *testing.T) {
+	t.Logf("\tWhen the method MapsOut is called MofInitableImpl")
+	{
+		impl := &snitch.MofInitableMockSnitch{
+			MapsOutFunc: func(var5 string) (map[*mock.GPSLoc]string, error) {
+				// Add implementation logic.
+				panic("Please write your implementation logic in here for MapsOut")
+			},
+		}
+
+		// Stub variables for method.
+		// TODO: Replace this stubs with real values for method
+		var var5 string
+
+		// Call MapsOut method with arguments
+		impl.MapsOut(var5)
+
+		if len(impl.MapsOutMethodCalls) == 0 {
+			tests.Failed("Should have received new method call record for MapsOut.")
+		}
+		tests.Passed("Should have received new method call record for MapsOut.")
+
+		lastCall := impl.MapsOutMethodCalls[len(impl.MapsOutMethodCalls)-1]
+
+		if lastCall.PanicError != nil {
+			tests.Failed("Should have successfully executed MapsOut method without panic.")
+		}
+		tests.Passed("Should have successfully executed MapsOut method without panic.")
 	}
 }
 
@@ -213,7 +312,7 @@ func testMethodCallForDrop(t *testing.T) {
 
 		lastCall := impl.DropMethodCalls[len(impl.DropMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Drop method without panic.")
 		}
 		tests.Passed("Should have successfully executed Drop method without panic.")
@@ -243,7 +342,7 @@ func testMethodCallForClose(t *testing.T) {
 
 		lastCall := impl.CloseMethodCalls[len(impl.CloseMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Close method without panic.")
 		}
 		tests.Passed("Should have successfully executed Close method without panic.")
@@ -273,7 +372,7 @@ func testMethodCallForBob(t *testing.T) {
 
 		lastCall := impl.BobMethodCalls[len(impl.BobMethodCalls)-1]
 
-		if lastCall.PanicErr != nil {
+		if lastCall.PanicError != nil {
 			tests.Failed("Should have successfully executed Bob method without panic.")
 		}
 		tests.Passed("Should have successfully executed Bob method without panic.")

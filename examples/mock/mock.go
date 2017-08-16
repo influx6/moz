@@ -25,6 +25,9 @@ type MofInitable interface {
 	Configuration() toml.Primitive
 	Location(string) (GPSLoc, error)
 	WriterTo(io.Writer) (int64, error)
+	Maps(string) (map[string]GPSLoc, error)
+	MapsIn(string) (map[string]*GPSLoc, error)
+	MapsOut(string) (map[*GPSLoc]string, error)
 	Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
 	Close() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string)
 	Bob() chan chan struct{}

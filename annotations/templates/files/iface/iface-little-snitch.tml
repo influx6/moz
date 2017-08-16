@@ -52,7 +52,7 @@ func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList true}}) ({
     defer func(){
         if err := recover(); err != nil {
             trace := make([]byte, 1000)
-            trace = trace[:runtime.Stack(trace, all)]
+            trace = trace[:runtime.Stack(trace, true)]
 
             caller.PanicError = err
             caller.PanicStack = trace
@@ -99,7 +99,7 @@ func (impl *{{$InterfaceName}}MockSnitch) {{.Name}}({{.ArgumentList true}}) ({{.
     defer func(){
         if err := recover(); err != nil {
             trace := make([]byte, 1000)
-            trace = trace[:runtime.Stack(trace, all)]
+            trace = trace[:runtime.Stack(trace, true)]
 
             caller.PanicError = err
             caller.PanicStack = trace

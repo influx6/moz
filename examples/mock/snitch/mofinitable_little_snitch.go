@@ -109,6 +109,72 @@ type MethodCallForWriterTo struct {
 	Var5 error
 }
 
+// MethodCallForMaps defines a type which holds meta-details about the giving calls associated
+// with the MofInitable.Maps() method.
+type MethodCallForMaps struct {
+	When  time.Time
+	Start time.Time
+	End   time.Time
+
+	// Details of panic if such occurs.
+	PanicStack []byte
+	PanicError interface{}
+
+	// Argument values.
+
+	Var3 string
+
+	// Return values.
+
+	Var6 map[string]mock.GPSLoc
+
+	Var7 error
+}
+
+// MethodCallForMapsIn defines a type which holds meta-details about the giving calls associated
+// with the MofInitable.MapsIn() method.
+type MethodCallForMapsIn struct {
+	When  time.Time
+	Start time.Time
+	End   time.Time
+
+	// Details of panic if such occurs.
+	PanicStack []byte
+	PanicError interface{}
+
+	// Argument values.
+
+	Var4 string
+
+	// Return values.
+
+	Var8 map[string]*mock.GPSLoc
+
+	Var9 error
+}
+
+// MethodCallForMapsOut defines a type which holds meta-details about the giving calls associated
+// with the MofInitable.MapsOut() method.
+type MethodCallForMapsOut struct {
+	When  time.Time
+	Start time.Time
+	End   time.Time
+
+	// Details of panic if such occurs.
+	PanicStack []byte
+	PanicError interface{}
+
+	// Argument values.
+
+	Var5 string
+
+	// Return values.
+
+	Var10 map[*mock.GPSLoc]string
+
+	Var11 error
+}
+
 // MethodCallForDrop defines a type which holds meta-details about the giving calls associated
 // with the MofInitable.Drop() method.
 type MethodCallForDrop struct {
@@ -124,13 +190,13 @@ type MethodCallForDrop struct {
 
 	// Return values.
 
-	Var6 *mock.GPSLoc
+	Var12 *mock.GPSLoc
 
-	Var7 *toml.Primitive
+	Var13 *toml.Primitive
 
-	Var8 *[]byte
+	Var14 *[]byte
 
-	Var9 *[5]byte
+	Var15 *[5]byte
 }
 
 // MethodCallForClose defines a type which holds meta-details about the giving calls associated
@@ -148,15 +214,15 @@ type MethodCallForClose struct {
 
 	// Return values.
 
-	Var10 chan struct{}
+	Var16 chan struct{}
 
-	Var11 chan toml.Primitive
+	Var17 chan toml.Primitive
 
-	Var12 chan string
+	Var18 chan string
 
-	Var13 chan []byte
+	Var19 chan []byte
 
-	Var14 chan *[]string
+	Var20 chan *[]string
 }
 
 // MethodCallForBob defines a type which holds meta-details about the giving calls associated
@@ -174,7 +240,7 @@ type MethodCallForBob struct {
 
 	// Return values.
 
-	Var15 chan chan struct{}
+	Var21 chan chan struct{}
 }
 
 // MofInitableSnitch is an implementation of the MofInitable which will wrap the
@@ -192,6 +258,12 @@ type MofInitableLittleSnitch struct {
 	LocationMethodCalls []MethodCallForLocation
 
 	WriterToMethodCalls []MethodCallForWriterTo
+
+	MapsMethodCalls []MethodCallForMaps
+
+	MapsInMethodCalls []MethodCallForMapsIn
+
+	MapsOutMethodCalls []MethodCallForMapsOut
 
 	DropMethodCalls []MethodCallForDrop
 
@@ -214,6 +286,12 @@ func NewLittleSnitch(impl mock.MofInitable) *MofInitableLittleSnitch {
 
 	snitch.WriterToMethodCalls = make([]MethodCallForWriterTo, 0)
 
+	snitch.MapsMethodCalls = make([]MethodCallForMaps, 0)
+
+	snitch.MapsInMethodCalls = make([]MethodCallForMapsIn, 0)
+
+	snitch.MapsOutMethodCalls = make([]MethodCallForMapsOut, 0)
+
 	snitch.DropMethodCalls = make([]MethodCallForDrop, 0)
 
 	snitch.CloseMethodCalls = make([]MethodCallForClose, 0)
@@ -230,7 +308,7 @@ func (impl *MofInitableLittleSnitch) Ignite() string {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -257,7 +335,7 @@ func (impl *MofInitableLittleSnitch) Crunch() string {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -284,7 +362,7 @@ func (impl *MofInitableLittleSnitch) Configuration() toml.Primitive {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -305,13 +383,13 @@ func (impl *MofInitableLittleSnitch) Configuration() toml.Primitive {
 }
 
 // Location implements the MofInitable.Location() method for the MofInitable.
-func (impl *MofInitableLittleSnitch) Location(string) (mock.GPSLoc, error) {
+func (impl *MofInitableLittleSnitch) Location(var1 string) (mock.GPSLoc, error) {
 	var caller MethodCallForLocation
 
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -336,13 +414,13 @@ func (impl *MofInitableLittleSnitch) Location(string) (mock.GPSLoc, error) {
 }
 
 // WriterTo implements the MofInitable.WriterTo() method for the MofInitable.
-func (impl *MofInitableLittleSnitch) WriterTo(io.Writer) (int64, error) {
+func (impl *MofInitableLittleSnitch) WriterTo(var2 io.Writer) (int64, error) {
 	var caller MethodCallForWriterTo
 
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -366,6 +444,99 @@ func (impl *MofInitableLittleSnitch) WriterTo(io.Writer) (int64, error) {
 	return var4, var5
 }
 
+// Maps implements the MofInitable.Maps() method for the MofInitable.
+func (impl *MofInitableLittleSnitch) Maps(var3 string) (map[string]mock.GPSLoc, error) {
+	var caller MethodCallForMaps
+
+	defer func() {
+		if err := recover(); err != nil {
+			trace := make([]byte, 1000)
+			trace = trace[:runtime.Stack(trace, true)]
+
+			caller.PanicError = err
+			caller.PanicStack = trace
+		}
+
+		caller.End = time.Now()
+		impl.MapsMethodCalls = append(impl.MapsMethodCalls, caller)
+	}()
+
+	caller.When = time.Now()
+	caller.Start = caller.When
+
+	caller.Var3 = var3
+
+	var6, var7 := impl.Implementer.Maps(var3)
+
+	caller.Var6 = var6
+
+	caller.Var7 = var7
+
+	return var6, var7
+}
+
+// MapsIn implements the MofInitable.MapsIn() method for the MofInitable.
+func (impl *MofInitableLittleSnitch) MapsIn(var4 string) (map[string]*mock.GPSLoc, error) {
+	var caller MethodCallForMapsIn
+
+	defer func() {
+		if err := recover(); err != nil {
+			trace := make([]byte, 1000)
+			trace = trace[:runtime.Stack(trace, true)]
+
+			caller.PanicError = err
+			caller.PanicStack = trace
+		}
+
+		caller.End = time.Now()
+		impl.MapsInMethodCalls = append(impl.MapsInMethodCalls, caller)
+	}()
+
+	caller.When = time.Now()
+	caller.Start = caller.When
+
+	caller.Var4 = var4
+
+	var8, var9 := impl.Implementer.MapsIn(var4)
+
+	caller.Var8 = var8
+
+	caller.Var9 = var9
+
+	return var8, var9
+}
+
+// MapsOut implements the MofInitable.MapsOut() method for the MofInitable.
+func (impl *MofInitableLittleSnitch) MapsOut(var5 string) (map[*mock.GPSLoc]string, error) {
+	var caller MethodCallForMapsOut
+
+	defer func() {
+		if err := recover(); err != nil {
+			trace := make([]byte, 1000)
+			trace = trace[:runtime.Stack(trace, true)]
+
+			caller.PanicError = err
+			caller.PanicStack = trace
+		}
+
+		caller.End = time.Now()
+		impl.MapsOutMethodCalls = append(impl.MapsOutMethodCalls, caller)
+	}()
+
+	caller.When = time.Now()
+	caller.Start = caller.When
+
+	caller.Var5 = var5
+
+	var10, var11 := impl.Implementer.MapsOut(var5)
+
+	caller.Var10 = var10
+
+	caller.Var11 = var11
+
+	return var10, var11
+}
+
 // Drop implements the MofInitable.Drop() method for the MofInitable.
 func (impl *MofInitableLittleSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
 	var caller MethodCallForDrop
@@ -373,7 +544,7 @@ func (impl *MofInitableLittleSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]b
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -386,17 +557,17 @@ func (impl *MofInitableLittleSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]b
 	caller.When = time.Now()
 	caller.Start = caller.When
 
-	var6, var7, var8, var9 := impl.Implementer.Drop()
+	var12, var13, var14, var15 := impl.Implementer.Drop()
 
-	caller.Var6 = var6
+	caller.Var12 = var12
 
-	caller.Var7 = var7
+	caller.Var13 = var13
 
-	caller.Var8 = var8
+	caller.Var14 = var14
 
-	caller.Var9 = var9
+	caller.Var15 = var15
 
-	return var6, var7, var8, var9
+	return var12, var13, var14, var15
 }
 
 // Close implements the MofInitable.Close() method for the MofInitable.
@@ -406,7 +577,7 @@ func (impl *MofInitableLittleSnitch) Close() (chan struct{}, chan toml.Primitive
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -419,19 +590,19 @@ func (impl *MofInitableLittleSnitch) Close() (chan struct{}, chan toml.Primitive
 	caller.When = time.Now()
 	caller.Start = caller.When
 
-	var10, var11, var12, var13, var14 := impl.Implementer.Close()
+	var16, var17, var18, var19, var20 := impl.Implementer.Close()
 
-	caller.Var10 = var10
+	caller.Var16 = var16
 
-	caller.Var11 = var11
+	caller.Var17 = var17
 
-	caller.Var12 = var12
+	caller.Var18 = var18
 
-	caller.Var13 = var13
+	caller.Var19 = var19
 
-	caller.Var14 = var14
+	caller.Var20 = var20
 
-	return var10, var11, var12, var13, var14
+	return var16, var17, var18, var19, var20
 }
 
 // Bob implements the MofInitable.Bob() method for the MofInitable.
@@ -441,7 +612,7 @@ func (impl *MofInitableLittleSnitch) Bob() chan chan struct{} {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -454,11 +625,11 @@ func (impl *MofInitableLittleSnitch) Bob() chan chan struct{} {
 	caller.When = time.Now()
 	caller.Start = caller.When
 
-	var15 := impl.Implementer.Bob()
+	var21 := impl.Implementer.Bob()
 
-	caller.Var15 = var15
+	caller.Var21 = var21
 
-	return var15
+	return var21
 }
 
 //==============================================================================================================
@@ -477,10 +648,19 @@ type MofInitableMockSnitch struct {
 	ConfigurationFunc        func() toml.Primitive
 
 	LocationMethodCalls []MethodCallForLocation
-	LocationFunc        func(string) (mock.GPSLoc, error)
+	LocationFunc        func(var1 string) (mock.GPSLoc, error)
 
 	WriterToMethodCalls []MethodCallForWriterTo
-	WriterToFunc        func(io.Writer) (int64, error)
+	WriterToFunc        func(var2 io.Writer) (int64, error)
+
+	MapsMethodCalls []MethodCallForMaps
+	MapsFunc        func(var3 string) (map[string]mock.GPSLoc, error)
+
+	MapsInMethodCalls []MethodCallForMapsIn
+	MapsInFunc        func(var4 string) (map[string]*mock.GPSLoc, error)
+
+	MapsOutMethodCalls []MethodCallForMapsOut
+	MapsOutFunc        func(var5 string) (map[*mock.GPSLoc]string, error)
 
 	DropMethodCalls []MethodCallForDrop
 	DropFunc        func() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
@@ -499,7 +679,7 @@ func (impl *MofInitableMockSnitch) Ignite() string {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -526,7 +706,7 @@ func (impl *MofInitableMockSnitch) Crunch() string {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -553,7 +733,7 @@ func (impl *MofInitableMockSnitch) Configuration() toml.Primitive {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -574,13 +754,13 @@ func (impl *MofInitableMockSnitch) Configuration() toml.Primitive {
 }
 
 // Location implements the MofInitable.Location() method for the MofInitable.
-func (impl *MofInitableMockSnitch) Location(string) (mock.GPSLoc, error) {
+func (impl *MofInitableMockSnitch) Location(var1 string) (mock.GPSLoc, error) {
 	var caller MethodCallForLocation
 
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -605,13 +785,13 @@ func (impl *MofInitableMockSnitch) Location(string) (mock.GPSLoc, error) {
 }
 
 // WriterTo implements the MofInitable.WriterTo() method for the MofInitable.
-func (impl *MofInitableMockSnitch) WriterTo(io.Writer) (int64, error) {
+func (impl *MofInitableMockSnitch) WriterTo(var2 io.Writer) (int64, error) {
 	var caller MethodCallForWriterTo
 
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -635,6 +815,99 @@ func (impl *MofInitableMockSnitch) WriterTo(io.Writer) (int64, error) {
 	return var4, var5
 }
 
+// Maps implements the MofInitable.Maps() method for the MofInitable.
+func (impl *MofInitableMockSnitch) Maps(var3 string) (map[string]mock.GPSLoc, error) {
+	var caller MethodCallForMaps
+
+	defer func() {
+		if err := recover(); err != nil {
+			trace := make([]byte, 1000)
+			trace = trace[:runtime.Stack(trace, true)]
+
+			caller.PanicError = err
+			caller.PanicStack = trace
+		}
+
+		caller.End = time.Now()
+		impl.MapsMethodCalls = append(impl.MapsMethodCalls, caller)
+	}()
+
+	caller.When = time.Now()
+	caller.Start = caller.When
+
+	caller.Var3 = var3
+
+	var6, var7 := impl.MapsFunc(var3)
+
+	caller.Var6 = var6
+
+	caller.Var7 = var7
+
+	return var6, var7
+}
+
+// MapsIn implements the MofInitable.MapsIn() method for the MofInitable.
+func (impl *MofInitableMockSnitch) MapsIn(var4 string) (map[string]*mock.GPSLoc, error) {
+	var caller MethodCallForMapsIn
+
+	defer func() {
+		if err := recover(); err != nil {
+			trace := make([]byte, 1000)
+			trace = trace[:runtime.Stack(trace, true)]
+
+			caller.PanicError = err
+			caller.PanicStack = trace
+		}
+
+		caller.End = time.Now()
+		impl.MapsInMethodCalls = append(impl.MapsInMethodCalls, caller)
+	}()
+
+	caller.When = time.Now()
+	caller.Start = caller.When
+
+	caller.Var4 = var4
+
+	var8, var9 := impl.MapsInFunc(var4)
+
+	caller.Var8 = var8
+
+	caller.Var9 = var9
+
+	return var8, var9
+}
+
+// MapsOut implements the MofInitable.MapsOut() method for the MofInitable.
+func (impl *MofInitableMockSnitch) MapsOut(var5 string) (map[*mock.GPSLoc]string, error) {
+	var caller MethodCallForMapsOut
+
+	defer func() {
+		if err := recover(); err != nil {
+			trace := make([]byte, 1000)
+			trace = trace[:runtime.Stack(trace, true)]
+
+			caller.PanicError = err
+			caller.PanicStack = trace
+		}
+
+		caller.End = time.Now()
+		impl.MapsOutMethodCalls = append(impl.MapsOutMethodCalls, caller)
+	}()
+
+	caller.When = time.Now()
+	caller.Start = caller.When
+
+	caller.Var5 = var5
+
+	var10, var11 := impl.MapsOutFunc(var5)
+
+	caller.Var10 = var10
+
+	caller.Var11 = var11
+
+	return var10, var11
+}
+
 // Drop implements the MofInitable.Drop() method for the MofInitable.
 func (impl *MofInitableMockSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
 	var caller MethodCallForDrop
@@ -642,7 +915,7 @@ func (impl *MofInitableMockSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]byt
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -655,17 +928,17 @@ func (impl *MofInitableMockSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]byt
 	caller.When = time.Now()
 	caller.Start = caller.When
 
-	var6, var7, var8, var9 := impl.DropFunc()
+	var12, var13, var14, var15 := impl.DropFunc()
 
-	caller.Var6 = var6
+	caller.Var12 = var12
 
-	caller.Var7 = var7
+	caller.Var13 = var13
 
-	caller.Var8 = var8
+	caller.Var14 = var14
 
-	caller.Var9 = var9
+	caller.Var15 = var15
 
-	return var6, var7, var8, var9
+	return var12, var13, var14, var15
 }
 
 // Close implements the MofInitable.Close() method for the MofInitable.
@@ -675,7 +948,7 @@ func (impl *MofInitableMockSnitch) Close() (chan struct{}, chan toml.Primitive, 
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -688,19 +961,19 @@ func (impl *MofInitableMockSnitch) Close() (chan struct{}, chan toml.Primitive, 
 	caller.When = time.Now()
 	caller.Start = caller.When
 
-	var10, var11, var12, var13, var14 := impl.CloseFunc()
+	var16, var17, var18, var19, var20 := impl.CloseFunc()
 
-	caller.Var10 = var10
+	caller.Var16 = var16
 
-	caller.Var11 = var11
+	caller.Var17 = var17
 
-	caller.Var12 = var12
+	caller.Var18 = var18
 
-	caller.Var13 = var13
+	caller.Var19 = var19
 
-	caller.Var14 = var14
+	caller.Var20 = var20
 
-	return var10, var11, var12, var13, var14
+	return var16, var17, var18, var19, var20
 }
 
 // Bob implements the MofInitable.Bob() method for the MofInitable.
@@ -710,7 +983,7 @@ func (impl *MofInitableMockSnitch) Bob() chan chan struct{} {
 	defer func() {
 		if err := recover(); err != nil {
 			trace := make([]byte, 1000)
-			trace = trace[:runtime.Stack(trace, all)]
+			trace = trace[:runtime.Stack(trace, true)]
 
 			caller.PanicError = err
 			caller.PanicStack = trace
@@ -723,9 +996,9 @@ func (impl *MofInitableMockSnitch) Bob() chan chan struct{} {
 	caller.When = time.Now()
 	caller.Start = caller.When
 
-	var15 := impl.BobFunc()
+	var21 := impl.BobFunc()
 
-	caller.Var15 = var15
+	caller.Var21 = var21
 
-	return var15
+	return var21
 }
