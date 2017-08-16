@@ -16,8 +16,6 @@ Moz is a code generator which builds around the concepts of pluggable `io.WriteT
 
 Moz does not provide a complete set of all possible programming structures found in the Go programming language but provides a mixture of basic and needed structures with a go template strategy that allows us to quickly generate code structures, more so, moz provides a annotation strategy that provides a higher level of code generation based on a target, which either will generate new methods/functions or generate new packages based on that target.
 
-We hope to extend this system to allow the usage of `go1.8 Plugin`  system to allow extensibility which will allow a variety of custom annotations outside of the `moz` package scope.
-
 Features
 ----------
 
@@ -25,6 +23,11 @@ Features
 - Simple Coding Blocks
 - Go text/template support
 - Annotation code generation
+
+Future Plans
+---------------
+
+- Extend Plugin to HotLoad with `go.18 Plugin`.
 
 
 Annotation Code Generation
