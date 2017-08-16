@@ -111,7 +111,10 @@ Moz provide the following generators type functions:
 
 #### StructType Code Generators
 
-This functions are specific to provide code generation instructions for struct type declarations which the given annotation is attached to.
+These functions types are used to provide code generation instructions for Go type declarations and are the ones who define the end result of
+what an annotation produces.
+
+_See [Annotations](./annotations) for code samples of different annotation functions._
 
 ```go
 type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
