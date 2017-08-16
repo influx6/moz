@@ -90,6 +90,7 @@ func PackageFile(file string, mode parser.Mode) (*token.FileSet, *ast.File, erro
 type AnnotationDeclaration struct {
 	Name      string   `json:"name"`
 	Namespace string   `json:"namespace"`
+	Template  string   `json:"template"`
 	Arguments []string `json:"arguments"`
 }
 
@@ -223,6 +224,7 @@ func (fnList Functions) Find(name string) (FuncDeclaration, error) {
 type AnnotationAssociationDeclaration struct {
 	Annotation string `json:"annotation"`
 	Action     string `json:"action"`
+	Template   string `json:"template"`
 	TypeName   string `json:"typeName"`
 }
 
@@ -1037,54 +1039,19 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			}
 
 			if file.Doc != nil {
-				for _, comment := range file.Doc.List {
-					text := strings.TrimPrefix(comment.Text, "//")
+				annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(file.Doc.Text()))
 
-					if !annotation.MatchString(text) {
-						continue
-					}
-
-					annons := annotation.FindStringSubmatch(text)
-
+				for _, item := range annotationRead {
 					log.Emit(stdout.Info("Annotation in Package comments").
 						With("dir", dir).
-						With("annotation", annons[1:]).
-						With("comment", comment.Text))
-
-					if len(annons) > 1 {
-						var arguments []string
-
-						var ns, args string
-
-						if len(annons) > 3 {
-							ns = annons[2]
-							args = strings.TrimSuffix(strings.TrimPrefix(annons[3], "("), ")")
-						} else {
-							args = strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
-						}
-
-						for _, elem := range strings.Split(args, ",") {
-							elem = strings.TrimSpace(elem)
-
-							if unquoted, err := strconv.Unquote(elem); err == nil {
-								arguments = append(arguments, unquoted)
-								continue
-							}
-
-							arguments = append(arguments, elem)
-						}
-
-						packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
-							Namespace: ns,
-							Name:      annons[1],
-							Arguments: arguments,
-						})
-
-						continue
-					}
+						With("annotation", item.Name).
+						With("comment", file.Doc.Text()))
 
 					packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
-						Name: annons[1],
+						Namespace: item.Name,
+						Name:      item.Name,
+						Arguments: item.Arguments,
+						Template:  item.Template,
 					})
 				}
 			}
@@ -1147,92 +1114,46 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 					associations := make(map[string]AnnotationAssociationDeclaration, 0)
 
 					if rdeclr.Doc != nil {
-						for _, comment := range rdeclr.Doc.List {
-							text := strings.TrimPrefix(comment.Text, "//")
+						annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(rdeclr.Doc.Text()))
 
-							if !annotation.MatchString(text) {
-								continue
-							}
-
-							annons := annotation.FindStringSubmatch(text)
-
+						for _, item := range annotationRead {
 							log.Emit(stdout.Info("Annotation in Decleration comment").
 								With("dir", dir).
-								With("comment", comment.Text).
-								With("annotation", annons[1:]).
+								With("comment", rdeclr.Doc.Text()).
+								With("annotation", item.Name).
 								With("position", rdeclr.Pos()).
 								With("token", rdeclr.Tok.String()))
 
-							if len(annons) > 1 {
-								var arguments []string
+							switch item.Name {
+							case "associates":
+								log.Emit(stdout.Error("Association Annotation in Decleration is incomplete: Expects 3 elements").
+									With("dir", dir).
+									With("association", item.Arguments).
+									With("position", rdeclr.Pos()).
+									With("token", rdeclr.Tok.String()))
 
-								var ns, args string
-
-								if len(annons) > 3 {
-									ns = annons[2]
-									args = strings.TrimSuffix(strings.TrimPrefix(annons[3], "("), ")")
-								} else {
-									args = strings.TrimSuffix(strings.TrimPrefix(annons[2], "("), ")")
+								if len(item.Arguments) >= 3 {
+									associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
+										Action:     item.Arguments[1],
+										TypeName:   item.Arguments[2],
+										Template:   item.Template,
+										Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
+									}
 								}
 
-								for _, elem := range strings.Split(args, ",") {
-									elem = strings.TrimSpace(elem)
+								break
 
-									if unquoted, err := strconv.Unquote(elem); err == nil {
-										arguments = append(arguments, unquoted)
-										continue
-									}
+							default:
+								annotations = append(annotations, AnnotationDeclaration{
+									Namespace: item.Name,
+									Name:      item.Name,
+									Arguments: item.Arguments,
+									Template:  item.Template,
+								})
 
-									arguments = append(arguments, elem)
-								}
-
-								switch annons[1] {
-								case "associates":
-									if len(arguments) < 3 {
-										log.Emit(stdout.Error("Association Annotation in Decleration is incomplete: Expects 3 elements").
-											With("dir", dir).
-											With("association", arguments).
-											With("comment", comment.Text).
-											With("annotation", annons[1:]).
-											With("position", rdeclr.Pos()).
-											With("token", rdeclr.Tok.String()))
-
-										continue declrLoop
-									}
-
-									log.Emit(stdout.Info("Association for Annotation in Decleration").
-										With("dir", dir).
-										With("association-annotation", strings.TrimPrefix(arguments[0], "@")).
-										With("association-action", arguments[1]).
-										With("association-typeName", arguments[2]).
-										With("comment", comment.Text).
-										With("annotation", annons[1:]).
-										With("position", rdeclr.Pos()).
-										With("token", rdeclr.Tok.String()))
-
-									associations[arguments[1]] = AnnotationAssociationDeclaration{
-										Action:     arguments[1],
-										TypeName:   arguments[2],
-										Annotation: strings.TrimPrefix(arguments[0], "@"),
-									}
-
-									break
-
-								default:
-									annotations = append(annotations, AnnotationDeclaration{
-										Namespace: ns,
-										Name:      annons[1],
-										Arguments: arguments,
-									})
-								}
-
-								continue
 							}
-
-							annotations = append(annotations, AnnotationDeclaration{
-								Name: annons[1],
-							})
 						}
+
 					}
 
 					for _, spec := range rdeclr.Specs {
