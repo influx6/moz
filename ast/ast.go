@@ -106,7 +106,7 @@ type PackageDeclaration struct {
 	Path        string                            `json:"path"`
 	FilePath    string                            `json:"filepath"`
 	File        string                            `json:"file"`
-	Imports     []ImportDeclaration               `json:"imports"`
+	Imports     map[string]ImportDeclaration      `json:"imports"`
 	Annotations []AnnotationDeclaration           `json:"annotations"`
 	Types       []TypeDeclaration                 `json:"types"`
 	Structs     []StructDeclaration               `json:"structs"`
@@ -141,6 +141,17 @@ func (pkg PackageDeclaration) FunctionsForName(objName string) []FuncDeclaration
 	return funcs
 }
 
+// ImportFor returns the ImportDeclaration associated with the giving handle.
+// Returns error if the import is not found.
+func (pkg PackageDeclaration) ImportFor(imp string) (ImportDeclaration, error) {
+	impDeclr, ok := pkg.Imports[imp]
+	if !ok {
+		return ImportDeclaration{}, errors.New("Not found")
+	}
+
+	return impDeclr, nil
+}
+
 // FunctionsFor returns a slice of FuncDeclaration for the giving object.
 func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	if funcs, ok := pkg.ObjectFunc[obj]; ok {
@@ -172,22 +183,23 @@ func HasFunctionFor(pkg PackageDeclaration) func(StructDeclaration, string) bool
 // FuncDeclaration defines a type used to annotate a giving type declaration
 // associated with a ast for a function.
 type FuncDeclaration struct {
-	LineNumber    int            `json:"line_number"`
-	Column        int            `json:"column"`
-	Package       string         `json:"package"`
-	Path          string         `json:"path"`
-	FilePath      string         `json:"filepath"`
-	File          string         `json:"file"`
-	FuncName      string         `json:"funcName"`
-	RecieverName  string         `json:"receiverName"`
-	Position      token.Pos      `json:"position"`
-	FuncDeclr     *ast.FuncDecl  `json:"funcdeclr"`
-	Type          *ast.FuncType  `json:"type"`
-	Reciever      *ast.Object    `json:"receiver"`
-	RecieverIdent *ast.Ident     `json:"receiverIdent"`
-	FuncType      *ast.FieldList `json:"funcType"`
-	Returns       *ast.FieldList `json:"returns"`
-	Arguments     *ast.FieldList `json:"arguments"`
+	LineNumber    int                 `json:"line_number"`
+	Column        int                 `json:"column"`
+	Package       string              `json:"package"`
+	Path          string              `json:"path"`
+	FilePath      string              `json:"filepath"`
+	File          string              `json:"file"`
+	FuncName      string              `json:"funcName"`
+	RecieverName  string              `json:"receiverName"`
+	Position      token.Pos           `json:"position"`
+	FuncDeclr     *ast.FuncDecl       `json:"funcdeclr"`
+	Type          *ast.FuncType       `json:"type"`
+	Reciever      *ast.Object         `json:"receiver"`
+	RecieverIdent *ast.Ident          `json:"receiverIdent"`
+	FuncType      *ast.FieldList      `json:"funcType"`
+	Returns       *ast.FieldList      `json:"returns"`
+	Arguments     *ast.FieldList      `json:"arguments"`
+	PackageDeclr  *PackageDeclaration `json:"-"`
 }
 
 // Functions defines a slice of FuncDeclaration.
@@ -227,16 +239,29 @@ type InterfaceDeclaration struct {
 	Position     token.Pos                                   `json:"position"`
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	PackageDeclr *PackageDeclaration                         `json:"-"`
+}
+
+// Methods returns the associated methods for the giving interface.
+func (i InterfaceDeclaration) Methods() []FunctionDefinition {
+	return GetInterfaceFunctions(i.Interface, i.PackageDeclr)
 }
 
 // ArgType defines a type to represent the information for a giving functions argument or
 // return type declaration.
 type ArgType struct {
-	Name       string
-	Type       string
-	Package    string
-	NameObject *ast.Object
-	TypeObject *ast.Object
+	Name           string
+	Type           string
+	Package        string
+	Import         ImportDeclaration
+	NameObject     *ast.Object
+	TypeObject     *ast.Object
+	StructObject   *ast.StructType
+	ImportedObject *ast.SelectorExpr
+	ArrayType      *ast.ArrayType
+	ChanType       *ast.ChanType
+	PointerType    *ast.StarExpr
+	IdentType      *ast.Ident
 }
 
 // FunctionDefinition defines a type to represent the function/method declarations of an
@@ -293,11 +318,6 @@ func (fd FunctionDefinition) ArgumentList() string {
 	return strings.Join(args, ",")
 }
 
-// Methods returns the associated methods for the giving interface.
-func (i InterfaceDeclaration) Methods() []FunctionDefinition {
-	return GetInterfaceFunctions(i.Interface)
-}
-
 // GetIdentName returns the first indent found within the field if it exists.
 func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 	if len(field.Names) == 0 {
@@ -309,7 +329,7 @@ func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 
 // GetInterfaceFunctions returns a slice of FunctionDefinitions retrieved from the provided
 // interface type object.
-func GetInterfaceFunctions(intr *ast.InterfaceType) []FunctionDefinition {
+func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []FunctionDefinition {
 	var defs []FunctionDefinition
 
 	var retCounter int
@@ -349,7 +369,130 @@ func GetInterfaceFunctions(intr *ast.InterfaceType) []FunctionDefinition {
 					})
 
 				case *ast.SelectorExpr:
-					fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
+					// fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
+					xobj, ok := iobj.X.(*ast.Ident)
+					if !ok {
+						break
+					}
+
+					importDclr, _ := pkg.ImportFor(xobj.Name)
+
+					name := fmt.Sprintf("var%d", retCounter)
+					retCounter++
+
+					returns = append(returns, ArgType{
+						Name:    name,
+						Import:  importDclr,
+						Package: xobj.Name,
+						Type:    getName(iobj),
+					})
+
+				case *ast.StarExpr:
+					name := fmt.Sprintf("var%d", retCounter)
+					retCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.PointerType = iobj
+					arg.Type = fmt.Sprintf("*%s", getName(iobj.X))
+
+					switch value := iobj.X.(type) {
+					case *ast.SelectorExpr:
+						arg.ImportedObject = value
+
+						vob, ok := value.X.(*ast.Ident)
+						if !ok {
+							break
+						}
+
+						importDclr, _ := pkg.ImportFor(vob.Name)
+
+						arg.Package = vob.Name
+						arg.Import = importDclr
+					case *ast.StructType:
+						arg.StructObject = value
+					case *ast.ArrayType:
+						arg.ArrayType = value
+					case *ast.Ident:
+						arg.IdentType = value
+						arg.NameObject = value.Obj
+					case *ast.ChanType:
+						arg.ChanType = value
+					}
+
+					returns = append(returns, arg)
+
+				case *ast.ArrayType:
+					name := fmt.Sprintf("var%d", retCounter)
+					retCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.ArrayType = iobj
+					arg.Type = getName(iobj)
+
+					switch value := iobj.Elt.(type) {
+					case *ast.SelectorExpr:
+						arg.ImportedObject = value
+
+						vob, ok := value.X.(*ast.Ident)
+						if !ok {
+							break
+						}
+
+						importDclr, _ := pkg.ImportFor(vob.Name)
+
+						arg.Package = vob.Name
+						arg.Import = importDclr
+					case *ast.StarExpr:
+						arg.PointerType = value
+					case *ast.StructType:
+						arg.StructObject = value
+					case *ast.Ident:
+						arg.IdentType = value
+						arg.NameObject = value.Obj
+					case *ast.ChanType:
+						arg.ChanType = value
+					}
+
+					returns = append(returns, arg)
+				case *ast.ChanType:
+					name := fmt.Sprintf("var%d", retCounter)
+					retCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.Type = fmt.Sprintf("chan %s", getName(iobj.Value))
+
+					switch value := iobj.Value.(type) {
+					case *ast.SelectorExpr:
+						arg.ImportedObject = value
+
+						vob, ok := value.X.(*ast.Ident)
+						if !ok {
+							break
+						}
+
+						importDclr, _ := pkg.ImportFor(vob.Name)
+
+						arg.Package = vob.Name
+						arg.Import = importDclr
+					case *ast.StarExpr:
+						arg.PointerType = value
+					case *ast.StructType:
+						arg.StructObject = value
+					case *ast.ArrayType:
+						arg.ArrayType = value
+					case *ast.Ident:
+						arg.IdentType = value
+						arg.NameObject = value.Obj
+					case *ast.ChanType:
+						arg.ChanType = value
+					}
+
+					returns = append(returns, arg)
+				default:
+					// fmt.Printf("Result:Default: %#v -> %#q\n\n", iobj, iobj)
 				}
 			}
 
@@ -377,9 +520,131 @@ func GetInterfaceFunctions(intr *ast.InterfaceType) []FunctionDefinition {
 					})
 
 				case *ast.SelectorExpr:
-					fmt.Printf("Param: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
-				}
+					// fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
+					xobj, ok := iobj.X.(*ast.Ident)
+					if !ok {
+						break
+					}
 
+					importDclr, _ := pkg.ImportFor(xobj.Name)
+
+					name := fmt.Sprintf("var%d", varCounter)
+					varCounter++
+
+					arguments = append(arguments, ArgType{
+						Name:    name,
+						Import:  importDclr,
+						Package: xobj.Name,
+						Type:    getName(iobj),
+					})
+
+				case *ast.StarExpr:
+					name := fmt.Sprintf("var%d", varCounter)
+					varCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.PointerType = iobj
+					arg.Type = fmt.Sprintf("*%s", getName(iobj.X))
+
+					switch value := iobj.X.(type) {
+					case *ast.SelectorExpr:
+						arg.ImportedObject = value
+
+						vob, ok := value.X.(*ast.Ident)
+						if !ok {
+							break
+						}
+
+						importDclr, _ := pkg.ImportFor(vob.Name)
+
+						arg.Package = vob.Name
+						arg.Import = importDclr
+					case *ast.StructType:
+						arg.StructObject = value
+					case *ast.ArrayType:
+						arg.ArrayType = value
+					case *ast.Ident:
+						arg.IdentType = value
+						arg.NameObject = value.Obj
+					case *ast.ChanType:
+						arg.ChanType = value
+					}
+
+					arguments = append(arguments, arg)
+
+				case *ast.ArrayType:
+					name := fmt.Sprintf("var%d", varCounter)
+					varCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.ArrayType = iobj
+					arg.Type = getName(iobj)
+
+					switch value := iobj.Elt.(type) {
+					case *ast.SelectorExpr:
+						arg.ImportedObject = value
+
+						vob, ok := value.X.(*ast.Ident)
+						if !ok {
+							break
+						}
+
+						importDclr, _ := pkg.ImportFor(vob.Name)
+
+						arg.Package = vob.Name
+						arg.Import = importDclr
+					case *ast.StarExpr:
+						arg.PointerType = value
+					case *ast.StructType:
+						arg.StructObject = value
+					case *ast.Ident:
+						arg.IdentType = value
+						arg.NameObject = value.Obj
+					case *ast.ChanType:
+						arg.ChanType = value
+					}
+
+					arguments = append(arguments, arg)
+				case *ast.ChanType:
+					name := fmt.Sprintf("var%d", varCounter)
+					varCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.Type = fmt.Sprintf("chan %s", getName(iobj.Value))
+
+					switch value := iobj.Value.(type) {
+					case *ast.SelectorExpr:
+						arg.ImportedObject = value
+
+						vob, ok := value.X.(*ast.Ident)
+						if !ok {
+							break
+						}
+
+						importDclr, _ := pkg.ImportFor(vob.Name)
+
+						arg.Package = vob.Name
+						arg.Import = importDclr
+					case *ast.StarExpr:
+						arg.PointerType = value
+					case *ast.StructType:
+						arg.StructObject = value
+					case *ast.ArrayType:
+						arg.ArrayType = value
+					case *ast.Ident:
+						arg.IdentType = value
+						arg.NameObject = value.Obj
+					case *ast.ChanType:
+						arg.ChanType = value
+					}
+
+					arguments = append(arguments, arg)
+				default:
+					// fmt.Printf("Param:Default: %#v -> %#q\n\n", iobj, iobj)
+				}
 			}
 
 			defs = append(defs, FunctionDefinition{
@@ -412,10 +677,82 @@ func GetInterfaceFunctions(intr *ast.InterfaceType) []FunctionDefinition {
 			continue
 		}
 
-		defs = append(defs, GetInterfaceFunctions(identIntr)...)
+		defs = append(defs, GetInterfaceFunctions(identIntr, pkg)...)
 	}
 
 	return defs
+}
+
+func getSelector(item interface{}) (*ast.SelectorExpr, error) {
+	switch di := item.(type) {
+	case *ast.ChanType:
+		return getSelector(di.Value)
+	case *ast.SelectorExpr:
+		return di, nil
+	default:
+		return nil, errors.New("Has no selector")
+	}
+}
+
+func getSoftName(item interface{}) string {
+	switch di := item.(type) {
+	case *ast.StarExpr:
+		return fmt.Sprintf("* %s", getName(di.X))
+	case *ast.StructType:
+		return "struct{}"
+	case *ast.Ident:
+		return di.Name
+	case *ast.ArrayType:
+		if di.Len != nil {
+			if dlen, ok := di.Len.(*ast.Ident); ok {
+				return fmt.Sprintf("[%s]%s", dlen.Name, getName(di.Elt))
+			}
+
+			if dlen, ok := di.Len.(*ast.BasicLit); ok {
+				return fmt.Sprintf("[%s]%s", dlen.Value, getName(di.Elt))
+			}
+		}
+
+		return fmt.Sprintf("[]%s", getName(di.Elt))
+	case *ast.ChanType:
+		return fmt.Sprintf("chan %s", getName(di.Value))
+	default:
+		return ""
+	}
+}
+
+func getName(item interface{}) string {
+	switch di := item.(type) {
+	case *ast.StarExpr:
+		return fmt.Sprintf("*%s", getName(di.X))
+	case *ast.SelectorExpr:
+		xobj, ok := di.X.(*ast.Ident)
+		if !ok {
+			return ""
+		}
+
+		return fmt.Sprintf("%s.%s", xobj.Name, di.Sel.Name)
+	case *ast.StructType:
+		return "struct{}"
+	case *ast.Ident:
+		return di.Name
+	case *ast.ArrayType:
+		if di.Len != nil {
+			if dlen, ok := di.Len.(*ast.Ident); ok {
+				return fmt.Sprintf("[%s]%s", dlen.Name, getName(di.Elt))
+			}
+
+			if dlen, ok := di.Len.(*ast.BasicLit); ok {
+				return fmt.Sprintf("[%s]%s", dlen.Value, getName(di.Elt))
+			}
+		}
+
+		return fmt.Sprintf("[]%s", getName(di.Elt))
+	case *ast.ChanType:
+		return fmt.Sprintf("chan %s", getName(di.Value))
+	default:
+		return ""
+	}
 }
 
 //===========================================================================================================
@@ -433,6 +770,7 @@ type StructDeclaration struct {
 	Position     token.Pos                                   `json:"position"`
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
@@ -447,6 +785,7 @@ type TypeDeclaration struct {
 	Position     token.Pos                                   `json:"position"`
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 //===========================================================================================================
@@ -467,6 +806,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			var packageDeclr PackageDeclaration
 			packageDeclr.Package = pkg.Name
 			packageDeclr.FilePath = path
+			packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
 			packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
 
 			for _, imp := range file.Imports {
@@ -476,10 +816,15 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 					pkgName = imp.Name.Name
 				}
 
-				packageDeclr.Imports = append(packageDeclr.Imports, ImportDeclaration{
+				impPkgPath, err := strconv.Unquote(imp.Path.Value)
+				if err != nil {
+					impPkgPath = imp.Path.Value
+				}
+
+				packageDeclr.Imports[pkgName] = ImportDeclaration{
 					Name: pkgName,
-					Path: imp.Path.Value,
-				})
+					Path: impPkgPath,
+				}
 			}
 
 			if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
@@ -556,6 +901,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 					var defFunc FuncDeclaration
 
+					defFunc.PackageDeclr = &packageDeclr
 					defFunc.FuncDeclr = rdeclr
 					defFunc.Type = rdeclr.Type
 					defFunc.Position = rdeclr.Pos()
@@ -722,6 +1068,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									FilePath:     packageDeclr.FilePath,
 									LineNumber:   tokenPosition.Line,
 									Column:       tokenPosition.Column,
+									PackageDeclr: &packageDeclr,
 								})
 								break
 
@@ -736,6 +1083,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									Interface:    robj,
 									Annotations:  annotations,
 									Associations: associations,
+									PackageDeclr: &packageDeclr,
 									File:         packageDeclr.File,
 									Package:      packageDeclr.Package,
 									Path:         packageDeclr.Path,
@@ -756,6 +1104,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 									Object:       obj,
 									Annotations:  annotations,
 									Associations: associations,
+									PackageDeclr: &packageDeclr,
 									File:         packageDeclr.File,
 									Package:      packageDeclr.Package,
 									Path:         packageDeclr.Path,
@@ -786,7 +1135,7 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 // Parse takes the provided package declrations parsing all internals with the
 // appropriate generators suited to the type and annotations.
-func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
+func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
 	{
 	parseloop:
 		for _, pkg := range packageDeclrs {
@@ -817,9 +1166,9 @@ func Parse(log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...P
 				newDir := filepath.Dir(pkg.FilePath)
 
 				if item.Dir != "" {
-					namedFileDir = filepath.Join(newDir, item.Dir)
+					namedFileDir = filepath.Join(toDir, newDir, item.Dir)
 				} else {
-					namedFileDir = newDir
+					namedFileDir = filepath.Join(toDir, newDir)
 				}
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {

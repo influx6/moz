@@ -19,6 +19,10 @@ var (
 			return b >= a
 		},
 		"capitalize": func(b string) string {
+			if len(b) == 0 {
+				return b
+			}
+
 			return strings.ToUpper(b[:1]) + b[1:]
 		},
 		"title": func(b string) string {

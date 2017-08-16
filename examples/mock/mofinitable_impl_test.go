@@ -1,11 +1,14 @@
 package mock_test
 
 import (
+	"io"
 	"testing"
 
 	"github.com/influx6/faux/tests"
 
 	"github.com/influx6/moz/examples/mock/snitch"
+
+	toml "github.com/BurntSushi/toml"
 )
 
 // TestImplementationForMofInitable defines the test for asserting the behaviour of
@@ -23,6 +26,12 @@ func TestImplementationForMofInitable(t *testing.T) {
 		testMethodCallForLocation(t)
 
 		testMethodCallForWriterTo(t)
+
+		testMethodCallForDrop(t)
+
+		testMethodCallForClose(t)
+
+		testMethodCallForBob(t)
 
 	}
 }
@@ -91,7 +100,7 @@ func testMethodCallForConfiguration(t *testing.T) {
 	t.Logf("\tWhen the method Configuration is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			ConfigurationFunc: func() {
+			ConfigurationFunc: func() toml.Primitive {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for Configuration")
 			},
@@ -152,7 +161,7 @@ func testMethodCallForWriterTo(t *testing.T) {
 	t.Logf("\tWhen the method WriterTo is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			WriterToFunc: func() (int64, error) {
+			WriterToFunc: func(var2 io.Writer) (int64, error) {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for WriterTo")
 			},
@@ -160,9 +169,10 @@ func testMethodCallForWriterTo(t *testing.T) {
 
 		// Stub variables for method.
 		// TODO: Replace this stubs with real values for method
+		var var2 io.Writer
 
 		// Call WriterTo method with arguments
-		impl.WriterTo()
+		impl.WriterTo(var2)
 
 		if len(impl.WriterToMethodCalls) == 0 {
 			tests.Failed("Should have received new method call record for WriterTo.")
@@ -175,5 +185,95 @@ func testMethodCallForWriterTo(t *testing.T) {
 			tests.Failed("Should have successfully executed WriterTo method without panic.")
 		}
 		tests.Passed("Should have successfully executed WriterTo method without panic.")
+	}
+}
+
+func testMethodCallForDrop(t *testing.T) {
+	t.Logf("\tWhen the method Drop is called MofInitableImpl")
+	{
+		impl := &snitch.MofInitableMockSnitch{
+			DropFunc: func() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
+				// Add implementation logic.
+				panic("Please write your implementation logic in here for Drop")
+			},
+		}
+
+		// Stub variables for method.
+		// TODO: Replace this stubs with real values for method
+
+		// Call Drop method with arguments
+		impl.Drop()
+
+		if len(impl.DropMethodCalls) == 0 {
+			tests.Failed("Should have received new method call record for Drop.")
+		}
+		tests.Passed("Should have received new method call record for Drop.")
+
+		lastCall := impl.DropMethodCalls[len(impl.DropMethodCalls)-1]
+
+		if lastCall.PanicErr != nil {
+			tests.Failed("Should have successfully executed Drop method without panic.")
+		}
+		tests.Passed("Should have successfully executed Drop method without panic.")
+	}
+}
+
+func testMethodCallForClose(t *testing.T) {
+	t.Logf("\tWhen the method Close is called MofInitableImpl")
+	{
+		impl := &snitch.MofInitableMockSnitch{
+			CloseFunc: func() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string) {
+				// Add implementation logic.
+				panic("Please write your implementation logic in here for Close")
+			},
+		}
+
+		// Stub variables for method.
+		// TODO: Replace this stubs with real values for method
+
+		// Call Close method with arguments
+		impl.Close()
+
+		if len(impl.CloseMethodCalls) == 0 {
+			tests.Failed("Should have received new method call record for Close.")
+		}
+		tests.Passed("Should have received new method call record for Close.")
+
+		lastCall := impl.CloseMethodCalls[len(impl.CloseMethodCalls)-1]
+
+		if lastCall.PanicErr != nil {
+			tests.Failed("Should have successfully executed Close method without panic.")
+		}
+		tests.Passed("Should have successfully executed Close method without panic.")
+	}
+}
+
+func testMethodCallForBob(t *testing.T) {
+	t.Logf("\tWhen the method Bob is called MofInitableImpl")
+	{
+		impl := &snitch.MofInitableMockSnitch{
+			BobFunc: func() chan chan struct{} {
+				// Add implementation logic.
+				panic("Please write your implementation logic in here for Bob")
+			},
+		}
+
+		// Stub variables for method.
+		// TODO: Replace this stubs with real values for method
+
+		// Call Bob method with arguments
+		impl.Bob()
+
+		if len(impl.BobMethodCalls) == 0 {
+			tests.Failed("Should have received new method call record for Bob.")
+		}
+		tests.Passed("Should have received new method call record for Bob.")
+
+		lastCall := impl.BobMethodCalls[len(impl.BobMethodCalls)-1]
+
+		if lastCall.PanicErr != nil {
+			tests.Failed("Should have successfully executed Bob method without panic.")
+		}
+		tests.Passed("Should have successfully executed Bob method without panic.")
 	}
 }

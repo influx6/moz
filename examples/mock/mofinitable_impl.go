@@ -1,5 +1,11 @@
 package mock
 
+import (
+	"io"
+
+	toml "github.com/BurntSushi/toml"
+)
+
 // MofInitableImpl defines a concrete struct which implements the methods for the
 // MofInitable interface. All methods will panic, so add necessary internal logic.
 type MofInitableImpl struct {
@@ -16,7 +22,7 @@ func (impl MofInitableImpl) Crunch() string {
 }
 
 // Configuration implements the MofInitable.Configuration() method for the MofInitable.
-func (impl MofInitableImpl) Configuration() {
+func (impl MofInitableImpl) Configuration() toml.Primitive {
 	panic("Not yet implemented")
 }
 
@@ -26,6 +32,21 @@ func (impl MofInitableImpl) Location(var1 string) (GPSLoc, error) {
 }
 
 // WriterTo implements the MofInitable.WriterTo() method for the MofInitable.
-func (impl MofInitableImpl) WriterTo() (int64, error) {
+func (impl MofInitableImpl) WriterTo(var2 io.Writer) (int64, error) {
+	panic("Not yet implemented")
+}
+
+// Drop implements the MofInitable.Drop() method for the MofInitable.
+func (impl MofInitableImpl) Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
+	panic("Not yet implemented")
+}
+
+// Close implements the MofInitable.Close() method for the MofInitable.
+func (impl MofInitableImpl) Close() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string) {
+	panic("Not yet implemented")
+}
+
+// Bob implements the MofInitable.Bob() method for the MofInitable.
+func (impl MofInitableImpl) Bob() chan chan struct{} {
 	panic("Not yet implemented")
 }

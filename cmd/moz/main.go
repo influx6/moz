@@ -72,9 +72,20 @@ func main() {
 		},
 		{
 			Name:        "generate",
-			Action:      annotationCLI,
+			Action:      generateCLI,
 			Description: "Runs the moz parser to parse and generate code for all annotations",
-			Flags:       []cli.Flag{},
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "f,fromDir",
+					Value: "",
+					Usage: "-f=./",
+				},
+				cli.StringFlag{
+					Name:  "t,toDir",
+					Value: "",
+					Usage: "-t=./",
+				},
+			},
 		},
 		{
 			Name:        "assets",
@@ -193,22 +204,29 @@ func assetsCLI(c *cli.Context) {
 	}
 }
 
-func annotationCLI(c *cli.Context) {
-	cdir, err := os.Getwd()
+func generateCLI(c *cli.Context) {
+	var err error
+
+	toDir := c.String("toDir")
+	fromDir := c.String("fromDir")
+
+	if fromDir == "" {
+		fromDir, err = os.Getwd()
+		if err != nil {
+			events.Emit(stdout.Error(err).With("dir", fromDir).With("message", "Failed to retrieve current directory"))
+			return
+		}
+	}
+
+	events.Emit(stdout.Info("Using Dir: %s", fromDir).With("dir", fromDir))
+
+	pkgs, err := ast.ParseAnnotations(events, fromDir)
 	if err != nil {
-		events.Emit(stdout.Error(err).With("dir", cdir).With("message", "Failed to retrieve current directory"))
+		events.Emit(stdout.Error(err).With("dir", fromDir).With("message", "Failed to parse package annotations"))
 		return
 	}
 
-	events.Emit(stdout.Info("Using Dir: %s", cdir).With("dir", cdir))
-
-	pkgs, err := ast.ParseAnnotations(events, cdir)
-	if err != nil {
-		events.Emit(stdout.Error(err).With("dir", cdir).With("message", "Failed to parse package annotations"))
-		return
-	}
-
-	if err := moz.Parse(events, pkgs...); err != nil {
-		events.Emit(stdout.Error(err).With("dir", cdir).With("message", "Failed to parse package declarations"))
+	if err := moz.Parse(toDir, events, pkgs...); err != nil {
+		events.Emit(stdout.Error(err).With("dir", fromDir).With("message", "Failed to parse package declarations"))
 	}
 }

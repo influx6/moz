@@ -44,30 +44,30 @@ func RegisterAnnotation(name string, generator interface{}) bool {
 
 // MustParseWith calls the ParseWith method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustParseWith(log metrics.Metrics, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) {
-	if err := ParseWith(log, provider, packageDeclrs...); err != nil {
+func MustParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) {
+	if err := ParseWith(toDir, log, provider, packageDeclrs...); err != nil {
 		panic(err)
 	}
 }
 
 // ParseWith takes the provided package declarations and annotation registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
-func ParseWith(log metrics.Metrics, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) error {
-	return ast.Parse(log, provider, packageDeclrs...)
+func ParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRegistry, packageDeclrs ...ast.PackageDeclaration) error {
+	return ast.Parse(toDir, log, provider, packageDeclrs...)
 }
 
 // MustParse calls the Parse method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustParse(log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) {
-	if err := Parse(log, packageDeclrs...); err != nil {
+func MustParse(toDir string, log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) {
+	if err := Parse(toDir, log, packageDeclrs...); err != nil {
 		panic(err)
 	}
 }
 
 // Parse takes the provided package declarations and the default Annotations registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
-func Parse(log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) error {
-	return ast.Parse(log, annotations, packageDeclrs...)
+func Parse(toDir string, log metrics.Metrics, packageDeclrs ...ast.PackageDeclaration) error {
+	return ast.Parse(toDir, log, annotations, packageDeclrs...)
 }
 
 // MustWriteDirectives calls the WriteDirectives method to attempt to parse the ast.PackageDeclarations
@@ -81,7 +81,6 @@ func MustWriteDirectives(log metrics.Metrics, rootDir string, directives ...gen.
 // WriteDirectives defines a funtion to sync the slices of WriteDirectives into a giving directory
 // root.
 func WriteDirectives(log metrics.Metrics, rootDir string, directives ...gen.WriteDirective) error {
-
 	{
 	directiveloop:
 		for _, directive := range directives {
