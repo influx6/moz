@@ -4,6 +4,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/influx6/moz/examples/mock"
+
 	"github.com/influx6/faux/tests"
 
 	"github.com/influx6/moz/examples/mock/snitch"
@@ -130,7 +132,7 @@ func testMethodCallForLocation(t *testing.T) {
 	t.Logf("\tWhen the method Location is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			LocationFunc: func(var1 string) (GPSLoc, error) {
+			LocationFunc: func(string) (mock.GPSLoc, error) {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for Location")
 			},
@@ -161,7 +163,7 @@ func testMethodCallForWriterTo(t *testing.T) {
 	t.Logf("\tWhen the method WriterTo is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			WriterToFunc: func(var2 io.Writer) (int64, error) {
+			WriterToFunc: func(io.Writer) (int64, error) {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for WriterTo")
 			},
@@ -192,7 +194,7 @@ func testMethodCallForDrop(t *testing.T) {
 	t.Logf("\tWhen the method Drop is called MofInitableImpl")
 	{
 		impl := &snitch.MofInitableMockSnitch{
-			DropFunc: func() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
+			DropFunc: func() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
 				// Add implementation logic.
 				panic("Please write your implementation logic in here for Drop")
 			},

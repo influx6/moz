@@ -1,4 +1,4 @@
-// TestImplementationFor{{.InterfaceName}} defines the test for asserting the behaviour of  
+// TestImplementationFor{{.InterfaceName}} defines the test for asserting the behaviour of
 // the implementation for the {{.InterfaceName}} interface methods.
 func TestImplementationFor{{.InterfaceName}}(t *testing.T){
     t.Logf("Given the need to validate the behaviour of elements implementing the {{.InterfaceName}} interface")
@@ -15,7 +15,7 @@ func testMethodCallFor{{.Name}}(t *testing.T){
     t.Logf("\tWhen the method {{.Name}} is called {{$InterfaceName}}Impl")
     {
         impl := &snitch.{{$InterfaceName}}MockSnitch{
-            {{.Name}}Func: func({{.ArgumentList}}) ({{.ReturnList}}) {
+            {{.Name}}Func: func({{.ArgumentList true}}) ({{.ReturnList true}}) {
                 // Add implementation logic.
                 panic("Please write your implementation logic in here for {{.Name}}")
             },
@@ -23,7 +23,7 @@ func testMethodCallFor{{.Name}}(t *testing.T){
 
         // Stub variables for method.
         // TODO: Replace this stubs with real values for method
-        {{ range .Args}}var {{.Name}} {{.Type}}{{ end }}
+        {{ range .Args}}var {{.Name}} {{.ExType}}{{ end }}
 
         // Call {{.Name}} method with arguments
         impl.{{.Name}}({{.ArgumentNamesList}})

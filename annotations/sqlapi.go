@@ -1,6 +1,7 @@
 package annotations
 
 import (
+	"path/filepath"
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
@@ -16,7 +17,7 @@ var (
 
 // SQLAnnotationGenerator defines a code generator for struct declarations that generate a
 // sql CRUD code for the use of sqldb as the underline db store.
-func SQLAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
 	updateAction := str
 	createAction := str
 
@@ -54,11 +55,11 @@ func SQLAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclarat
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
-				gen.Import(str.Path, ""),
-				gen.Import(str.Path+"/sqlapi", ""),
 				gen.Import("github.com/go-sql-driver/mysql", "_"),
 				gen.Import("github.com/lib/pq", "_"),
 				gen.Import("github.com/mattn/go-sqlite3", "_"),
+				gen.Import(filepath.Join(str.Path, toDir, "sqlapi"), ""),
+				gen.Import(str.Path, ""),
 			),
 			gen.Block(
 				gen.SourceTextWith(

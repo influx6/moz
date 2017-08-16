@@ -42,11 +42,11 @@ func (impl MofInitableImpl) Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
 }
 
 // Close implements the MofInitable.Close() method for the MofInitable.
-func (impl MofInitableImpl) Close() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string) {
+func (impl MofInitableImpl) Close() (struct{}, toml.Primitive, string, []byte, *[]string) {
 	panic("Not yet implemented")
 }
 
 // Bob implements the MofInitable.Bob() method for the MofInitable.
-func (impl MofInitableImpl) Bob() chan chan struct{} {
+func (impl MofInitableImpl) Bob() chan struct{} {
 	panic("Not yet implemented")
 }

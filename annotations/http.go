@@ -3,6 +3,7 @@ package annotations
 import (
 	"fmt"
 	goast "go/ast"
+	"path/filepath"
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
@@ -17,7 +18,7 @@ var (
 )
 
 // HTTPRestAnnotationGenerator defines a code generator for creating a restful HTTP for a giving struct.
-func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
 	updateAction := str
 	createAction := str
 
@@ -197,8 +198,8 @@ func HTTPRestAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(filepath.Join(str.Path, toDir, "/httpapi"), ""),
 				gen.Import(str.Path, ""),
-				gen.Import(str.Path+"/httpapi", ""),
 			),
 			gen.Block(
 				gen.SourceTextWith(

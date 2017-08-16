@@ -1,13 +1,13 @@
-// {{.InterfaceName}}Impl defines a concrete struct which implements the methods for the 
+// {{.InterfaceName}}Impl defines a concrete struct which implements the methods for the
 // {{.InterfaceName}} interface. All methods will panic, so add necessary internal logic.
 type {{.InterfaceName}}Impl struct{
 
 }
 
 {{$InterfaceName := .InterfaceName }}
-{{ range .Methods }} 
+{{ range .Methods }}
 // {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
-func (impl {{$InterfaceName}}Impl) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
+func (impl {{$InterfaceName}}Impl) {{.Name}}({{.ArgumentList false}}) ({{.ReturnList false}}){
     panic("Not yet implemented")
 }
 {{ end }}

@@ -16,7 +16,7 @@ var (
 
 // MongoAnnotationGenerator defines a code generator for struct declarations that generate a
 // mongo CRUD code for the use of mongodb as the underline db store.
-func MongoAnnotationGenerator(an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
 
 	mongoReadmeGen := gen.Block(
 		gen.Block(

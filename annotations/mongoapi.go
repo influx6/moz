@@ -1,6 +1,7 @@
 package annotations
 
 import (
+	"path/filepath"
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
@@ -16,7 +17,7 @@ var (
 
 // MongoAPIAnnotationGenerator defines a code generator for struct declarations that generate a
 // mongo CRUD code for the use of mongodb as the underline db store.
-func MongoAPIAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
 	updateAction := str
 	createAction := str
 
@@ -55,8 +56,8 @@ func MongoAPIAnnotationGenerator(an ast.AnnotationDeclaration, str ast.StructDec
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/db/mongo", ""),
 				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import(filepath.Join(str.Path, toDir, "/mongoapi"), ""),
 				gen.Import(str.Path, ""),
-				gen.Import(str.Path+"/mongoapi", ""),
 			),
 			gen.Block(
 				gen.SourceTextWith(

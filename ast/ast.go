@@ -252,13 +252,17 @@ func (i InterfaceDeclaration) Methods() []FunctionDefinition {
 type ArgType struct {
 	Name           string
 	Type           string
+	ExType         string
 	Package        string
+	BaseType       bool
 	Import         ImportDeclaration
+	Import2        ImportDeclaration
 	NameObject     *ast.Object
 	TypeObject     *ast.Object
 	StructObject   *ast.StructType
 	ImportedObject *ast.SelectorExpr
 	ArrayType      *ast.ArrayType
+	MapType        *ast.MapType
 	ChanType       *ast.ChanType
 	PointerType    *ast.StarExpr
 	IdentType      *ast.Ident
@@ -297,10 +301,15 @@ func (fd FunctionDefinition) ReturnNamesList() string {
 }
 
 // ReturnList returns a string version of the return of the giving function.
-func (fd FunctionDefinition) ReturnList() string {
+func (fd FunctionDefinition) ReturnList(asFromOutside bool) string {
 	var rets []string
 
 	for _, ret := range fd.Returns {
+		if asFromOutside {
+			rets = append(rets, fmt.Sprintf("%s", ret.ExType))
+			continue
+		}
+
 		rets = append(rets, fmt.Sprintf("%s", ret.Type))
 	}
 
@@ -308,10 +317,15 @@ func (fd FunctionDefinition) ReturnList() string {
 }
 
 // ArgumentList returns a string version of the arguments of the giving function.
-func (fd FunctionDefinition) ArgumentList() string {
+func (fd FunctionDefinition) ArgumentList(asFromOutside bool) string {
 	var args []string
 
 	for _, arg := range fd.Args {
+		if asFromOutside {
+			args = append(args, fmt.Sprintf("%s", arg.ExType))
+			continue
+		}
+
 		args = append(args, fmt.Sprintf("%s %s", arg.Name, arg.Type))
 	}
 
@@ -346,6 +360,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 			var arguments, returns []ArgType
 
 			for _, result := range ftype.Results.List {
+				resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
+
 				switch iobj := result.Type.(type) {
 				case *ast.Ident:
 					var name string
@@ -364,8 +380,11 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					returns = append(returns, ArgType{
 						Name:       name,
 						NameObject: nameObj,
-						Type:       iobj.Name,
+						Type:       getName(iobj),
+						ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
 						TypeObject: iobj.Obj,
+						Package:    resPkg,
+						BaseType:   defaultresType,
 					})
 
 				case *ast.SelectorExpr:
@@ -385,6 +404,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 						Import:  importDclr,
 						Package: xobj.Name,
 						Type:    getName(iobj),
+						ExType:  getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
 					})
 
 				case *ast.StarExpr:
@@ -394,7 +414,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					var arg ArgType
 					arg.Name = name
 					arg.PointerType = iobj
-					arg.Type = fmt.Sprintf("*%s", getName(iobj.X))
+					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
 					switch value := iobj.X.(type) {
 					case *ast.SelectorExpr:
@@ -411,17 +432,49 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 						arg.Import = importDclr
 					case *ast.StructType:
 						arg.StructObject = value
+						// arg.Package = resPkg
+						// arg.BaseType = defaultresType
 					case *ast.ArrayType:
 						arg.ArrayType = value
 					case *ast.Ident:
 						arg.IdentType = value
 						arg.NameObject = value.Obj
+
+						arg.Package = resPkg
+						arg.BaseType = defaultresType
 					case *ast.ChanType:
 						arg.ChanType = value
 					}
 
 					returns = append(returns, arg)
 
+				case *ast.MapType:
+					name := fmt.Sprintf("var%d", retCounter)
+					retCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.MapType = iobj
+					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
+
+					if keySel, err := getSelector(iobj.Key); err == nil {
+						if x, ok := keySel.X.(*ast.Ident); ok {
+							if imported, err := pkg.ImportFor(x.Name); err == nil {
+								arg.Import = imported
+							}
+						}
+					}
+
+					if valSel, err := getSelector(iobj.Value); err == nil {
+						if x, ok := valSel.X.(*ast.Ident); ok {
+							if imported, err := pkg.ImportFor(x.Name); err == nil {
+								arg.Import2 = imported
+							}
+						}
+					}
+
+					returns = append(returns, arg)
 				case *ast.ArrayType:
 					name := fmt.Sprintf("var%d", retCounter)
 					retCounter++
@@ -430,6 +483,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					arg.Name = name
 					arg.ArrayType = iobj
 					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
 					switch value := iobj.Elt.(type) {
 					case *ast.SelectorExpr:
@@ -451,18 +505,22 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					case *ast.Ident:
 						arg.IdentType = value
 						arg.NameObject = value.Obj
+						arg.Package = resPkg
+						arg.BaseType = defaultresType
 					case *ast.ChanType:
 						arg.ChanType = value
 					}
 
 					returns = append(returns, arg)
+
 				case *ast.ChanType:
 					name := fmt.Sprintf("var%d", retCounter)
 					retCounter++
 
 					var arg ArgType
 					arg.Name = name
-					arg.Type = fmt.Sprintf("chan %s", getName(iobj.Value))
+					arg.Type = getName(iobj.Value)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
 					switch value := iobj.Value.(type) {
 					case *ast.SelectorExpr:
@@ -486,6 +544,9 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					case *ast.Ident:
 						arg.IdentType = value
 						arg.NameObject = value.Obj
+
+						arg.Package = resPkg
+						arg.BaseType = defaultresType
 					case *ast.ChanType:
 						arg.ChanType = value
 					}
@@ -497,6 +558,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 			}
 
 			for _, param := range ftype.Params.List {
+				paramPkg, defaultresType := getPackageFromItem(param.Type, filepath.Base(pkg.Package))
+
 				switch iobj := param.Type.(type) {
 				case *ast.Ident:
 					var name string
@@ -515,8 +578,11 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					arguments = append(arguments, ArgType{
 						Name:       name,
 						NameObject: nameObj,
-						Type:       iobj.Name,
+						Type:       getName(iobj),
+						ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
 						TypeObject: iobj.Obj,
+						Package:    paramPkg,
+						BaseType:   defaultresType,
 					})
 
 				case *ast.SelectorExpr:
@@ -536,6 +602,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 						Import:  importDclr,
 						Package: xobj.Name,
 						Type:    getName(iobj),
+						ExType:  getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
 					})
 
 				case *ast.StarExpr:
@@ -545,7 +612,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					var arg ArgType
 					arg.Name = name
 					arg.PointerType = iobj
-					arg.Type = fmt.Sprintf("*%s", getName(iobj.X))
+					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
 					switch value := iobj.X.(type) {
 					case *ast.SelectorExpr:
@@ -567,12 +635,41 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					case *ast.Ident:
 						arg.IdentType = value
 						arg.NameObject = value.Obj
+						arg.Package = paramPkg
+						arg.BaseType = defaultresType
 					case *ast.ChanType:
 						arg.ChanType = value
 					}
 
 					arguments = append(arguments, arg)
 
+				case *ast.MapType:
+					name := fmt.Sprintf("var%d", varCounter)
+					varCounter++
+
+					var arg ArgType
+					arg.Name = name
+					arg.MapType = iobj
+					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
+
+					if keySel, err := getSelector(iobj.Key); err == nil {
+						if x, ok := keySel.X.(*ast.Ident); ok {
+							if imported, err := pkg.ImportFor(x.Name); err == nil {
+								arg.Import = imported
+							}
+						}
+					}
+
+					if valSel, err := getSelector(iobj.Value); err == nil {
+						if x, ok := valSel.X.(*ast.Ident); ok {
+							if imported, err := pkg.ImportFor(x.Name); err == nil {
+								arg.Import2 = imported
+							}
+						}
+					}
+
+					arguments = append(arguments, arg)
 				case *ast.ArrayType:
 					name := fmt.Sprintf("var%d", varCounter)
 					varCounter++
@@ -581,6 +678,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					arg.Name = name
 					arg.ArrayType = iobj
 					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
 					switch value := iobj.Elt.(type) {
 					case *ast.SelectorExpr:
@@ -602,6 +700,9 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					case *ast.Ident:
 						arg.IdentType = value
 						arg.NameObject = value.Obj
+
+						arg.Package = paramPkg
+						arg.BaseType = defaultresType
 					case *ast.ChanType:
 						arg.ChanType = value
 					}
@@ -613,7 +714,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 
 					var arg ArgType
 					arg.Name = name
-					arg.Type = fmt.Sprintf("chan %s", getName(iobj.Value))
+					arg.Type = getName(iobj)
+					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
 					switch value := iobj.Value.(type) {
 					case *ast.SelectorExpr:
@@ -637,6 +739,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					case *ast.Ident:
 						arg.IdentType = value
 						arg.NameObject = value.Obj
+						arg.Package = paramPkg
+						arg.BaseType = defaultresType
 					case *ast.ChanType:
 						arg.ChanType = value
 					}
@@ -683,8 +787,61 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 	return defs
 }
 
+var (
+	naturalIdents = map[string]bool{
+		"string":      true,
+		"bool":        true,
+		"rune":        true,
+		"byte":        true,
+		"int":         true,
+		"int8":        true,
+		"int16":       true,
+		"int32":       true,
+		"int64":       true,
+		"uint":        true,
+		"uint8":       true,
+		"uint32":      true,
+		"uint64":      true,
+		"uintptr":     true,
+		"float32":     true,
+		"float64":     true,
+		"complex128":  true,
+		"complex64":   true,
+		"error":       true,
+		"struct":      true,
+		"interface":   true,
+		"interface{}": true,
+		"struct{}":    true,
+	}
+)
+
+// getPackageFromItem returns the package name associated with the type
+// by attempting to retrieve it from a selector or final declaration name,
+// and returns true/false if its part of go's base types.
+func getPackageFromItem(item interface{}, defaultPkg string) (string, bool) {
+	realName := getRealIdentName(item)
+
+	if parts := strings.Split(realName, "."); len(parts) > 1 {
+		if _, ok := naturalIdents[parts[1]]; ok {
+			return "", true
+		}
+
+		return parts[0], false
+	}
+
+	if _, ok := naturalIdents[realName]; ok {
+		return "", true
+	}
+
+	return defaultPkg, false
+}
+
 func getSelector(item interface{}) (*ast.SelectorExpr, error) {
 	switch di := item.(type) {
+	case *ast.StarExpr:
+		return getSelector(di.X)
+	case *ast.ArrayType:
+		return getSelector(di.Elt)
 	case *ast.ChanType:
 		return getSelector(di.Value)
 	case *ast.SelectorExpr:
@@ -694,28 +851,65 @@ func getSelector(item interface{}) (*ast.SelectorExpr, error) {
 	}
 }
 
-func getSoftName(item interface{}) string {
+func getRealIdentName(item interface{}) string {
 	switch di := item.(type) {
 	case *ast.StarExpr:
-		return fmt.Sprintf("* %s", getName(di.X))
-	case *ast.StructType:
-		return "struct{}"
+		return getRealIdentName(di.X)
+	case *ast.SelectorExpr:
+		xobj, ok := di.X.(*ast.Ident)
+		if !ok {
+			return ""
+		}
+
+		return fmt.Sprintf("%s.%s", xobj.Name, di.Sel.Name)
 	case *ast.Ident:
 		return di.Name
 	case *ast.ArrayType:
+		return getRealIdentName(di.Elt)
+	case *ast.ChanType:
+		return getRealIdentName(di.Value)
+	default:
+		return ""
+	}
+}
+
+func getNameAsFromOuter(item interface{}, basePkg string) string {
+	switch di := item.(type) {
+	case *ast.MapType:
+		keyName := getNameAsFromOuter(di.Key, basePkg)
+		valName := getNameAsFromOuter(di.Value, basePkg)
+		return fmt.Sprintf("map[%s]%s", keyName, valName)
+	case *ast.StarExpr:
+		return fmt.Sprintf("*%s", getNameAsFromOuter(di.X, basePkg))
+	case *ast.SelectorExpr:
+		xobj, ok := di.X.(*ast.Ident)
+		if !ok {
+			return ""
+		}
+
+		return fmt.Sprintf("%s.%s", xobj.Name, di.Sel.Name)
+	case *ast.StructType:
+		return "struct{}"
+	case *ast.Ident:
+		if _, ok := naturalIdents[di.Name]; ok {
+			return di.Name
+		}
+
+		return fmt.Sprintf("%s.%s", basePkg, di.Name)
+	case *ast.ArrayType:
 		if di.Len != nil {
 			if dlen, ok := di.Len.(*ast.Ident); ok {
-				return fmt.Sprintf("[%s]%s", dlen.Name, getName(di.Elt))
+				return fmt.Sprintf("[%s]%s", dlen.Name, getNameAsFromOuter(di.Elt, basePkg))
 			}
 
 			if dlen, ok := di.Len.(*ast.BasicLit); ok {
-				return fmt.Sprintf("[%s]%s", dlen.Value, getName(di.Elt))
+				return fmt.Sprintf("[%s]%s", dlen.Value, getNameAsFromOuter(di.Elt, basePkg))
 			}
 		}
 
-		return fmt.Sprintf("[]%s", getName(di.Elt))
+		return fmt.Sprintf("[]%s", getNameAsFromOuter(di.Elt, basePkg))
 	case *ast.ChanType:
-		return fmt.Sprintf("chan %s", getName(di.Value))
+		return fmt.Sprintf("chan %s", getNameAsFromOuter(di.Value, basePkg))
 	default:
 		return ""
 	}
@@ -723,6 +917,10 @@ func getSoftName(item interface{}) string {
 
 func getName(item interface{}) string {
 	switch di := item.(type) {
+	case *ast.MapType:
+		keyName := getName(di.Key)
+		valName := getName(di.Value)
+		return fmt.Sprintf("map[%s]%s", keyName, valName)
 	case *ast.StarExpr:
 		return fmt.Sprintf("*%s", getName(di.X))
 	case *ast.SelectorExpr:
@@ -1139,7 +1337,7 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, pack
 	{
 	parseloop:
 		for _, pkg := range packageDeclrs {
-			wdrs, err := provider.ParseDeclr(pkg)
+			wdrs, err := provider.ParseDeclr(pkg, toDir)
 			if err != nil {
 				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
 					With("error", err.Error()).With("package", pkg.Package))
@@ -1247,25 +1445,25 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, pack
 // Annotation for a non-struct, non-interface type declaration. This allows you to apply and create
 // new sources specifically for a giving type(non-struct, non-interface).
 // It is responsible to fully contain all operations required to both generator any source and write such to
-type TypeAnnotationGenerator func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 // StructAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving struct type.
 // It is responsible to fully contain all operations required to both generator any source and write such to.
-type StructAnnotationGenerator func(AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 // InterfaceAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving interface type.
 // It is responsible to fully contain all operations required to both generator any source and write such to
 // appropriate files as intended, meta-data about package, and file paths are already include in the PackageDeclaration.
-type InterfaceAnnotationGenerator func(AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type InterfaceAnnotationGenerator func(string, AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 // PackageAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation for a package. This allows you to apply and create new sources specifically because of a
 // package wide annotation.
 // It is responsible to fully contain all operations required to both generator any source and write such to
 // All generators are expected to return
-type PackageAnnotationGenerator func(AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
 
 //===========================================================================================================
 
@@ -1391,7 +1589,7 @@ type AnnotationWriteDirective struct {
 
 // ParseDeclr runs the generators suited for each declaration and type returning a slice of
 // Annotationgen.WriteDirective that delivers the content to be created for each piece.
-func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationWriteDirective, error) {
+func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration, toDir string) ([]AnnotationWriteDirective, error) {
 	var directives []AnnotationWriteDirective
 
 	// Generate directives for package level
@@ -1401,7 +1599,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationW
 			continue
 		}
 
-		drs, err := generator(annotation, declr)
+		drs, err := generator(toDir, annotation, declr)
 		if err != nil {
 			return nil, err
 		}
@@ -1421,7 +1619,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationW
 				continue
 			}
 
-			drs, err := generator(annotation, inter, declr)
+			drs, err := generator(toDir, annotation, inter, declr)
 			if err != nil {
 				return nil, err
 			}
@@ -1442,7 +1640,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationW
 				continue
 			}
 
-			drs, err := generator(annotation, structs, declr)
+			drs, err := generator(toDir, annotation, structs, declr)
 			if err != nil {
 				return nil, err
 			}
@@ -1463,7 +1661,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration) ([]AnnotationW
 				continue
 			}
 
-			drs, err := generator(annotation, typ, declr)
+			drs, err := generator(toDir, annotation, typ, declr)
 			if err != nil {
 				return nil, err
 			}
@@ -1600,25 +1798,25 @@ func (a *AnnotationRegistry) Register(name string, generator interface{}) error 
 	case PackageAnnotationGenerator:
 		a.RegisterPackage(name, gen)
 		return nil
-	case func(AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
 		a.RegisterPackage(name, gen)
 		return nil
 	case TypeAnnotationGenerator:
 		a.RegisterType(name, gen)
 		return nil
-	case func(AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
 		a.RegisterType(name, gen)
 		return nil
 	case StructAnnotationGenerator:
 		a.RegisterStructType(name, gen)
 		return nil
-	case func(AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
 		a.RegisterStructType(name, gen)
 		return nil
 	case InterfaceAnnotationGenerator:
 		a.RegisterInterfaceType(name, gen)
 		return nil
-	case func(AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
 		a.RegisterInterfaceType(name, gen)
 		return nil
 	default:

@@ -82,7 +82,7 @@ type MethodCallForLocation struct {
 
 	// Return values.
 
-	Var2 GPSLoc
+	Var2 mock.GPSLoc
 
 	Var3 error
 }
@@ -124,7 +124,7 @@ type MethodCallForDrop struct {
 
 	// Return values.
 
-	Var6 *GPSLoc
+	Var6 *mock.GPSLoc
 
 	Var7 *toml.Primitive
 
@@ -305,7 +305,7 @@ func (impl *MofInitableLittleSnitch) Configuration() toml.Primitive {
 }
 
 // Location implements the MofInitable.Location() method for the MofInitable.
-func (impl *MofInitableLittleSnitch) Location(var1 string) (GPSLoc, error) {
+func (impl *MofInitableLittleSnitch) Location(string) (mock.GPSLoc, error) {
 	var caller MethodCallForLocation
 
 	defer func() {
@@ -336,7 +336,7 @@ func (impl *MofInitableLittleSnitch) Location(var1 string) (GPSLoc, error) {
 }
 
 // WriterTo implements the MofInitable.WriterTo() method for the MofInitable.
-func (impl *MofInitableLittleSnitch) WriterTo(var2 io.Writer) (int64, error) {
+func (impl *MofInitableLittleSnitch) WriterTo(io.Writer) (int64, error) {
 	var caller MethodCallForWriterTo
 
 	defer func() {
@@ -367,7 +367,7 @@ func (impl *MofInitableLittleSnitch) WriterTo(var2 io.Writer) (int64, error) {
 }
 
 // Drop implements the MofInitable.Drop() method for the MofInitable.
-func (impl *MofInitableLittleSnitch) Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
+func (impl *MofInitableLittleSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
 	var caller MethodCallForDrop
 
 	defer func() {
@@ -477,13 +477,13 @@ type MofInitableMockSnitch struct {
 	ConfigurationFunc        func() toml.Primitive
 
 	LocationMethodCalls []MethodCallForLocation
-	LocationFunc        func(var1 string) (GPSLoc, error)
+	LocationFunc        func(string) (mock.GPSLoc, error)
 
 	WriterToMethodCalls []MethodCallForWriterTo
-	WriterToFunc        func(var2 io.Writer) (int64, error)
+	WriterToFunc        func(io.Writer) (int64, error)
 
 	DropMethodCalls []MethodCallForDrop
-	DropFunc        func() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
+	DropFunc        func() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
 
 	CloseMethodCalls []MethodCallForClose
 	CloseFunc        func() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string)
@@ -574,7 +574,7 @@ func (impl *MofInitableMockSnitch) Configuration() toml.Primitive {
 }
 
 // Location implements the MofInitable.Location() method for the MofInitable.
-func (impl *MofInitableMockSnitch) Location(var1 string) (GPSLoc, error) {
+func (impl *MofInitableMockSnitch) Location(string) (mock.GPSLoc, error) {
 	var caller MethodCallForLocation
 
 	defer func() {
@@ -605,7 +605,7 @@ func (impl *MofInitableMockSnitch) Location(var1 string) (GPSLoc, error) {
 }
 
 // WriterTo implements the MofInitable.WriterTo() method for the MofInitable.
-func (impl *MofInitableMockSnitch) WriterTo(var2 io.Writer) (int64, error) {
+func (impl *MofInitableMockSnitch) WriterTo(io.Writer) (int64, error) {
 	var caller MethodCallForWriterTo
 
 	defer func() {
@@ -636,7 +636,7 @@ func (impl *MofInitableMockSnitch) WriterTo(var2 io.Writer) (int64, error) {
 }
 
 // Drop implements the MofInitable.Drop() method for the MofInitable.
-func (impl *MofInitableMockSnitch) Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
+func (impl *MofInitableMockSnitch) Drop() (*mock.GPSLoc, *toml.Primitive, *[]byte, *[5]byte) {
 	var caller MethodCallForDrop
 
 	defer func() {

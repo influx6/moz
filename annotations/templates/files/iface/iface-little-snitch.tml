@@ -1,7 +1,7 @@
 {{$InterfaceName := .InterfaceName }}
 
 {{ range .Methods }}
-// MethodCallFor{{.Name}} defines a type which holds meta-details about the giving calls associated 
+// MethodCallFor{{.Name}} defines a type which holds meta-details about the giving calls associated
 // with the {{$InterfaceName}}.{{.Name}}() method.
 type MethodCallFor{{.Name}} struct{
     When time.Time
@@ -14,18 +14,18 @@ type MethodCallFor{{.Name}} struct{
 
     // Argument values.
     {{ range .Args }}
-    {{capitalize .Name}} {{.Type}}
+    {{capitalize .Name}} {{.ExType}}
     {{end}}
 
     // Return values.
     {{ range .Returns }}
-    {{capitalize .Name}} {{.Type}}
+    {{capitalize .Name}} {{.ExType}}
     {{ end}}
 }
 {{ end }}
 
-// {{.InterfaceName}}Snitch is an implementation of the {{.InterfaceName}} which will wrap the 
-// {{.InterfaceName}}Impl and allow you to record all arguments and return values from calls to the 
+// {{.InterfaceName}}Snitch is an implementation of the {{.InterfaceName}} which will wrap the
+// {{.InterfaceName}}Impl and allow you to record all arguments and return values from calls to the
 // provided implementation which it wraps.
 type {{.InterfaceName}}LittleSnitch struct{
     Implementer {{.Package.Package}}.{{.InterfaceName}}
@@ -44,9 +44,9 @@ func NewLittleSnitch(impl {{.Package.Package}}.{{.InterfaceName}}) *{{.Interface
     return &snitch
 }
 
-{{ range .Methods }} 
+{{ range .Methods }}
 // {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
-func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
+func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList true}}) ({{.ReturnList true}}){
     var caller MethodCallFor{{.Name}}
 
     defer func(){
@@ -81,19 +81,19 @@ func (impl *{{$InterfaceName}}LittleSnitch) {{.Name}}({{.ArgumentList}}) ({{.Ret
 
 //==============================================================================================================
 
-// {{.InterfaceName}}MockSnitch defines a function type which implements a struct with the 
-// methods for the {{.InterfaceName}} as fields which allows you provide implementations of 
+// {{.InterfaceName}}MockSnitch defines a function type which implements a struct with the
+// methods for the {{.InterfaceName}} as fields which allows you provide implementations of
 // these functions to provide flexible testing.
 type {{.InterfaceName}}MockSnitch struct{
     {{ range .Methods }}
     {{.Name}}MethodCalls []MethodCallFor{{.Name}}
-    {{.Name}}Func func({{.ArgumentList}}) ({{.ReturnList}})
+    {{.Name}}Func func({{.ArgumentList true}}) ({{.ReturnList true}})
     {{ end }}
 }
 
-{{ range .Methods }} 
+{{ range .Methods }}
 // {{.Name}} implements the {{$InterfaceName}}.{{.Name}}() method for the {{$InterfaceName}}.
-func (impl *{{$InterfaceName}}MockSnitch) {{.Name}}({{.ArgumentList}}) ({{.ReturnList}}){
+func (impl *{{$InterfaceName}}MockSnitch) {{.Name}}({{.ArgumentList true}}) ({{.ReturnList true}}){
     var caller MethodCallFor{{.Name}}
 
     defer func(){

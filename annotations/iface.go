@@ -2,6 +2,7 @@ package annotations
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/influx6/faux/fmtwriter"
@@ -17,7 +18,7 @@ var (
 
 // IFaceAnnotationGenerator defines a code generator for creating a struct implementations for giving interface declaration.
 // Annotation associated with this Generator is: @iface.
-func IFaceAnnotationGenerator(an ast.AnnotationDeclaration, itr ast.InterfaceDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr ast.InterfaceDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
 	interfaceName := itr.Object.Name.Name
 	interfaceNameLower := strings.ToLower(interfaceName)
 
@@ -30,6 +31,9 @@ func IFaceAnnotationGenerator(an ast.AnnotationDeclaration, itr ast.InterfaceDec
 		// Retrieve all import paths for arguments.
 		func(args []ast.ArgType) {
 			for _, argument := range args {
+				if argument.Import2.Path != "" {
+					imports[argument.Import2.Path] = argument.Import2.Name
+				}
 				if argument.Import.Path != "" {
 					imports[argument.Import.Path] = argument.Import.Name
 				}
@@ -39,6 +43,9 @@ func IFaceAnnotationGenerator(an ast.AnnotationDeclaration, itr ast.InterfaceDec
 		// Retrieve all import paths for returns.
 		func(args []ast.ArgType) {
 			for _, argument := range args {
+				if argument.Import2.Path != "" {
+					imports[argument.Import2.Path] = argument.Import2.Name
+				}
 				if argument.Import.Path != "" {
 					imports[argument.Import.Path] = argument.Import.Name
 				}
@@ -105,7 +112,7 @@ func IFaceAnnotationGenerator(an ast.AnnotationDeclaration, itr ast.InterfaceDec
 		gen.Import("testing", ""),
 		gen.Import(pkg.Path, ""),
 		gen.Import("github.com/influx6/faux/tests", ""),
-		gen.Import(fmt.Sprintf("%s/%s", pkg.Path, "snitch"), ""),
+		gen.Import(filepath.Join(pkg.Path, toDir, "snitch"), ""),
 	}, wantedImports...)
 
 	testGen := gen.Block(
@@ -131,20 +138,20 @@ func IFaceAnnotationGenerator(an ast.AnnotationDeclaration, itr ast.InterfaceDec
 
 	return []gen.WriteDirective{
 		{
-			Dir:      "snitch",
-			Writer:   fmtwriter.New(implSnitchGen, true, true),
-			FileName: fmt.Sprintf("%s_little_snitch.go", interfaceNameLower),
-			// DontOverride: true,
+			Dir:          "snitch",
+			Writer:       fmtwriter.New(implSnitchGen, true, true),
+			FileName:     fmt.Sprintf("%s_little_snitch.go", interfaceNameLower),
+			DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(implGen, true, true),
-			FileName: fmt.Sprintf("%s_impl.go", interfaceNameLower),
-			// DontOverride: true,
+			Writer:       fmtwriter.New(implGen, true, true),
+			FileName:     fmt.Sprintf("%s_impl.go", interfaceNameLower),
+			DontOverride: true,
 		},
 		{
-			Writer:   fmtwriter.New(testGen, true, true),
-			FileName: fmt.Sprintf("%s_impl_test.go", interfaceNameLower),
-			// DontOverride: true,
+			Writer:       fmtwriter.New(testGen, true, true),
+			FileName:     fmt.Sprintf("%s_impl_test.go", interfaceNameLower),
+			DontOverride: true,
 		},
 	}, nil
 }

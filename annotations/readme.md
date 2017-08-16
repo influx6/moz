@@ -13,8 +13,18 @@ Example can be found in `Dap` package: [Dap](../examples/dap)
 
 
  ### @httpapi
- 
+
 *@httpapi* provides a struct-level annotation for generating a http based CRUD API, which provides all necessary calls for the creation, update, removal and retreival of that given struct. This provides a means to quickly generate out a very quick API with basic API readme, that describes each endpoint.
+
+### @mongo
+
+*@mongo* provides a struct-level annotation for generating a mongo based type which exposes a `.Exec` method to execute transactions against a mongo collection.
+
+
+### @iface
+
+*@iface* provides a interface-level annotation for generating initial struct implementation with mocking and initial tests files. It's great to allow one
+quickly reduce repetitive tasks of writing method implementations for an interface.
 
 
 ### @mongoapi
