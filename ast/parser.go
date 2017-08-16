@@ -8,16 +8,9 @@ import (
 	"strings"
 )
 
-// AnnotationMeta defines a type to hold parsed details of a giving template.
-type AnnotationMeta struct {
-	Name      string
-	Template  string
-	Arguments []string
-}
-
 // ReadAnnotationsFromCommentry returns a slice of all annotation passed from the provided list.
-func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationMeta {
-	var annotations []AnnotationMeta
+func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
+	var annotations []AnnotationDeclaration
 
 	reader := bufio.NewReader(r)
 
@@ -37,8 +30,10 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationMeta {
 			continue
 		}
 
+		params := make(map[string]string, 0)
+
 		if !strings.Contains(trimmedline, "(") {
-			annotations = append(annotations, AnnotationMeta{Name: trimmedline})
+			annotations = append(annotations, AnnotationDeclaration{Name: trimmedline, Params: params})
 			continue
 		}
 
@@ -61,11 +56,18 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationMeta {
 				}
 
 				parts = append(parts, trimmed)
+
+				// If we are dealing with key value pairs then split, trimspace and set
+				// in params. We only expect 2 values, any more and we wont consider the rest.
+				if kvPieces := strings.Split(trimmed, "=>"); len(kvPieces) > 1 {
+					params[strings.TrimSpace(kvPieces[0])] = strings.TrimSpace(kvPieces[1])
+				}
 			}
 
-			annotations = append(annotations, AnnotationMeta{
+			annotations = append(annotations, AnnotationDeclaration{
 				Arguments: parts,
 				Name:      argName,
+				Params:    params,
 			})
 
 			continue
@@ -84,14 +86,21 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationMeta {
 			}
 
 			parts = append(parts, trimmed)
+
+			// If we are dealing with key value pairs then split, trimspace and set
+			// in params. We only expect 2 values, any more and we wont consider the rest.
+			if kvPieces := strings.Split(trimmed, "=>"); len(kvPieces) > 1 {
+				params[strings.TrimSpace(kvPieces[0])] = strings.TrimSpace(kvPieces[1])
+			}
 		}
 
 		template := strings.TrimSpace(readTemplate(reader))
 
-		annotations = append(annotations, AnnotationMeta{
+		annotations = append(annotations, AnnotationDeclaration{
 			Arguments: parts,
 			Name:      argName,
 			Template:  template,
+			Params:    params,
 		})
 
 	}

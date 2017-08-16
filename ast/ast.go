@@ -88,10 +88,10 @@ func PackageFile(file string, mode parser.Mode) (*token.FileSet, *ast.File, erro
 
 // AnnotationDeclaration defines a annotation type which holds detail about a giving annotation.
 type AnnotationDeclaration struct {
-	Name      string   `json:"name"`
-	Namespace string   `json:"namespace"`
-	Template  string   `json:"template"`
-	Arguments []string `json:"arguments"`
+	Name      string            `json:"name"`
+	Template  string            `json:"template"`
+	Arguments []string          `json:"arguments"`
+	Params    map[string]string `json:"params"`
 }
 
 // ImportDeclaration defines a type to contain import declaration within a package.
@@ -125,6 +125,23 @@ func (pkg PackageDeclaration) HasFunctionFor(str StructDeclaration, funcName str
 	}
 
 	return true
+}
+
+// AnnotationsFor returns all annotations with the giving name.
+func (pkg PackageDeclaration) AnnotationsFor(typeName string) []AnnotationDeclaration {
+	typeName = strings.TrimPrefix(typeName, "@")
+
+	var found []AnnotationDeclaration
+
+	for _, item := range pkg.Annotations {
+		if strings.TrimPrefix(item.Name, "@") != typeName {
+			continue
+		}
+
+		found = append(found, item)
+	}
+
+	return found
 }
 
 // FunctionsForName returns a slice of FuncDeclaration for the giving name.
@@ -222,10 +239,11 @@ func (fnList Functions) Find(name string) (FuncDeclaration, error) {
 // AnnotationAssociationDeclaration defines a type which defines an association between
 // a giving annotation and a series of values.
 type AnnotationAssociationDeclaration struct {
-	Annotation string `json:"annotation"`
-	Action     string `json:"action"`
-	Template   string `json:"template"`
-	TypeName   string `json:"typeName"`
+	Annotation string                `json:"annotation"`
+	Action     string                `json:"action"`
+	Template   string                `json:"template"`
+	TypeName   string                `json:"typeName"`
+	Record     AnnotationDeclaration `json:"record"`
 }
 
 // InterfaceDeclaration defines a type which holds annotation data for a giving interface type declaration.
@@ -1041,19 +1059,12 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 			if file.Doc != nil {
 				annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(file.Doc.Text()))
 
-				for _, item := range annotationRead {
-					log.Emit(stdout.Info("Annotation in Package comments").
-						With("dir", dir).
-						With("annotation", item.Name).
-						With("comment", file.Doc.Text()))
+				log.Emit(stdout.Info("Annotations in Package comments").
+					With("dir", dir).
+					With("annotations", annotationRead).
+					With("comment", file.Doc.Text()))
 
-					packageDeclr.Annotations = append(packageDeclr.Annotations, AnnotationDeclaration{
-						Namespace: item.Name,
-						Name:      item.Name,
-						Arguments: item.Arguments,
-						Template:  item.Template,
-					})
-				}
+				packageDeclr.Annotations = append(packageDeclr.Annotations, annotationRead...)
 			}
 
 			// Collect and categorize annotations in types and their fields.
@@ -1134,23 +1145,15 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 
 								if len(item.Arguments) >= 3 {
 									associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
+										Record:     item,
+										Template:   item.Template,
 										Action:     item.Arguments[1],
 										TypeName:   item.Arguments[2],
-										Template:   item.Template,
 										Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
 									}
 								}
-
-								break
-
 							default:
-								annotations = append(annotations, AnnotationDeclaration{
-									Namespace: item.Name,
-									Name:      item.Name,
-									Arguments: item.Arguments,
-									Template:  item.Template,
-								})
-
+								annotations = append(annotations, item)
 							}
 						}
 
