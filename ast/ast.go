@@ -1072,6 +1072,8 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					arg.Type = getName(iobj)
 					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
+					fmt.Printf("MapType: %+q -> %#v : %#v\n", arg.Type, iobj.Key, iobj.Value)
+
 					if keySel, err := getSelector(iobj.Key); err == nil {
 						if x, ok := keySel.X.(*ast.Ident); ok {
 							if imported, err := pkg.ImportFor(x.Name); err == nil {
@@ -1294,7 +1296,10 @@ func getRealIdentName(item interface{}) string {
 
 func getNameAsFromOuter(item interface{}, basePkg string) string {
 	switch di := item.(type) {
+	case *ast.InterfaceType:
+		return "interface{}"
 	case *ast.MapType:
+		// fmt.Printf("MapType: %#v : %#v\n", di.Key, di.Value)
 		keyName := getNameAsFromOuter(di.Key, basePkg)
 		valName := getNameAsFromOuter(di.Value, basePkg)
 		return fmt.Sprintf("map[%s]%s", keyName, valName)
@@ -1336,7 +1341,10 @@ func getNameAsFromOuter(item interface{}, basePkg string) string {
 
 func getName(item interface{}) string {
 	switch di := item.(type) {
+	case *ast.InterfaceType:
+		return "interface{}"
 	case *ast.MapType:
+		// fmt.Printf("MapType: %#v : %#v\n", di.Key, di.Value)
 		keyName := getName(di.Key)
 		valName := getName(di.Value)
 		return fmt.Sprintf("map[%s]%s", keyName, valName)
