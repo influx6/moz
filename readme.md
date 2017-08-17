@@ -44,7 +44,7 @@ See the [Example](./examples/) directory, which demonstrates use of annotations 
 
 ### Example
 
-- Generate code structures from an interface
+#### Generate code structures from an interface
 
 1. Create a file and add the following contents defining a interface we wish to
 create it's implementation structures by annotating with a `@iface` comment.
@@ -107,7 +107,7 @@ The command above will generate all necessary files and packages ready for editi
 See [Mock Example](./examples/mock) for end result.
 
 
-- Generate code structures from an annotation template
+#### Generate code structures from an annotation template
 
 1. Create a `doc.go` file
 
@@ -149,6 +149,8 @@ func Add(m int32, n int32) int64 {
 ```
 
 The command above will generate all necessary files and packages ready for editing.
+
+See [Temples Example](./examples/temples) for end result.
 
 ### How Annotation Code Generation works
 
