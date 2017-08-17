@@ -789,7 +789,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					resName, err := GetIdentName(result)
 					switch err != nil {
 					case true:
-						name = fmt.Sprintf("var%d", retCounter)
+						name = fmt.Sprintf("ret%d", retCounter)
 						retCounter++
 					case false:
 						name = resName.Name
