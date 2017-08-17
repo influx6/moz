@@ -23,7 +23,9 @@ func testMethodCallFor{{.Name}}(t *testing.T){
 
         // Stub variables for method.
         // TODO: Replace this stubs with real values for method
-        {{ range .Args}}var {{.Name}} {{.ExType}}{{ end }}
+        {{ range .Args}}
+        var {{.Name}} {{.ExType}}
+        {{ end }}
 
         // Call {{.Name}} method with arguments
         impl.{{.Name}}({{.ArgumentNamesList}})
