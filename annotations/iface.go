@@ -79,77 +79,83 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 		),
 	)
 
+	var directives []gen.WriteDirective
+
 	impImports := append([]gen.ImportItemDeclr{
 		gen.Import("time", ""),
 		gen.Import("runtime", ""),
 		gen.Import(pkg.Path, ""),
 	}, wantedImports...)
 
-	implSnitchGen := gen.Block(
-		gen.Package(
-			gen.Name("snitch"),
-			gen.Imports(impImports...),
-			gen.Block(
-				gen.SourceText(
-					string(templates.Must("iface/iface-little-snitch.tml")),
-					struct {
-						Package       ast.PackageDeclaration
-						InterfaceName string
-						Methods       []ast.FunctionDefinition
-					}{
-						Package:       pkg,
-						InterfaceName: interfaceName,
-						Methods:       itr.Methods(),
-					},
+	directives = append(directives, gen.WriteDirective{
+		Writer:       fmtwriter.New(implGen, true, true),
+		FileName:     fmt.Sprintf("%s_impl.go", interfaceNameLower),
+		DontOverride: true,
+	})
+
+	if val, ok := an.Params["tests"]; ok && val == "true" {
+		implSnitchGen := gen.Block(
+			gen.Package(
+				gen.Name("snitch"),
+				gen.Imports(impImports...),
+				gen.Block(
+					gen.SourceText(
+						string(templates.Must("iface/iface-little-snitch.tml")),
+						struct {
+							Package       ast.PackageDeclaration
+							InterfaceName string
+							Methods       []ast.FunctionDefinition
+						}{
+							Package:       pkg,
+							InterfaceName: interfaceName,
+							Methods:       itr.Methods(),
+						},
+					),
 				),
 			),
-		),
-	)
+		)
 
-	testImports := append([]gen.ImportItemDeclr{
-		gen.Import("testing", ""),
-		gen.Import(pkg.Path, ""),
-		gen.Import("github.com/influx6/faux/tests", ""),
-		gen.Import(filepath.Join(pkg.Path, toDir, "snitch"), ""),
-	}, wantedImports...)
-
-	testGen := gen.Block(
-		gen.Package(
-			gen.Name(fmt.Sprintf("%s_test", ast.WhichPackage(toDir, pkg))),
-			gen.Imports(testImports...),
-			gen.Block(
-				gen.SourceText(
-					string(templates.Must("iface/iface-test.tml")),
-					struct {
-						InterfaceName string
-						Package       ast.PackageDeclaration
-						Methods       []ast.FunctionDefinition
-					}{
-						Package:       pkg,
-						InterfaceName: interfaceName,
-						Methods:       itr.Methods(),
-					},
-				),
-			),
-		),
-	)
-
-	return []gen.WriteDirective{
-		{
+		directives = append(directives, gen.WriteDirective{
 			Dir:          "snitch",
 			Writer:       fmtwriter.New(implSnitchGen, true, true),
 			FileName:     fmt.Sprintf("%s_little_snitch.go", interfaceNameLower),
 			DontOverride: true,
-		},
-		{
-			Writer:       fmtwriter.New(implGen, true, true),
-			FileName:     fmt.Sprintf("%s_impl.go", interfaceNameLower),
-			DontOverride: true,
-		},
-		{
+		})
+
+		testImports := append([]gen.ImportItemDeclr{
+			gen.Import("testing", ""),
+			gen.Import(pkg.Path, ""),
+			gen.Import("github.com/influx6/faux/tests", ""),
+			gen.Import(filepath.Join(pkg.Path, toDir, "snitch"), ""),
+		}, wantedImports...)
+
+		testGen := gen.Block(
+			gen.Package(
+				gen.Name(fmt.Sprintf("%s_test", ast.WhichPackage(toDir, pkg))),
+				gen.Imports(testImports...),
+				gen.Block(
+					gen.SourceText(
+						string(templates.Must("iface/iface-test.tml")),
+						struct {
+							InterfaceName string
+							Package       ast.PackageDeclaration
+							Methods       []ast.FunctionDefinition
+						}{
+							Package:       pkg,
+							InterfaceName: interfaceName,
+							Methods:       itr.Methods(),
+						},
+					),
+				),
+			),
+		)
+
+		directives = append(directives, gen.WriteDirective{
 			Writer:       fmtwriter.New(testGen, true, true),
 			FileName:     fmt.Sprintf("%s_impl_test.go", interfaceNameLower),
 			DontOverride: true,
-		},
-	}, nil
+		})
+	}
+
+	return directives, nil
 }
