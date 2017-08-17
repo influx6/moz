@@ -218,15 +218,18 @@ func generateCLI(c *cli.Context) {
 		}
 	}
 
-	events.Emit(stdout.Info("Using Dir: %s", fromDir).With("dir", fromDir))
+	events.Emit(stdout.Info("Using FromDir: %s", fromDir).With("dir", fromDir))
+	events.Emit(stdout.Info("Using ToDir: %s", toDir).With("dir", toDir))
 
 	pkgs, err := ast.ParseAnnotations(events, fromDir)
 	if err != nil {
-		events.Emit(stdout.Error(err).With("dir", fromDir).With("message", "Failed to parse package annotations"))
+		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package annotations"))
 		return
 	}
 
 	if err := moz.Parse(toDir, events, pkgs...); err != nil {
-		events.Emit(stdout.Error(err).With("dir", fromDir).With("message", "Failed to parse package declarations"))
+		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
+
+	events.Emit(stdout.Info("Finished").With("todir", toDir).With("fromDir", fromDir))
 }

@@ -3,7 +3,6 @@ package annotations
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -122,23 +121,26 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 		)
 
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(pkgGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(pkgGen, true, true),
 		})
 
 	case "go":
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(typeGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(typeGen, true, true),
 		})
 
 	default:
 		directives = append(directives, gen.WriteDirective{
-			Writer:   typeGen,
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
+			Writer:       typeGen,
+			DontOverride: true,
+			FileName:     fileName,
+			Dir:          toDir,
 		})
 	}
 
@@ -239,23 +241,26 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 		)
 
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(pkgGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(pkgGen, true, true),
 		})
 
 	case "go":
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(typeGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(typeGen, true, true),
 		})
 
 	default:
 		directives = append(directives, gen.WriteDirective{
-			Writer:   typeGen,
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
+			Writer:       typeGen,
+			DontOverride: true,
+			FileName:     fileName,
+			Dir:          toDir,
 		})
 	}
 
@@ -354,23 +359,26 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 		)
 
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(pkgGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(pkgGen, true, true),
 		})
 
 	case "go":
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(typeGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(typeGen, true, true),
 		})
 
 	default:
 		directives = append(directives, gen.WriteDirective{
-			Writer:   typeGen,
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
+			Writer:       typeGen,
+			DontOverride: true,
+			FileName:     fileName,
+			Dir:          toDir,
 		})
 	}
 
@@ -471,23 +479,26 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		)
 
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(pkgGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(pkgGen, true, true),
 		})
 
 	case "go":
 		directives = append(directives, gen.WriteDirective{
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
-			Writer:   fmtwriter.New(typeGen, true, true),
+			FileName:     fileName,
+			DontOverride: true,
+			Dir:          toDir,
+			Writer:       fmtwriter.New(typeGen, true, true),
 		})
 
 	default:
 		directives = append(directives, gen.WriteDirective{
-			Writer:   typeGen,
-			FileName: fileName,
-			Dir:      filepath.Join(toDir),
+			Writer:       typeGen,
+			DontOverride: true,
+			FileName:     fileName,
+			Dir:          toDir,
 		})
 	}
 
