@@ -103,7 +103,7 @@ func AssetsAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkg a
 	directives = append(directives, gen.WriteDirective{
 		Writer:   fmtwriter.New(mainFile, true, true),
 		FileName: "generate.go",
-		Dir:      filepath.Join(toDir, "pkgName"),
+		Dir:      pkgName,
 	})
 
 	return directives, nil

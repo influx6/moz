@@ -396,9 +396,9 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, pack
 				newDir := filepath.Dir(pkg.FilePath)
 
 				if item.Dir != "" {
-					namedFileDir = filepath.Join(toDir, newDir, item.Dir)
+					namedFileDir = filepath.Join(newDir, toDir, item.Dir)
 				} else {
-					namedFileDir = filepath.Join(toDir, newDir)
+					namedFileDir = filepath.Join(newDir, toDir)
 				}
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
@@ -469,6 +469,18 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, pack
 	}
 
 	return nil
+}
+
+//===========================================================================================================
+
+// WhichPackage is an utility function which returns the appropriate package name to use
+// if a toDir is provided as destination.
+func WhichPackage(toDir string, pkg PackageDeclaration) string {
+	if toDir != "" && toDir != "./" && toDir != "." {
+		return strings.ToLower(filepath.Base(toDir))
+	}
+
+	return pkg.Package
 }
 
 //===========================================================================================================

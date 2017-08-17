@@ -307,31 +307,31 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 		{
 			Writer:   httpReadmeGen,
 			FileName: "readme.md",
-			Dir:      filepath.Join(toDir, "httpapi"),
+			Dir:      "httpapi",
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(httpMockGen, true, true),
 			FileName: "httpapi_mock_test.go",
-			Dir:      filepath.Join(toDir, "httpapi"),
+			Dir:      "httpapi",
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(httpTestGen, true, true),
 			FileName: "httpapi_test.go",
-			Dir:      filepath.Join(toDir, "httpapi"),
+			Dir:      "httpapi",
 			// DontOverride: true,
 		},
 		{
 			Writer:       fmtwriter.New(httpJSONGen, true, true),
 			FileName:     "httpjson_test.go",
-			Dir:          filepath.Join(toDir, "httpapi"),
+			Dir:          "httpapi",
 			DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(httpGen, true, true),
 			FileName: "httpapi.go",
-			Dir:      filepath.Join(toDir, "httpapi"),
+			Dir:      "httpapi",
 			// DontOverride: true,
 		},
 	}
@@ -340,7 +340,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 		writers = append(writers, gen.WriteDirective{
 			Writer:       fmtwriter.New(httpMockHelperGen, true, true),
 			FileName:     "httpapi_mock_cu_test.go",
-			Dir:          filepath.Join(toDir, "httpapi"),
+			Dir:          "httpapi",
 			DontOverride: true,
 		})
 	}

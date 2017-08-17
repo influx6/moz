@@ -226,12 +226,17 @@ func generateFileCLI(c *cli.Context) {
 
 	fromFile := c.String("fromFile")
 	if fromFile == "" {
-		err = fmt.Errorf("File target not provided, use the -fromFile flag")
-		events.Emit(stdout.Error(err).With("file", fromFile).With("message", "Failed to retrieve current fileectory"))
+		err = fmt.Errorf("file target not provided, use the -fromfile flag")
+		events.Emit(stdout.Error(err).With("dir", fromFile).With("message", "Failed to retrieve current directory"))
 		return
 	}
 
 	toDir := c.String("toDir")
+	if filepath.IsAbs(toDir) {
+		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
+		events.Emit(stdout.Error(err).With("dir", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+		return
+	}
 
 	if fromFile == "" {
 		fromFile, err = os.Getwd()
@@ -239,6 +244,17 @@ func generateFileCLI(c *cli.Context) {
 			events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
 			return
 		}
+	}
+
+	// If its not an absolute path then get real absolute
+	if !filepath.IsAbs(fromFile) {
+		pwd, err := os.Getwd()
+		if err != nil {
+			events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
+			return
+		}
+
+		fromFile = filepath.Join(pwd, fromFile)
 	}
 
 	events.Emit(stdout.Info("Using FromFile: %s", fromFile).With("file", fromFile))
@@ -260,8 +276,14 @@ func generateFileCLI(c *cli.Context) {
 func generatePackageCLI(c *cli.Context) {
 	var err error
 
-	toDir := c.String("toDir")
 	fromDir := c.String("fromDir")
+	toDir := c.String("toDir")
+
+	if filepath.IsAbs(toDir) {
+		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
+		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+		return
+	}
 
 	if fromDir == "" {
 		fromDir, err = os.Getwd()

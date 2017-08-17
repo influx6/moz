@@ -27,7 +27,6 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 	imports := make(map[string]string, 0)
 
 	for _, method := range methods {
-
 		// Retrieve all import paths for arguments.
 		func(args []ast.ArgType) {
 			for _, argument := range args {
@@ -51,7 +50,6 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 				}
 			}
 		}(method.Returns)
-
 	}
 
 	var wantedImports []gen.ImportItemDeclr
@@ -62,7 +60,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 
 	implGen := gen.Block(
 		gen.Package(
-			gen.Name(pkg.Package),
+			gen.Name(ast.WhichPackage(toDir, pkg)),
 			gen.Imports(wantedImports...),
 			gen.Block(
 				gen.SourceText(
@@ -117,7 +115,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 
 	testGen := gen.Block(
 		gen.Package(
-			gen.Name(fmt.Sprintf("%s_test", strings.ToLower(pkg.Package))),
+			gen.Name(fmt.Sprintf("%s_test", ast.WhichPackage(toDir, pkg))),
 			gen.Imports(testImports...),
 			gen.Block(
 				gen.SourceText(
