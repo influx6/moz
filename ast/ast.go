@@ -815,7 +815,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 
 					importDclr, _ := pkg.ImportFor(xobj.Name)
 
-					name := fmt.Sprintf("var%d", retCounter)
+					name := fmt.Sprintf("ret%d", retCounter)
 					retCounter++
 
 					returns = append(returns, ArgType{
@@ -827,7 +827,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					})
 
 				case *ast.StarExpr:
-					name := fmt.Sprintf("var%d", retCounter)
+					name := fmt.Sprintf("ret%d", retCounter)
 					retCounter++
 
 					var arg ArgType
@@ -868,7 +868,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					returns = append(returns, arg)
 
 				case *ast.MapType:
-					name := fmt.Sprintf("var%d", retCounter)
+					name := fmt.Sprintf("ret%d", retCounter)
 					retCounter++
 
 					var arg ArgType
@@ -895,7 +895,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 
 					returns = append(returns, arg)
 				case *ast.ArrayType:
-					name := fmt.Sprintf("var%d", retCounter)
+					name := fmt.Sprintf("ret%d", retCounter)
 					retCounter++
 
 					var arg ArgType
@@ -933,7 +933,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					returns = append(returns, arg)
 
 				case *ast.ChanType:
-					name := fmt.Sprintf("var%d", retCounter)
+					name := fmt.Sprintf("ret%d", retCounter)
 					retCounter++
 
 					var arg ArgType
