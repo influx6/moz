@@ -44,6 +44,8 @@ See the [Example](./examples/) directory, which demonstrates use of annotations 
 
 ### Example
 
+- Generate code structures from an interface
+
 1. Create a file and add the following contents defining a interface we wish to
 create it's implementation structures by annotating with a `@iface` comment.
 
@@ -57,17 +59,6 @@ import (
 
 	toml "github.com/BurntSushi/toml"
 )
-
-// Ignitable defines a struct which is used to ignite the package.
-type Ignitable interface {
-	Ignite() string
-}
-
-// GPSLoc defines a struct to hold long and lat values for a gps location.
-type GPSLoc struct {
-	Lat  float64
-	Long float64
-}
 
 // MofInitable defines a interface for a Mof.
 // @iface
@@ -83,6 +74,18 @@ type MofInitable interface {
 	Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
 	Close() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string)
 	Bob() chan chan struct{}
+}
+
+
+// Ignitable defines a struct which is used to ignite the package.
+type Ignitable interface {
+	Ignite() string
+}
+
+// GPSLoc defines a struct to hold long and lat values for a gps location.
+type GPSLoc struct {
+	Lat  float64
+	Long float64
 }
 
 ```
@@ -102,6 +105,14 @@ moz generate
 The command above will generate all necessary files and packages ready for editing.
 
 See [Mock Example](./examples/mock) for end result.
+
+
+- Generate code structures from an annotation template
+
+```go
+
+
+```
 
 ### How Annotation Code Generation works
 
