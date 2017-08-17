@@ -135,9 +135,9 @@ func readTemplate(reader *bufio.Reader) string {
 			}
 
 			// If it's all space, then return.
-			if strings.TrimSpace(string(dataVal)) == "" {
-				return bu.String()
-			}
+			// if strings.TrimSpace(string(dataVal)) == "" {
+			return bu.String()
+			// }
 		}
 
 		twoWord, err := reader.ReadString('\n')
