@@ -1072,7 +1072,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 					arg.Type = getName(iobj)
 					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
-					fmt.Printf("MapType: %+q -> %#v : %#v\n", arg.Type, iobj.Key, iobj.Value)
+					// fmt.Printf("MapType: %+q -> %#v : %#v\n", arg.Type, iobj.Key, iobj.Value)
 
 					if keySel, err := getSelector(iobj.Key); err == nil {
 						if x, ok := keySel.X.(*ast.Ident); ok {
