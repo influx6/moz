@@ -149,7 +149,7 @@ func readTemplate(reader *bufio.Reader) string {
 			continue
 		}
 
-		bu.WriteString(commentry.ReplaceAllString(twoWord, ""))
+		bu.WriteString(twoWord)
 	}
 
 	return bu.String()

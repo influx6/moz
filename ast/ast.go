@@ -1268,6 +1268,8 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, pack
 				continue
 			}
 
+			log.Emit(stdout.Info("ParseSuccess: Package %q", pkg.Package).With("package", pkg.Package))
+
 			for _, item := range wdrs {
 
 				if filepath.IsAbs(item.Dir) {

@@ -173,25 +173,25 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 		{
 			Writer:   sqlJSONGen,
 			FileName: "sqljson_test.go",
-			Dir:      "sqlapi",
+			Dir:      filepath.Join(toDir, "sqlapi"),
 			// DontOverride: true,
 		},
 		{
 			Writer:   sqlReadmeGen,
 			FileName: "README.md",
-			Dir:      "sqlapi",
+			Dir:      filepath.Join(toDir, "sqlapi"),
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(sqlTestGen, true, true),
 			FileName: "sqlapi_test.go",
-			Dir:      "sqlapi",
+			Dir:      filepath.Join(toDir, "sqlapi"),
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(sqlGen, true, true),
 			FileName: "sqlapi.go",
-			Dir:      "sqlapi",
+			Dir:      filepath.Join(toDir, "sqlapi"),
 			// DontOverride: true,
 		},
 	}, nil
