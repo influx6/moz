@@ -5,10 +5,11 @@
 //
 //  // Add brings the new level into the system.
 //  func Add(m {{ sel "Type1"}}, n {{ sel "Type2"}}) {{ sel "Type3" }} {
-//      return int64(m * n)
+//      return {{sel "Type3"}}(m * n)
 //  }
 //
 // })
+//
 // @templaterTypesFor(id => Mob, filename => temples_add.go, Type1 => int32, Type2 => int32, Type3 => int64)
 //
 package temples

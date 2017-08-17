@@ -11,9 +11,9 @@ This package provides a list of annotations which provide code generation for sp
 
 Example can be found in `Dap` package: [Dap](../examples/dap)
 
-### @templator
+### @templatorTypesFor
 
-*@templator* provides a template-base annotation for generating new code from the provided templates associated with the annotation and from associated annotation `templaterTypesFor` which details necessary key-value pairs for the code generation to be done.
+*@templatorTypesFor* provides a template-base annotation for generating content from the provided template associated with a annotation `templater`, which has the template identified by the `id` which will be used to generate the new code for the `filename` provided on this annotation.
 
 Example can be found in `Temples` package: [Temples](../examples/temples)
 
