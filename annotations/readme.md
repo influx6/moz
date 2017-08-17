@@ -11,15 +11,23 @@ This package provides a list of annotations which provide code generation for sp
 
 Example can be found in `Dap` package: [Dap](../examples/dap)
 
+### @templator
+
+*@templator* provides a template-base annotation for generating new code from the provided templates associated with the annotation and from associated annotation `templaterTypesFor` which details necessary key-value pairs for the code generation to be done.
+
+Example can be found in `Temples` package: [Temples](../examples/temples)
 
  ### @httpapi
 
 *@httpapi* provides a struct-level annotation for generating a http based CRUD API, which provides all necessary calls for the creation, update, removal and retreival of that given struct. This provides a means to quickly generate out a very quick API with basic API readme, that describes each endpoint.
 
+Example can be found in `Dap` package: [Dap](../examples/dap)
+
 ### @mongo
 
 *@mongo* provides a struct-level annotation for generating a mongo based type which exposes a `.Exec` method to execute transactions against a mongo collection.
 
+Example can be found in `Dap` package: [Dap](../examples/dap)
 
 ### @iface
 
@@ -44,6 +52,7 @@ The `@mongoapi` annotation provides an associative annotation which helps custom
 
 This two types above are declared with an `@associates` annotation, which will dictate the struct to be presented to either the `Create` and `Update` methods as the struct type to be giving to the function to retrieve the update values from. Generally if not declared the default struct type which the `@mongoapi` annotation is declared on.
 
+Example can be found in `Dap` package: [Dap](../examples/dap)
 
 ### @sqlapi
 
@@ -61,3 +70,6 @@ The `@sqlapi` annotation provides an associative annotation which helps customiz
          3. To use the `StructType` name represented as the type to be expected by either C or U in CRUD.
 
 This two types above are declared with an `@associates` annotation, which will dictate the struct to be presented to either the `Create` and `Update` methods as the struct type to be giving to the function to retrieve the update values from. Generally if not declared the default struct type which the `@sqlapi` annotation is declared on.
+
+
+Example can be found in `Dap` package: [Dap](../examples/dap)
