@@ -86,6 +86,393 @@ func PackageFile(file string, mode parser.Mode) (*token.FileSet, *ast.File, erro
 	return tokens, nodes, nil
 }
 
+//===========================================================================================================
+
+// ParseFileAnnotations parses the package from the provided file.
+func ParseFileAnnotations(log metrics.Metrics, path string) (PackageDeclaration, error) {
+	dir := filepath.Dir(path)
+
+	tokenFiles, file, err := PackageFile(path, parser.ParseComments)
+	if err != nil {
+		log.Emit(stdout.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file))
+		return PackageDeclaration{}, err
+	}
+
+	return parseFileToPackage(log, dir, path, filepath.Base(dir), tokenFiles, file)
+}
+
+// ParseAnnotations parses the package which generates a series of ast with associated
+// annotation for processing.
+func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, error) {
+	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
+	if err != nil {
+		log.Emit(stdout.Error(err).With("message", "Failed to parse directory").With("dir", dir))
+		return nil, err
+	}
+
+	var packageDeclrs []PackageDeclaration
+
+	for _, pkg := range packages {
+		for path, file := range pkg.Files {
+			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file)
+			if err != nil {
+				return nil, err
+			}
+
+			packageDeclrs = append(packageDeclrs, res)
+		}
+	}
+
+	return packageDeclrs, nil
+}
+
+func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName string, tokenFiles *token.FileSet, file *ast.File) (PackageDeclaration, error) {
+	var packageDeclr PackageDeclaration
+
+	{
+		packageDeclr.Package = pkgName
+		packageDeclr.FilePath = path
+		packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
+		packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
+
+		for _, imp := range file.Imports {
+			var pkgName string
+
+			if imp.Name != nil {
+				pkgName = imp.Name.Name
+			}
+
+			impPkgPath, err := strconv.Unquote(imp.Path.Value)
+			if err != nil {
+				impPkgPath = imp.Path.Value
+			}
+
+			packageDeclr.Imports[pkgName] = ImportDeclaration{
+				Name: pkgName,
+				Path: impPkgPath,
+			}
+		}
+
+		if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
+			packageDeclr.Path = filepath.Dir(relPath)
+			packageDeclr.File = filepath.Base(relPath)
+		}
+
+		if runtime.GOOS == "windows" {
+			packageDeclr.Path = filepath.ToSlash(packageDeclr.Path)
+			packageDeclr.File = filepath.ToSlash(packageDeclr.File)
+			packageDeclr.FilePath = filepath.ToSlash(packageDeclr.FilePath)
+		}
+
+		if file.Doc != nil {
+			annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(file.Doc.Text()))
+
+			log.Emit(stdout.Info("Annotations in Package comments").
+				With("dir", dir).
+				With("annotations", annotationRead).
+				With("comment", file.Doc.Text()))
+
+			packageDeclr.Annotations = append(packageDeclr.Annotations, annotationRead...)
+		}
+
+		// Collect and categorize annotations in types and their fields.
+	declrLoop:
+		for _, declr := range file.Decls {
+			switch rdeclr := declr.(type) {
+			case *ast.FuncDecl:
+
+				tokenPosition := tokenFiles.Position(rdeclr.Pos())
+
+				var defFunc FuncDeclaration
+
+				defFunc.PackageDeclr = &packageDeclr
+				defFunc.FuncDeclr = rdeclr
+				defFunc.Type = rdeclr.Type
+				defFunc.Position = rdeclr.Pos()
+				defFunc.Path = packageDeclr.Path
+				defFunc.File = packageDeclr.File
+				defFunc.FuncName = rdeclr.Name.Name
+				defFunc.Column = tokenPosition.Column
+				defFunc.Package = packageDeclr.Package
+				defFunc.LineNumber = tokenPosition.Line
+				defFunc.FilePath = packageDeclr.FilePath
+
+				if rdeclr.Type != nil {
+					defFunc.Returns = rdeclr.Type.Results
+					defFunc.Arguments = rdeclr.Type.Params
+				}
+
+				if rdeclr.Recv != nil {
+					defFunc.FuncType = rdeclr.Recv
+
+					nameIdent := rdeclr.Recv.List[0]
+
+					if receiverNameType, ok := nameIdent.Type.(*ast.Ident); ok {
+						defFunc.RecieverName = receiverNameType.Name
+						defFunc.Reciever = receiverNameType.Obj
+						defFunc.RecieverIdent = receiverNameType
+
+						if rems, ok := packageDeclr.ObjectFunc[receiverNameType.Obj]; ok {
+							rems = append(rems, defFunc)
+							packageDeclr.ObjectFunc[receiverNameType.Obj] = rems
+						} else {
+							packageDeclr.ObjectFunc[receiverNameType.Obj] = []FuncDeclaration{defFunc}
+						}
+
+						continue declrLoop
+					}
+				}
+
+				packageDeclr.Functions = append(packageDeclr.Functions, defFunc)
+				continue declrLoop
+
+			case *ast.GenDecl:
+
+				var annotations []AnnotationDeclaration
+
+				associations := make(map[string]AnnotationAssociationDeclaration, 0)
+
+				if rdeclr.Doc != nil {
+					annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(rdeclr.Doc.Text()))
+
+					for _, item := range annotationRead {
+						log.Emit(stdout.Info("Annotation in Decleration comment").
+							With("dir", dir).
+							With("comment", rdeclr.Doc.Text()).
+							With("annotation", item.Name).
+							With("position", rdeclr.Pos()).
+							With("token", rdeclr.Tok.String()))
+
+						switch item.Name {
+						case "associates":
+							log.Emit(stdout.Error("Association Annotation in Decleration is incomplete: Expects 3 elements").
+								With("dir", dir).
+								With("association", item.Arguments).
+								With("position", rdeclr.Pos()).
+								With("token", rdeclr.Tok.String()))
+
+							if len(item.Arguments) >= 3 {
+								associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
+									Record:     item,
+									Template:   item.Template,
+									Action:     item.Arguments[1],
+									TypeName:   item.Arguments[2],
+									Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
+								}
+							}
+						default:
+							annotations = append(annotations, item)
+						}
+					}
+
+				}
+
+				for _, spec := range rdeclr.Specs {
+					switch obj := spec.(type) {
+					case *ast.ValueSpec:
+						// Handles variable declaration
+						// i.e Spec:
+						// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a00)}, Type:ast.Expr(nil), Values:[]ast.Expr{(*ast.BasicLit)(0xc4200e4a20)}, Comment:(*ast.CommentGroup)(nil)}
+						// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a40)}, Type:(*ast.Ident)(0xc4200e4a60), Values:[]ast.Expr(nil), Comment:(*ast.CommentGroup)(nil)}
+
+					case *ast.TypeSpec:
+
+						tokenPosition := tokenFiles.Position(spec.Pos())
+
+						switch robj := obj.Type.(type) {
+						case *ast.StructType:
+
+							log.Emit(stdout.Info("Annotation in Decleration").
+								With("Type", "Struct").
+								With("Annotations", len(annotations)).
+								With("StructName", obj.Name))
+
+							packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
+								Object:       obj,
+								Struct:       robj,
+								Annotations:  annotations,
+								Associations: associations,
+								File:         packageDeclr.File,
+								Package:      packageDeclr.Package,
+								Path:         packageDeclr.Path,
+								FilePath:     packageDeclr.FilePath,
+								LineNumber:   tokenPosition.Line,
+								Column:       tokenPosition.Column,
+								PackageDeclr: &packageDeclr,
+							})
+							break
+
+						case *ast.InterfaceType:
+							log.Emit(stdout.Info("Annotation in Decleration").
+								With("Type", "Interface").
+								With("Annotations", len(annotations)).
+								With("StructName", obj.Name))
+
+							packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
+								Object:       obj,
+								Interface:    robj,
+								Annotations:  annotations,
+								Associations: associations,
+								PackageDeclr: &packageDeclr,
+								File:         packageDeclr.File,
+								Package:      packageDeclr.Package,
+								Path:         packageDeclr.Path,
+								FilePath:     packageDeclr.FilePath,
+								LineNumber:   tokenPosition.Line,
+								Column:       tokenPosition.Column,
+							})
+							break
+
+						default:
+							log.Emit(stdout.Info("Annotation in Decleration").
+								With("Type", "OtherType").
+								With("Marker", "NonStruct/NonInterface:Type").
+								With("Annotations", len(annotations)).
+								With("StructName", obj.Name))
+
+							packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
+								Object:       obj,
+								Annotations:  annotations,
+								Associations: associations,
+								PackageDeclr: &packageDeclr,
+								File:         packageDeclr.File,
+								Package:      packageDeclr.Package,
+								Path:         packageDeclr.Path,
+								FilePath:     packageDeclr.FilePath,
+								LineNumber:   tokenPosition.Line,
+								Column:       tokenPosition.Column,
+							})
+						}
+
+					case *ast.ImportSpec:
+						// Do Nothing.
+					}
+				}
+
+			case *ast.BadDecl:
+				// Do Nothing.
+			}
+		}
+
+	}
+
+	return packageDeclr, nil
+}
+
+//===========================================================================================================
+
+// Parse takes the provided package declrations parsing all internals with the
+// appropriate generators suited to the type and annotations.
+func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
+	{
+	parseloop:
+		for _, pkg := range packageDeclrs {
+			wdrs, err := provider.ParseDeclr(pkg, toDir)
+			if err != nil {
+				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
+					With("error", err.Error()).With("package", pkg.Package))
+				continue
+			}
+
+			log.Emit(stdout.Info("ParseSuccess: Package %q", pkg.Package).With("package", pkg.Package))
+
+			for _, item := range wdrs {
+
+				if filepath.IsAbs(item.Dir) {
+					log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
+						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
+
+					continue parseloop
+				}
+
+				log.Emit(stdout.Info("Executing WriteDirective").
+					With("annotation", item.Annotation).
+					With("fileName", item.FileName).
+					With("toDir", item.Dir))
+
+				var namedFileDir, namedFile string
+
+				annotation := strings.ToLower(item.Annotation)
+				newDir := filepath.Dir(pkg.FilePath)
+
+				if item.Dir != "" {
+					namedFileDir = filepath.Join(toDir, newDir, item.Dir)
+				} else {
+					namedFileDir = filepath.Join(toDir, newDir)
+				}
+
+				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+					log.Emit(stdout.Error("IOError: Unable to create writer directory").
+						With("dir", namedFileDir).With("error", err.Error()))
+					return err
+				}
+
+				if item.Writer == nil {
+					log.Emit(stdout.Info("Annotation Resolved").
+						With("annotation", item.Annotation).
+						With("dir", namedFileDir))
+					continue
+				}
+
+				if item.FileName == "" {
+					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
+					annotationFile := fmt.Sprintf(annotationFileFormat, annotation, fileName, "go")
+
+					namedFile = filepath.Join(namedFileDir, annotationFile)
+				} else {
+					// annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
+					namedFile = filepath.Join(namedFileDir, item.FileName)
+				}
+
+				log.Emit(stdout.Info("OS:Operation for annotation").
+					With("annotation", item.Annotation).
+					With("file", namedFile).
+					With("dir", namedFileDir))
+
+				fileStat, err := os.Stat(namedFile)
+				if err == nil && !fileStat.IsDir() && item.DontOverride {
+					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must no over-write").With("annotation", item.Annotation).
+						With("dir", namedFileDir).
+						With("package", pkg.Package).
+						With("file", pkg.File).
+						With("generated-file", namedFile))
+
+					continue
+				}
+
+				newFile, err := os.Create(namedFile)
+				if err != nil {
+					log.Emit(stdout.Error("IOError: Unable to create file").
+						With("dir", namedFileDir).
+						With("file", namedFile).With("error", err.Error()))
+					continue
+				}
+
+				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
+					newFile.Close()
+					log.Emit(stdout.Error("IOError: Unable to write content to file").
+						With("dir", namedFileDir).
+						With("file", namedFile).With("error", err.Error()))
+					continue
+				}
+
+				log.Emit(stdout.Info("Annotation Resolved").With("annotation", item.Annotation).
+					With("dir", namedFileDir).
+					With("package", pkg.Package).
+					With("file", pkg.File).
+					With("generated-file", namedFile))
+
+				newFile.Close()
+			}
+		}
+
+	}
+
+	return nil
+}
+
+//===========================================================================================================
+
 // AnnotationDeclaration defines a annotation type which holds detail about a giving annotation.
 type AnnotationDeclaration struct {
 	Name      string            `json:"name"`
@@ -1004,365 +1391,6 @@ type TypeDeclaration struct {
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
 	PackageDeclr *PackageDeclaration                         `json:"-"`
-}
-
-//===========================================================================================================
-
-// ParseAnnotations parses the package which generates a series of ast with associated
-// annotation for processing.
-func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, error) {
-	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
-	if err != nil {
-		log.Emit(stdout.Error(err).With("message", "Failed to parse directory").With("dir", dir))
-		return nil, err
-	}
-
-	var packageDeclrs []PackageDeclaration
-
-	for _, pkg := range packages {
-		for path, file := range pkg.Files {
-			var packageDeclr PackageDeclaration
-			packageDeclr.Package = pkg.Name
-			packageDeclr.FilePath = path
-			packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
-			packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
-
-			for _, imp := range file.Imports {
-				var pkgName string
-
-				if imp.Name != nil {
-					pkgName = imp.Name.Name
-				}
-
-				impPkgPath, err := strconv.Unquote(imp.Path.Value)
-				if err != nil {
-					impPkgPath = imp.Path.Value
-				}
-
-				packageDeclr.Imports[pkgName] = ImportDeclaration{
-					Name: pkgName,
-					Path: impPkgPath,
-				}
-			}
-
-			if relPath, err := filepath.Rel(GoSrcPath, path); err == nil {
-				packageDeclr.Path = filepath.Dir(relPath)
-				packageDeclr.File = filepath.Base(relPath)
-			}
-
-			if runtime.GOOS == "windows" {
-				packageDeclr.Path = filepath.ToSlash(packageDeclr.Path)
-				packageDeclr.File = filepath.ToSlash(packageDeclr.File)
-				packageDeclr.FilePath = filepath.ToSlash(packageDeclr.FilePath)
-			}
-
-			if file.Doc != nil {
-				annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(file.Doc.Text()))
-
-				log.Emit(stdout.Info("Annotations in Package comments").
-					With("dir", dir).
-					With("annotations", annotationRead).
-					With("comment", file.Doc.Text()))
-
-				packageDeclr.Annotations = append(packageDeclr.Annotations, annotationRead...)
-			}
-
-			// Collect and categorize annotations in types and their fields.
-		declrLoop:
-			for _, declr := range file.Decls {
-				switch rdeclr := declr.(type) {
-				case *ast.FuncDecl:
-
-					tokenPosition := tokenFiles.Position(rdeclr.Pos())
-
-					var defFunc FuncDeclaration
-
-					defFunc.PackageDeclr = &packageDeclr
-					defFunc.FuncDeclr = rdeclr
-					defFunc.Type = rdeclr.Type
-					defFunc.Position = rdeclr.Pos()
-					defFunc.Path = packageDeclr.Path
-					defFunc.File = packageDeclr.File
-					defFunc.FuncName = rdeclr.Name.Name
-					defFunc.Column = tokenPosition.Column
-					defFunc.Package = packageDeclr.Package
-					defFunc.LineNumber = tokenPosition.Line
-					defFunc.FilePath = packageDeclr.FilePath
-
-					if rdeclr.Type != nil {
-						defFunc.Returns = rdeclr.Type.Results
-						defFunc.Arguments = rdeclr.Type.Params
-					}
-
-					if rdeclr.Recv != nil {
-						defFunc.FuncType = rdeclr.Recv
-
-						nameIdent := rdeclr.Recv.List[0]
-
-						if receiverNameType, ok := nameIdent.Type.(*ast.Ident); ok {
-							defFunc.RecieverName = receiverNameType.Name
-							defFunc.Reciever = receiverNameType.Obj
-							defFunc.RecieverIdent = receiverNameType
-
-							if rems, ok := packageDeclr.ObjectFunc[receiverNameType.Obj]; ok {
-								rems = append(rems, defFunc)
-								packageDeclr.ObjectFunc[receiverNameType.Obj] = rems
-							} else {
-								packageDeclr.ObjectFunc[receiverNameType.Obj] = []FuncDeclaration{defFunc}
-							}
-
-							continue declrLoop
-						}
-					}
-
-					packageDeclr.Functions = append(packageDeclr.Functions, defFunc)
-					continue declrLoop
-
-				case *ast.GenDecl:
-
-					var annotations []AnnotationDeclaration
-
-					associations := make(map[string]AnnotationAssociationDeclaration, 0)
-
-					if rdeclr.Doc != nil {
-						annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(rdeclr.Doc.Text()))
-
-						for _, item := range annotationRead {
-							log.Emit(stdout.Info("Annotation in Decleration comment").
-								With("dir", dir).
-								With("comment", rdeclr.Doc.Text()).
-								With("annotation", item.Name).
-								With("position", rdeclr.Pos()).
-								With("token", rdeclr.Tok.String()))
-
-							switch item.Name {
-							case "associates":
-								log.Emit(stdout.Error("Association Annotation in Decleration is incomplete: Expects 3 elements").
-									With("dir", dir).
-									With("association", item.Arguments).
-									With("position", rdeclr.Pos()).
-									With("token", rdeclr.Tok.String()))
-
-								if len(item.Arguments) >= 3 {
-									associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
-										Record:     item,
-										Template:   item.Template,
-										Action:     item.Arguments[1],
-										TypeName:   item.Arguments[2],
-										Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
-									}
-								}
-							default:
-								annotations = append(annotations, item)
-							}
-						}
-
-					}
-
-					for _, spec := range rdeclr.Specs {
-						switch obj := spec.(type) {
-						case *ast.ValueSpec:
-							// Handles variable declaration
-							// i.e Spec:
-							// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a00)}, Type:ast.Expr(nil), Values:[]ast.Expr{(*ast.BasicLit)(0xc4200e4a20)}, Comment:(*ast.CommentGroup)(nil)}
-							// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a40)}, Type:(*ast.Ident)(0xc4200e4a60), Values:[]ast.Expr(nil), Comment:(*ast.CommentGroup)(nil)}
-
-						case *ast.TypeSpec:
-
-							tokenPosition := tokenFiles.Position(spec.Pos())
-
-							switch robj := obj.Type.(type) {
-							case *ast.StructType:
-
-								log.Emit(stdout.Info("Annotation in Decleration").
-									With("Type", "Struct").
-									With("Annotations", len(annotations)).
-									With("StructName", obj.Name))
-
-								packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
-									Object:       obj,
-									Struct:       robj,
-									Annotations:  annotations,
-									Associations: associations,
-									File:         packageDeclr.File,
-									Package:      packageDeclr.Package,
-									Path:         packageDeclr.Path,
-									FilePath:     packageDeclr.FilePath,
-									LineNumber:   tokenPosition.Line,
-									Column:       tokenPosition.Column,
-									PackageDeclr: &packageDeclr,
-								})
-								break
-
-							case *ast.InterfaceType:
-								log.Emit(stdout.Info("Annotation in Decleration").
-									With("Type", "Interface").
-									With("Annotations", len(annotations)).
-									With("StructName", obj.Name))
-
-								packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
-									Object:       obj,
-									Interface:    robj,
-									Annotations:  annotations,
-									Associations: associations,
-									PackageDeclr: &packageDeclr,
-									File:         packageDeclr.File,
-									Package:      packageDeclr.Package,
-									Path:         packageDeclr.Path,
-									FilePath:     packageDeclr.FilePath,
-									LineNumber:   tokenPosition.Line,
-									Column:       tokenPosition.Column,
-								})
-								break
-
-							default:
-								log.Emit(stdout.Info("Annotation in Decleration").
-									With("Type", "OtherType").
-									With("Marker", "NonStruct/NonInterface:Type").
-									With("Annotations", len(annotations)).
-									With("StructName", obj.Name))
-
-								packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
-									Object:       obj,
-									Annotations:  annotations,
-									Associations: associations,
-									PackageDeclr: &packageDeclr,
-									File:         packageDeclr.File,
-									Package:      packageDeclr.Package,
-									Path:         packageDeclr.Path,
-									FilePath:     packageDeclr.FilePath,
-									LineNumber:   tokenPosition.Line,
-									Column:       tokenPosition.Column,
-								})
-							}
-
-						case *ast.ImportSpec:
-							// Do Nothing.
-						}
-					}
-
-				case *ast.BadDecl:
-					// Do Nothing.
-				}
-			}
-
-			packageDeclrs = append(packageDeclrs, packageDeclr)
-		}
-	}
-
-	return packageDeclrs, nil
-}
-
-//===========================================================================================================
-
-// Parse takes the provided package declrations parsing all internals with the
-// appropriate generators suited to the type and annotations.
-func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
-	{
-	parseloop:
-		for _, pkg := range packageDeclrs {
-			wdrs, err := provider.ParseDeclr(pkg, toDir)
-			if err != nil {
-				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
-					With("error", err.Error()).With("package", pkg.Package))
-				continue
-			}
-
-			log.Emit(stdout.Info("ParseSuccess: Package %q", pkg.Package).With("package", pkg.Package))
-
-			for _, item := range wdrs {
-
-				if filepath.IsAbs(item.Dir) {
-					log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
-						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
-
-					continue parseloop
-				}
-
-				log.Emit(stdout.Info("Executing WriteDirective").
-					With("annotation", item.Annotation).
-					With("fileName", item.FileName).
-					With("toDir", item.Dir))
-
-				var namedFileDir, namedFile string
-
-				annotation := strings.ToLower(item.Annotation)
-				newDir := filepath.Dir(pkg.FilePath)
-
-				if item.Dir != "" {
-					namedFileDir = filepath.Join(toDir, newDir, item.Dir)
-				} else {
-					namedFileDir = filepath.Join(toDir, newDir)
-				}
-
-				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-					log.Emit(stdout.Error("IOError: Unable to create writer directory").
-						With("dir", namedFileDir).With("error", err.Error()))
-					return err
-				}
-
-				if item.Writer == nil {
-					log.Emit(stdout.Info("Annotation Resolved").
-						With("annotation", item.Annotation).
-						With("dir", namedFileDir))
-					continue
-				}
-
-				if item.FileName == "" {
-					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
-					annotationFile := fmt.Sprintf(annotationFileFormat, annotation, fileName, "go")
-
-					namedFile = filepath.Join(namedFileDir, annotationFile)
-				} else {
-					// annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
-					namedFile = filepath.Join(namedFileDir, item.FileName)
-				}
-
-				log.Emit(stdout.Info("OS:Operation for annotation").
-					With("annotation", item.Annotation).
-					With("file", namedFile).
-					With("dir", namedFileDir))
-
-				fileStat, err := os.Stat(namedFile)
-				if err == nil && !fileStat.IsDir() && item.DontOverride {
-					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must no over-write").With("annotation", item.Annotation).
-						With("dir", namedFileDir).
-						With("package", pkg.Package).
-						With("file", pkg.File).
-						With("generated-file", namedFile))
-
-					continue
-				}
-
-				newFile, err := os.Create(namedFile)
-				if err != nil {
-					log.Emit(stdout.Error("IOError: Unable to create file").
-						With("dir", namedFileDir).
-						With("file", namedFile).With("error", err.Error()))
-					continue
-				}
-
-				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
-					newFile.Close()
-					log.Emit(stdout.Error("IOError: Unable to write content to file").
-						With("dir", namedFileDir).
-						With("file", namedFile).With("error", err.Error()))
-					continue
-				}
-
-				log.Emit(stdout.Info("Annotation Resolved").With("annotation", item.Annotation).
-					With("dir", namedFileDir).
-					With("package", pkg.Package).
-					With("file", pkg.File).
-					With("generated-file", namedFile))
-
-				newFile.Close()
-			}
-		}
-
-	}
-
-	return nil
 }
 
 //===========================================================================================================

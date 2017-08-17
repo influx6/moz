@@ -71,9 +71,26 @@ func main() {
 			Flags:  []cli.Flag{},
 		},
 		{
+			Name:        "generate-file",
+			Action:      generateFileCLI,
+			Description: "Runs the moz parser to parse and generate code for all annotations found in the file",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "f,fromFile",
+					Value: "",
+					Usage: "-f=./",
+				},
+				cli.StringFlag{
+					Name:  "t,toDir",
+					Value: "",
+					Usage: "-t=./",
+				},
+			},
+		},
+		{
 			Name:        "generate",
-			Action:      generateCLI,
-			Description: "Runs the moz parser to parse and generate code for all annotations",
+			Action:      generatePackageCLI,
+			Description: "Runs the moz parser to parse and generate code for all annotations in the package directory",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "f,fromDir",
@@ -204,7 +221,43 @@ func assetsCLI(c *cli.Context) {
 	}
 }
 
-func generateCLI(c *cli.Context) {
+func generateFileCLI(c *cli.Context) {
+	var err error
+
+	fromFile := c.String("fromFile")
+	if fromFile == "" {
+		err = fmt.Errorf("File target not provided, use the -fromFile flag")
+		events.Emit(stdout.Error(err).With("file", fromFile).With("message", "Failed to retrieve current fileectory"))
+		return
+	}
+
+	toDir := c.String("toDir")
+
+	if fromFile == "" {
+		fromFile, err = os.Getwd()
+		if err != nil {
+			events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
+			return
+		}
+	}
+
+	events.Emit(stdout.Info("Using FromFile: %s", fromFile).With("file", fromFile))
+	events.Emit(stdout.Info("Using ToDir: %s", toDir).With("Dir", toDir))
+
+	pkg, err := ast.ParseFileAnnotations(events, fromFile)
+	if err != nil {
+		events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to parse package annotations"))
+		return
+	}
+
+	if err := moz.Parse(toDir, events, pkg); err != nil {
+		events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to parse package declarations"))
+	}
+
+	events.Emit(stdout.Info("Finished").With("toDir", toDir).With("fromFile", fromFile))
+}
+
+func generatePackageCLI(c *cli.Context) {
 	var err error
 
 	toDir := c.String("toDir")
@@ -213,7 +266,7 @@ func generateCLI(c *cli.Context) {
 	if fromDir == "" {
 		fromDir, err = os.Getwd()
 		if err != nil {
-			events.Emit(stdout.Error(err).With("dir", fromDir).With("message", "Failed to retrieve current directory"))
+			events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
 			return
 		}
 	}
@@ -231,5 +284,5 @@ func generateCLI(c *cli.Context) {
 		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
-	events.Emit(stdout.Info("Finished").With("todir", toDir).With("fromDir", fromDir))
+	events.Emit(stdout.Info("Finished").With("toDir", toDir).With("fromDir", fromDir))
 }
