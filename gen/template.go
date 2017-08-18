@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"text/template"
@@ -33,6 +34,12 @@ var (
 		},
 		"upper": func(b string) string {
 			return strings.ToUpper(b)
+		},
+		"joinPath": func(b ...string) string {
+			return path.Join(b...)
+		},
+		"basePathName": func(b string) string {
+			return path.Base(b)
 		},
 		"indent": func(b string) string {
 			return strings.Join(strings.Split(b, "\n"), "\n\t")
