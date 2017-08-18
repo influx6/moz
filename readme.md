@@ -1,20 +1,21 @@
 Moz
 =======
-Moz exists has a library to provide a solid foundation for code generation by combining basic programming structures and `text/templates` to provide a flexible and extensive generation capability.
+Moz exists has a library to provide a solid foundation for code generation by combining functional composition and Go ast for flexible content creation.
 
 Install
 -----------
 
 ```shell
-go get -u github.com/influx6/moz
+go get -u github.com/influx6/moz/...
 ```
 
 Introduction
 ----------------------------
 
-Moz is a code generator which builds around the concepts of pluggable `io.WriteTo` elements that allow a elegant but capable system for generating code programmatically. It uses functional compositions to define structures and how these structures connect to create desired output, which becomes rather easy to both understand and use.
+Moz is a code generator which builds around the concepts of pluggable `io.WriteTo` elements that allow a elegant but capable system for generating code programmatically.
 
-Moz does not provide a complete set of all possible programming structures found in the Go programming language but provides a mixture of basic and needed structures with a go template strategy that allows us to quickly generate code structures, more so, moz provides a annotation strategy that provides a higher level of code generation based on a target, which either will generate new methods/functions or generate new packages based on that target.
+It uses functional compositions to define code structures that connect to create contents and using the Go ast parser, generates elegant structures for easier interaction with source files.
+
 
 Features
 ----------
@@ -30,84 +31,63 @@ Future Plans
 - Extend Plugin to HotLoad with `go.18 Plugin`.
 
 
-Annotation Code Generation
-----------------------------
+Code Generation with Moz
+--------------------------
 
-Moz provides a annotation style code generation system apart from it's code generation structures. This is provide to allow descriptive annotations to be added to giving Go structures (`interface`, `struct`, `type alises`) within their comments and as well as to the package.
+Moz is intended to be very barebones and minimal, it focuses around providing very basic structures, that allows the most flexibility in how you generate new content.
 
-This annotation then are passed by the moz `annotation` CLI tooling which can generate a series of files and packages based on the internal logic of the generator associated with that annotation to meet the needs for that type.
+It provides two packages that are the center of it's system:
 
-For example: If we wanted to be able to generate code for database CRUD activities without having to use ORMs or write such code manually, with the Moz annotation code generation ability, we can create a `struct` generator that can use a `@mongo` annotation, which generates mongo CRUD functions which expect such a type and perform the appropriate CRUD operations.
+## [Gen](./gen)
 
-See the [Example](./examples/) directory, which demonstrates use of annotations to code generate other parts of a project or mock up implementation detail for an interface using annotations.
+Gen provides compositional structures for creating content with functions.
 
-
-### Example
-
-#### Generate code structures from an interface
-
-1. Create a file and add the following contents defining a interface we wish to
-create it's implementation structures by annotating with a `@iface` comment.
+#### Generate Go struct using [Gen](./gen)
 
 ```go
-package mock
+import "github.com/influx6/moz/gen"
 
-//go:generate moz generate
-
-import (
-	"io"
-
-	toml "github.com/BurntSushi/toml"
+floppy := gen.Struct(
+		gen.Name("Floppy"),
+		gen.Commentary(
+			gen.Text("Floppy provides a basic function."),
+			gen.Text("Demonstration of using floppy API."),
+		),
+		gen.Annotations(
+			"Flipo",
+			"API",
+		),
+		gen.Field(
+			gen.Name("Name"),
+			gen.Type("string"),
+			gen.Tag("json", "name"),
+		),
 )
 
-// MofInitable defines a interface for a Mof.
-// @iface
-type MofInitable interface {
-	Ignitable
-	Crunch() (cr string)
-	Configuration() toml.Primitive
-	Location(string) (GPSLoc, error)
-	WriterTo(io.Writer) (int64, error)
-	Maps(string) (map[string]GPSLoc, error)
-	MapsIn(string) (map[string]*GPSLoc, error)
-	MapsOut(string) (map[*GPSLoc]string, error)
-	Drop() (*GPSLoc, *toml.Primitive, *[]byte, *[5]byte)
-	Close() (chan struct{}, chan toml.Primitive, chan string, chan []byte, chan *[]string)
-	Bob() chan chan struct{}
+var source bytes.Buffer
+
+floppy.WriteTo(&source) /*
+// Floppy provides a basic function.
+//
+// Demonstration of using floppy API.
+//
+//
+//@Flipo
+//@API
+type Floppy struct {
+
+    Name string `json:"name"`
+
 }
-
-
-// Ignitable defines a struct which is used to ignite the package.
-type Ignitable interface {
-	Ignite() string
-}
-
-// GPSLoc defines a struct to hold long and lat values for a gps location.
-type GPSLoc struct {
-	Lat  float64
-	Long float64
-}
-
+*/
 ```
 
-2. Navigate to where file is stored (We assume it's in your GOPATH) and run
+## [Ast](./ast)
 
-```
-go generate
-```
+AST uses the Go ast parser to generate structures that greatly simplify working with the different declarations like interfaces, functions and structs.
+Thereby allowing the user a more cleaner understanding of a given Go source file or package, with ease in transversing such structures to generate new contents.
 
-or
-
-```
-moz generate
-```
-
-The command above will generate all necessary files and packages ready for editing.
-
-See [Mock Example](./examples/mock) for end result.
-
-
-#### Generate code structures from an annotation template
+#### Generate code using Go templates and annotation using [Ast](./ast)
 
 1. Create a `doc.go` file
 
@@ -152,133 +132,229 @@ The command above will generate all necessary files and packages ready for editi
 
 See [Temples Example](./examples/temples) for end result.
 
-### How Annotation Code Generation works
 
-Moz provides 4 types of Annotation generators, which are function types which provide the necessary operations to be performed to create the underline series of sources to be generated for each annotation.
+Writing Custom Generators using Annotations
+----------------------------------------------
+Moz [Ast Package](./ast) makes it very easy to parse annotations (_Words with the `@` prefix_), has these is automatically done when parsing a Go file or packges using the Go ast parser.
 
-Moz provide the following generators type functions:
+More so, Moz ensures it is deadly simply to write custom functions that use these annotations has markers to create new content from. Such as,
 
-#### StructType Code Generators
+- Generating tests code to declared types
+- API packages for given types.
+- Custom contents dictated by templates in code.
 
-These functions types are used to provide code generation instructions for Go type declarations and are the ones who define the end result of
-what an annotation produces.
+Demonstrated below will be a simple example of creating an annotation code generator that provides us the following ability:
 
-_See [Annotations](./annotations) for code samples of different annotation functions._
 
-```go
-type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
-```
+- To Declare content using templates declared as part of a package's comment
+- Provide key-value parameters which such template can access
+- To create varying contents based on parameters
 
-*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+With the above requirements, we can easily draw the fact that we need the following:
 
-#### InterfaceType Code Generators
+- An annotation called `@generateFromTemplate`
+- key-value pairs, such as in the format `key => value`
+- An annotation called `@withTemplate`
+- Connect a `@generateFromTemplate` with a `@withTemplate` by providing some `id` value.
 
-This functions are specific to provide code generation instructions for interface declarations which the given annotation is attached to.
+Luckily, Moz [AST](./ast) already handles parsing key-value pairs in the format `key => value`, which saves us some work and will parse out any comment with a `@`
+prefix.
 
-```go
-type InterfaceAnnotationGenerator func(string,AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
-```
-
-*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
-
-#### PackageType Code Generators
-
-This functions are specific to provide code generation instructions for given annotation declared on the package comment block.
+Lets dive into code:
 
 ```go
-type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
-```
 
-*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"text/template"
 
-#### Non(Struct|Interface) Code Generators
-
-This functions are specific to provide code generation instructions for non-struct and non-interface declarations which the given annotation is attached to.
-
-```go
-type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
-```
-
-*This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
-
-
-
-Code Generation structures
----------------------------
-
-Moz provides the [Gen Package](./gen) which defines sets of structures which define specific code structures and are used to built a programmatically combination that define the expected code to be produced. It also provides a functional composition style functions that provide a cleaner and more descriptive approach to how these blocks are combined.
-
-The code gen is heavily geared towards the use of `text/template` but also ensures to be flexible to provide non-template based structures that work as well.
-
-### Example
-
-- Generate a struct with moz
-
-```go
-import "github.com/influx6/moz/gen"
-
-floppy := gen.Struct(
-		gen.Name("Floppy"),
-		gen.Commentary(
-			gen.Text("Floppy provides a basic function."),
-			gen.Text("Demonstration of using floppy API."),
-		),
-		gen.Annotations(
-			"Flipo",
-			"API",
-		),
-		gen.Field(
-			gen.Name("Name"),
-			gen.Type("string"),
-			gen.Tag("json", "name"),
-		),
+	"github.com/influx6/moz"
+	"github.com/influx6/moz/ast"
+	"github.com/influx6/moz/gen"
 )
 
-var source bytes.Buffer
 
-floppy.WriteTo(&source) /*
-// Floppy provides a basic function.
-//
-// Demonstration of using floppy API.
-//
-//
-//@Flipo
-//@API
-type Floppy struct {
+// TypeMap defines a map type of a giving series of key-value pairs.
+type TypeMap map[string]string
 
-    Name string `json:"name"`
-
+// Get returns the value associated with the giving key.
+func (t TypeMap) Get(key string) string {
+	return t[key]
 }
-*/
 ```
 
-
-- Generate a function with moz
+Firstly as always in Go, we import moz and any other package we need. Then for personal purpose define a custom type called `TypeMap`, which provides a `Get` method to simplify retrieval of values using keys from a `map[string]string` type.
 
 ```go
-import "github.com/influx6/moz/gen"
 
-main := gen.Function(
-    gen.Name("main"),
-    gen.Constructor(
-        gen.FieldType(
-            gen.Name("v"),
-            gen.Type("int"),
-        ),
-        gen.FieldType(
-            gen.Name("m"),
-            gen.Type("string"),
-        ),
-    ),
-    gen.Returns(),
-    gen.SourceText(`	fmt.Printf("Welcome to Lola Land");`, nil),
+// WithTemplateGenerator generates new content from the templates provided by a `@generateFromTemplate` annotation.
+func WithTemplateGenerator(toDir string, an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+	templaterId, ok := an.Params["id"]
+	if !ok {
+		return nil, errors.New("No templater id provided")
+	}
+
+	// Get all AnnotationDeclaration of @generateFromTemplate.
+	templaters := pkg.AnnotationsFor("@generateFromTemplate")
+
+	var targetTemplater ast.AnnotationDeclaration
+
+	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
+	for _, targetTemplater = range templaters {
+		if targetTemplater.Params["id"] != templaterId {
+			continue
+		}
+
+		break
+	}
+
+	if targetTemplater.Template == "" {
+		return nil, errors.New("Expected Template from annotation")
+	}
+
+	var directives []gen.WriteDirective
+
+	genName := strings.ToLower(targetTemplater.Params["gen"])
+	genID := strings.ToLower(targetTemplater.Params["id"])
+
+	fileName, ok := an.Params["filename"]
+	if !ok {
+		return nil, errors.New("Filename expected from annotation")
+	}
+
+	typeGen := gen.Block(
+		gen.SourceTextWith(
+			targetTemplater.Template,
+			template.FuncMap{
+				"sel": TypeMap(an.Params).Get,
+			},
+			nil,
+		),
+	)
+
+	directives = append(directives, gen.WriteDirective{
+		Writer:       typeGen,
+		DontOverride: true,
+		FileName:     fileName,
+	})
+
+	return directives, nil
+}
+```
+
+Secondly, we create a `WithTemplateGenerator` function which will house the necessary logic for generating content using templates in comments.
+
+```go
+templaterId, ok := an.Params["id"]
+if !ok {
+	return nil, errors.New("No templater id provided")
+}
+
+// Get all AnnotationDeclaration of @generateFromTemplate.
+templaters := pkg.AnnotationsFor("@generateFromTemplate")
+
+var targetTemplater ast.AnnotationDeclaration
+
+// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
+for _, targetTemplater = range templaters {
+	if targetTemplater.Params["id"] != templaterId {
+		continue
+	}
+
+	break
+}
+```
+
+Within the function we attempt to validate that our `@withTemplate` annotation has an associated `id` parameter and attempt to find
+any `@generateFromTemplate` annotation provided by the `PackageDeclaration` which is a root type structure that represent a Go package.
+When we find such annotation represented by the `@generateFromTemplate`, we further attempt to find the first which matches the `id` value,
+which we used to mark our `@withTemplate`. This ensures we have the write annotation incase of multiples `@generateFromTemplate`.
+
+_`PackageDeclaration` contain all needed structures for each type found within a package and it's source files_
+
+
+```go
+typeGen := gen.Block(
+	gen.SourceTextWith(
+		targetTemplater.Template,
+		template.FuncMap{
+			"sel": TypeMap(an.Params).Get,
+		},
+		struct{
+			Package ast.PackageAnnotation
+		}{
+			Package: pkg,
+		},
+	),
+)
+```
+
+We then use [Gen's]("./gen") `SourceTextWith` which takes a giving template and provided `template.FuncMap`, allows us
+parse any template and using the provided struct to parse in data for use. More so, we had a `sel` method into the `internal functions`
+of the template, to give us access to the `AnnotationDeclaration` parameters.
+
+```go
+directives = append(directives, gen.WriteDirective{
+	Writer:       typeGen,
+	DontOverride: true,
+	FileName:     fileName,
+})
+```
+
+Finally, we take the returned structure from [Gen]("./gen"), which actually matches the `io.WriterTo` interface, returning a `WriteDirective`,
+which dictates the content, filename and file creation flag to be used by moz.
+
+```go
+
+var (
+	_ = moz.RegisterAnnotation("withTemplate", WithTemplateGenerator)
 )
 
-var source bytes.Buffer
-
-main.WriteTo(&source) /*
-func main(v int, m string) {
-	fmt.Printf("Welcome to Lola Land");
-}
-*/
 ```
+
+Lastly, we register our `WithTemplateGenerator` function as part of the default annotation generators supported
+by moz to allow us get access to it directly when using `moz generate` for content creation.
+
+Once this is done and moz CLI tool has being installed using `go install`, we can quickly generate contents from the
+Go file source like below:
+
+_See [Temples](./examples/temples) for content and result._
+
+
+```go
+// Package temples defines a series of structures which are auto-generated based on
+// a template and series of type declerations.
+//
+// @generateFromTemplate(id => Mob, gen => Partial.Go, {
+//	package temples
+//
+//  // Add brings the new level into the system.
+//  func Add(m {{ sel "Type1"}}, n {{ sel "Type2"}}) {{ sel "Type3" }} {
+//      return {{sel "Type3"}}(m * n)
+//  }
+//
+// })
+//
+// @withTemplate(id => Mob, filename => temples_add.go, Type1 => int32, Type2 => int32, Type3 => int64)
+//
+package temples
+```
+
+Where after running `moz generate` against the go file above, will produce content in a `temples_add.go`:
+
+
+```go
+package temples
+
+// Add brings the new level into the system.
+func Add(m int32, n int32) int64 {
+	return int64(m * n)
+}
+```
+
+
+Contributors
+----------------
+Please feel welcome to contribute with issues and PRs to improve Moz. :)
