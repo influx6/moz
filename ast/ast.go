@@ -363,7 +363,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 // Parse takes the provided package declrations parsing all internals with the
 // appropriate generators suited to the type and annotations.
-func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, packageDeclrs ...PackageDeclaration) error {
+func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, packageDeclrs ...PackageDeclaration) error {
 	{
 	parseloop:
 		for _, pkg := range packageDeclrs {
@@ -430,7 +430,7 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, pack
 					With("dir", namedFileDir))
 
 				fileStat, err := os.Stat(namedFile)
-				if err == nil && !fileStat.IsDir() && item.DontOverride {
+				if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
 					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must no over-write").With("annotation", item.Annotation).
 						With("dir", namedFileDir).
 						With("package", pkg.Package).

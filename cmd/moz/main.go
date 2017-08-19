@@ -80,6 +80,10 @@ func main() {
 					Value: "",
 					Usage: "-f=./",
 				},
+				cli.BoolFlag{
+					Name:  "fw,forceWrite",
+					Usage: "-fw=true",
+				},
 				cli.StringFlag{
 					Name:  "t,toDir",
 					Value: "",
@@ -96,6 +100,10 @@ func main() {
 					Name:  "f,fromDir",
 					Value: "",
 					Usage: "-f=./",
+				},
+				cli.BoolFlag{
+					Name:  "fw,forceWrite",
+					Usage: "-fw=true",
 				},
 				cli.StringFlag{
 					Name:  "t,toDir",
@@ -224,6 +232,7 @@ func assetsCLI(c *cli.Context) {
 func generateFileCLI(c *cli.Context) {
 	var err error
 
+	forceWrite := c.Bool("forceWrite")
 	fromFile := c.String("fromFile")
 	if fromFile == "" {
 		err = fmt.Errorf("file target not provided, use the -fromfile flag")
@@ -266,7 +275,7 @@ func generateFileCLI(c *cli.Context) {
 		return
 	}
 
-	if err := moz.Parse(toDir, events, pkg); err != nil {
+	if err := moz.Parse(toDir, events, forceWrite, pkg); err != nil {
 		events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
@@ -276,6 +285,7 @@ func generateFileCLI(c *cli.Context) {
 func generatePackageCLI(c *cli.Context) {
 	var err error
 
+	forceWrite := c.Bool("forceWrite")
 	fromDir := c.String("fromDir")
 	toDir := c.String("toDir")
 
@@ -302,7 +312,7 @@ func generatePackageCLI(c *cli.Context) {
 		return
 	}
 
-	if err := moz.Parse(toDir, events, pkgs...); err != nil {
+	if err := moz.Parse(toDir, events, forceWrite, pkgs...); err != nil {
 		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
