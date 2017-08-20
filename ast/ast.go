@@ -194,7 +194,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			log.Emit(stdout.Info("Annotations in Package comments").
 				With("dir", dir).
 				With("annotations", len(annotationRead)).
-				With("comment", file.Doc.Text()))
+				With("file", file.Name.Name))
 
 			packageDeclr.Annotations = append(packageDeclr.Annotations, annotationRead...)
 		}
@@ -262,7 +262,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					for _, item := range annotationRead {
 						log.Emit(stdout.Info("Annotation in Decleration comment").
 							With("dir", dir).
-							With("comment", rdeclr.Doc.Text()).
 							With("annotation", item.Name).
 							With("position", rdeclr.Pos()).
 							With("token", rdeclr.Tok.String()))
