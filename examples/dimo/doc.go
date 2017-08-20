@@ -1,3 +1,6 @@
+// Package dimo contains a template within it's comments to generate code based off.
+// 
+//
 /* All types of services and adapters are generated from the template below.
  @templater(id => Vars, gen => Partial.Go, {
 		var (
@@ -914,3 +917,7 @@
 //
 // @templaterTypesFor(id => Vars, filename => vars.go)
 //
+package dimo
+
+
+//go:generate moz generate --toDir=./
