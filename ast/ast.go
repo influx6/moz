@@ -1038,6 +1038,18 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 	return defs
 }
 
+// GetVariableDeclaration returns a variable type name as exported from the base package
+// returning the string representation.
+func GetVariableDeclaration(item interface{}) string {
+	return getName(item)
+}
+
+// GetVariableDeclarationAsExported returns a variable type name as exported from the base package
+// returning the string representation.
+func GetVariableDeclarationAsExported(item interface{}, basePkg string) string {
+	return getNameAsFromOuter(item, basePkg)
+}
+
 var (
 	naturalIdents = map[string]bool{
 		"string":      true,
