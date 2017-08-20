@@ -1038,9 +1038,9 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 	return defs
 }
 
-// GetVariableDeclaration returns a variable type name as exported from the base package
+// GetVariableTypeName returns a variable type name as exported from the base package
 // returning the string representation.
-func GetVariableDeclaration(item interface{}) (string, error) {
+func GetVariableTypeName(item interface{}) (string, error) {
 	nameDeclr := getName(item)
 	if nameDeclr == "" {
 		return "", errors.New("Unknown type")
@@ -1049,9 +1049,9 @@ func GetVariableDeclaration(item interface{}) (string, error) {
 	return nameDeclr, nil
 }
 
-// GetVariableDeclarationAsExported returns a variable type name as exported from the base package
+// GetVariableNameAsExported returns a variable type name as exported from the base package
 // returning the string representation.
-func GetVariableDeclarationAsExported(item interface{}, basePkg string) (string, error) {
+func GetVariableNameAsExported(item interface{}, basePkg string) (string, error) {
 	nameDeclr := getNameAsFromOuter(item, basePkg)
 	if nameDeclr == "" {
 		return "", errors.New("Unknown type")
