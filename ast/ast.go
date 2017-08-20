@@ -695,6 +695,7 @@ type FunctionDefinition struct {
 	Returns   []ArgType
 	Func      *ast.FuncType
 	Interface *ast.InterfaceType
+	Struct    *ast.StructType
 }
 
 // ArgumentNamesList returns the assignment names for the function arguments.
