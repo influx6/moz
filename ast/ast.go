@@ -193,7 +193,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 			log.Emit(stdout.Info("Annotations in Package comments").
 				With("dir", dir).
-				With("annotations", annotationRead).
+				With("annotations", len(annotationRead)).
 				With("comment", file.Doc.Text()))
 
 			packageDeclr.Annotations = append(packageDeclr.Annotations, annotationRead...)
