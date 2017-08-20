@@ -29,6 +29,15 @@ var (
 		"title": func(b string) string {
 			return strings.ToTitle(b)
 		},
+		"trim": func(b, suff string) string {
+			return strings.Trim(b, suff)
+		},
+		"trimSuffix": func(b, suff string) string {
+			return strings.TrimSuffix(b, suff)
+		},
+		"trimPrefix": func(b, pre string) string {
+			return strings.TrimPrefix(b, pre)
+		},
 		"hasSuffix": func(b, suff string) bool {
 			return strings.HasSuffix(b, suff)
 		},
