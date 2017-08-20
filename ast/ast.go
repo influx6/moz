@@ -760,426 +760,255 @@ func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 	return field.Names[0], nil
 }
 
+// GetArgTypeFromField returns a ArgType that writes out the representation of the giving variable name or decleration ast.Field
+// associated with the giving package. It returns an error if it does not know the type.
+func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
+	var retCounter int
+
+	retCounter++
+
+	resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
+
+	switch iobj := result.Type.(type) {
+	case *ast.Ident:
+		var name string
+		var nameObj *ast.Object
+
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+			retCounter++
+		case false:
+			name = resName.Name
+			nameObj = resName.Obj
+		}
+
+		return ArgType{
+			Name:       name,
+			NameObject: nameObj,
+			Type:       getName(iobj),
+			ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
+			TypeObject: iobj.Obj,
+			Package:    resPkg,
+			BaseType:   defaultresType,
+		}, nil
+
+	case *ast.SelectorExpr:
+		// fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
+		xobj, ok := iobj.X.(*ast.Ident)
+		if !ok {
+			return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
+		}
+
+		importDclr, _ := pkg.ImportFor(xobj.Name)
+
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+		retCounter++
+
+		return ArgType{
+			Name:    name,
+			Import:  importDclr,
+			Package: xobj.Name,
+			Type:    getName(iobj),
+			ExType:  getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
+		}, nil
+
+	case *ast.StarExpr:
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+		retCounter++
+
+		var arg ArgType
+		arg.Name = name
+		arg.PointerType = iobj
+		arg.Type = getName(iobj)
+		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
+
+		switch value := iobj.X.(type) {
+		case *ast.SelectorExpr:
+			arg.ImportedObject = value
+
+			vob, ok := value.X.(*ast.Ident)
+			if !ok {
+				return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
+			}
+
+			importDclr, _ := pkg.ImportFor(vob.Name)
+
+			arg.Package = vob.Name
+			arg.Import = importDclr
+		case *ast.StructType:
+			arg.StructObject = value
+			// arg.Package = resPkg
+			// arg.BaseType = defaultresType
+		case *ast.ArrayType:
+			arg.ArrayType = value
+		case *ast.Ident:
+			arg.IdentType = value
+			arg.NameObject = value.Obj
+
+			arg.Package = resPkg
+			arg.BaseType = defaultresType
+		case *ast.ChanType:
+			arg.ChanType = value
+		}
+
+		return arg, nil
+
+	case *ast.MapType:
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+		retCounter++
+
+		var arg ArgType
+		arg.Name = name
+		arg.MapType = iobj
+		arg.Type = getName(iobj)
+		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
+
+		if keySel, err := getSelector(iobj.Key); err == nil {
+			if x, ok := keySel.X.(*ast.Ident); ok {
+				if imported, err := pkg.ImportFor(x.Name); err == nil {
+					arg.Import = imported
+				}
+			}
+		}
+
+		if valSel, err := getSelector(iobj.Value); err == nil {
+			if x, ok := valSel.X.(*ast.Ident); ok {
+				if imported, err := pkg.ImportFor(x.Name); err == nil {
+					arg.Import2 = imported
+				}
+			}
+		}
+
+		return arg, nil
+	case *ast.ArrayType:
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+		retCounter++
+
+		var arg ArgType
+		arg.Name = name
+		arg.ArrayType = iobj
+		arg.Type = getName(iobj)
+		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
+
+		switch value := iobj.Elt.(type) {
+		case *ast.SelectorExpr:
+			arg.ImportedObject = value
+
+			vob, ok := value.X.(*ast.Ident)
+			if !ok {
+				return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
+			}
+
+			importDclr, _ := pkg.ImportFor(vob.Name)
+
+			arg.Package = vob.Name
+			arg.Import = importDclr
+		case *ast.StarExpr:
+			arg.PointerType = value
+		case *ast.StructType:
+			arg.StructObject = value
+		case *ast.Ident:
+			arg.IdentType = value
+			arg.NameObject = value.Obj
+			arg.Package = resPkg
+			arg.BaseType = defaultresType
+		case *ast.ChanType:
+			arg.ChanType = value
+		}
+
+		return arg, nil
+
+	case *ast.ChanType:
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+		retCounter++
+
+		var arg ArgType
+		arg.Name = name
+		arg.Type = getName(iobj.Value)
+		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
+
+		switch value := iobj.Value.(type) {
+		case *ast.SelectorExpr:
+			arg.ImportedObject = value
+
+			vob, ok := value.X.(*ast.Ident)
+			if !ok {
+				return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
+			}
+
+			importDclr, _ := pkg.ImportFor(vob.Name)
+
+			arg.Package = vob.Name
+			arg.Import = importDclr
+		case *ast.StarExpr:
+			arg.PointerType = value
+		case *ast.StructType:
+			arg.StructObject = value
+		case *ast.ArrayType:
+			arg.ArrayType = value
+		case *ast.Ident:
+			arg.IdentType = value
+			arg.NameObject = value.Obj
+
+			arg.Package = resPkg
+			arg.BaseType = defaultresType
+		case *ast.ChanType:
+			arg.ChanType = value
+		}
+
+		return arg, nil
+	}
+
+	return ArgType{}, errors.New("Unknown Field type, only variable type declaration wanted")
+}
+
+// GetFunctionDefinition returns a FunctionDefinition representing a giving function.
+func GetFunctionDefinition(method *ast.Field, pkg *PackageDeclaration) (FunctionDefinition, error) {
+	if len(method.Names) == 0 {
+		return FunctionDefinition{}, errors.New("Method field must have names")
+	}
+
+	nameIdent := method.Names[0]
+	ftype, ok := method.Type.(*ast.FuncType)
+	if !ok {
+		return FunctionDefinition{}, errors.New("Only ast.FuncType allowed")
+	}
+
+	var arguments, returns []ArgType
+
+	for _, result := range ftype.Results.List {
+		if arg, err := GetArgTypeFromField("ret", result, pkg); err == nil {
+			returns = append(returns, arg)
+		}
+	}
+
+	for _, param := range ftype.Params.List {
+		if arg, err := GetArgTypeFromField("var", param, pkg); err == nil {
+			arguments = append(arguments, arg)
+		}
+	}
+
+	return FunctionDefinition{
+		Func:    ftype,
+		Returns: returns,
+		Args:    arguments,
+		Name:    nameIdent.Name,
+	}, nil
+}
+
 // GetInterfaceFunctions returns a slice of FunctionDefinitions retrieved from the provided
 // interface type object.
 func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []FunctionDefinition {
 	var defs []FunctionDefinition
 
-	var retCounter int
-	var varCounter int
-
-	retCounter++
-	varCounter++
-
 	for _, method := range intr.Methods.List {
 		if len(method.Names) > 0 {
-			nameIdent := method.Names[0]
-			ftype := method.Type.(*ast.FuncType)
-
-			var arguments, returns []ArgType
-
-			for _, result := range ftype.Results.List {
-				resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
-
-				switch iobj := result.Type.(type) {
-				case *ast.Ident:
-					var name string
-					var nameObj *ast.Object
-
-					resName, err := GetIdentName(result)
-					switch err != nil {
-					case true:
-						name = fmt.Sprintf("ret%d", retCounter)
-						retCounter++
-					case false:
-						name = resName.Name
-						nameObj = resName.Obj
-					}
-
-					returns = append(returns, ArgType{
-						Name:       name,
-						NameObject: nameObj,
-						Type:       getName(iobj),
-						ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
-						TypeObject: iobj.Obj,
-						Package:    resPkg,
-						BaseType:   defaultresType,
-					})
-
-				case *ast.SelectorExpr:
-					// fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
-					xobj, ok := iobj.X.(*ast.Ident)
-					if !ok {
-						break
-					}
-
-					importDclr, _ := pkg.ImportFor(xobj.Name)
-
-					name := fmt.Sprintf("ret%d", retCounter)
-					retCounter++
-
-					returns = append(returns, ArgType{
-						Name:    name,
-						Import:  importDclr,
-						Package: xobj.Name,
-						Type:    getName(iobj),
-						ExType:  getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
-					})
-
-				case *ast.StarExpr:
-					name := fmt.Sprintf("ret%d", retCounter)
-					retCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.PointerType = iobj
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					switch value := iobj.X.(type) {
-					case *ast.SelectorExpr:
-						arg.ImportedObject = value
-
-						vob, ok := value.X.(*ast.Ident)
-						if !ok {
-							break
-						}
-
-						importDclr, _ := pkg.ImportFor(vob.Name)
-
-						arg.Package = vob.Name
-						arg.Import = importDclr
-					case *ast.StructType:
-						arg.StructObject = value
-						// arg.Package = resPkg
-						// arg.BaseType = defaultresType
-					case *ast.ArrayType:
-						arg.ArrayType = value
-					case *ast.Ident:
-						arg.IdentType = value
-						arg.NameObject = value.Obj
-
-						arg.Package = resPkg
-						arg.BaseType = defaultresType
-					case *ast.ChanType:
-						arg.ChanType = value
-					}
-
-					returns = append(returns, arg)
-
-				case *ast.MapType:
-					name := fmt.Sprintf("ret%d", retCounter)
-					retCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.MapType = iobj
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					if keySel, err := getSelector(iobj.Key); err == nil {
-						if x, ok := keySel.X.(*ast.Ident); ok {
-							if imported, err := pkg.ImportFor(x.Name); err == nil {
-								arg.Import = imported
-							}
-						}
-					}
-
-					if valSel, err := getSelector(iobj.Value); err == nil {
-						if x, ok := valSel.X.(*ast.Ident); ok {
-							if imported, err := pkg.ImportFor(x.Name); err == nil {
-								arg.Import2 = imported
-							}
-						}
-					}
-
-					returns = append(returns, arg)
-				case *ast.ArrayType:
-					name := fmt.Sprintf("ret%d", retCounter)
-					retCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.ArrayType = iobj
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					switch value := iobj.Elt.(type) {
-					case *ast.SelectorExpr:
-						arg.ImportedObject = value
-
-						vob, ok := value.X.(*ast.Ident)
-						if !ok {
-							break
-						}
-
-						importDclr, _ := pkg.ImportFor(vob.Name)
-
-						arg.Package = vob.Name
-						arg.Import = importDclr
-					case *ast.StarExpr:
-						arg.PointerType = value
-					case *ast.StructType:
-						arg.StructObject = value
-					case *ast.Ident:
-						arg.IdentType = value
-						arg.NameObject = value.Obj
-						arg.Package = resPkg
-						arg.BaseType = defaultresType
-					case *ast.ChanType:
-						arg.ChanType = value
-					}
-
-					returns = append(returns, arg)
-
-				case *ast.ChanType:
-					name := fmt.Sprintf("ret%d", retCounter)
-					retCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.Type = getName(iobj.Value)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					switch value := iobj.Value.(type) {
-					case *ast.SelectorExpr:
-						arg.ImportedObject = value
-
-						vob, ok := value.X.(*ast.Ident)
-						if !ok {
-							break
-						}
-
-						importDclr, _ := pkg.ImportFor(vob.Name)
-
-						arg.Package = vob.Name
-						arg.Import = importDclr
-					case *ast.StarExpr:
-						arg.PointerType = value
-					case *ast.StructType:
-						arg.StructObject = value
-					case *ast.ArrayType:
-						arg.ArrayType = value
-					case *ast.Ident:
-						arg.IdentType = value
-						arg.NameObject = value.Obj
-
-						arg.Package = resPkg
-						arg.BaseType = defaultresType
-					case *ast.ChanType:
-						arg.ChanType = value
-					}
-
-					returns = append(returns, arg)
-				default:
-					// fmt.Printf("Result:Default: %#v -> %#q\n\n", iobj, iobj)
-				}
+			if def, err := GetFunctionDefinition(method, pkg); err == nil {
+				def.Interface = intr
+				defs = append(defs, def)
 			}
-
-			for _, param := range ftype.Params.List {
-				paramPkg, defaultresType := getPackageFromItem(param.Type, filepath.Base(pkg.Package))
-
-				switch iobj := param.Type.(type) {
-				case *ast.Ident:
-					var name string
-					var nameObj *ast.Object
-
-					resName, err := GetIdentName(param)
-					switch err != nil {
-					case true:
-						name = fmt.Sprintf("var%d", varCounter)
-						varCounter++
-					case false:
-						name = resName.Name
-						nameObj = resName.Obj
-					}
-
-					arguments = append(arguments, ArgType{
-						Name:       name,
-						NameObject: nameObj,
-						Type:       getName(iobj),
-						ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
-						TypeObject: iobj.Obj,
-						Package:    paramPkg,
-						BaseType:   defaultresType,
-					})
-
-				case *ast.SelectorExpr:
-					// fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
-					xobj, ok := iobj.X.(*ast.Ident)
-					if !ok {
-						break
-					}
-
-					importDclr, _ := pkg.ImportFor(xobj.Name)
-
-					name := fmt.Sprintf("var%d", varCounter)
-					varCounter++
-
-					arguments = append(arguments, ArgType{
-						Name:    name,
-						Import:  importDclr,
-						Package: xobj.Name,
-						Type:    getName(iobj),
-						ExType:  getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
-					})
-
-				case *ast.StarExpr:
-					name := fmt.Sprintf("var%d", varCounter)
-					varCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.PointerType = iobj
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					switch value := iobj.X.(type) {
-					case *ast.SelectorExpr:
-						arg.ImportedObject = value
-
-						vob, ok := value.X.(*ast.Ident)
-						if !ok {
-							break
-						}
-
-						importDclr, _ := pkg.ImportFor(vob.Name)
-
-						arg.Package = vob.Name
-						arg.Import = importDclr
-					case *ast.StructType:
-						arg.StructObject = value
-					case *ast.ArrayType:
-						arg.ArrayType = value
-					case *ast.Ident:
-						arg.IdentType = value
-						arg.NameObject = value.Obj
-						arg.Package = paramPkg
-						arg.BaseType = defaultresType
-					case *ast.ChanType:
-						arg.ChanType = value
-					}
-
-					arguments = append(arguments, arg)
-
-				case *ast.MapType:
-					name := fmt.Sprintf("var%d", varCounter)
-					varCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.MapType = iobj
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					// fmt.Printf("MapType: %+q -> %#v : %#v\n", arg.Type, iobj.Key, iobj.Value)
-
-					if keySel, err := getSelector(iobj.Key); err == nil {
-						if x, ok := keySel.X.(*ast.Ident); ok {
-							if imported, err := pkg.ImportFor(x.Name); err == nil {
-								arg.Import = imported
-							}
-						}
-					}
-
-					if valSel, err := getSelector(iobj.Value); err == nil {
-						if x, ok := valSel.X.(*ast.Ident); ok {
-							if imported, err := pkg.ImportFor(x.Name); err == nil {
-								arg.Import2 = imported
-							}
-						}
-					}
-
-					arguments = append(arguments, arg)
-				case *ast.ArrayType:
-					name := fmt.Sprintf("var%d", varCounter)
-					varCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.ArrayType = iobj
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					switch value := iobj.Elt.(type) {
-					case *ast.SelectorExpr:
-						arg.ImportedObject = value
-
-						vob, ok := value.X.(*ast.Ident)
-						if !ok {
-							break
-						}
-
-						importDclr, _ := pkg.ImportFor(vob.Name)
-
-						arg.Package = vob.Name
-						arg.Import = importDclr
-					case *ast.StarExpr:
-						arg.PointerType = value
-					case *ast.StructType:
-						arg.StructObject = value
-					case *ast.Ident:
-						arg.IdentType = value
-						arg.NameObject = value.Obj
-
-						arg.Package = paramPkg
-						arg.BaseType = defaultresType
-					case *ast.ChanType:
-						arg.ChanType = value
-					}
-
-					arguments = append(arguments, arg)
-				case *ast.ChanType:
-					name := fmt.Sprintf("var%d", varCounter)
-					varCounter++
-
-					var arg ArgType
-					arg.Name = name
-					arg.Type = getName(iobj)
-					arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
-
-					switch value := iobj.Value.(type) {
-					case *ast.SelectorExpr:
-						arg.ImportedObject = value
-
-						vob, ok := value.X.(*ast.Ident)
-						if !ok {
-							break
-						}
-
-						importDclr, _ := pkg.ImportFor(vob.Name)
-
-						arg.Package = vob.Name
-						arg.Import = importDclr
-					case *ast.StarExpr:
-						arg.PointerType = value
-					case *ast.StructType:
-						arg.StructObject = value
-					case *ast.ArrayType:
-						arg.ArrayType = value
-					case *ast.Ident:
-						arg.IdentType = value
-						arg.NameObject = value.Obj
-						arg.Package = paramPkg
-						arg.BaseType = defaultresType
-					case *ast.ChanType:
-						arg.ChanType = value
-					}
-
-					arguments = append(arguments, arg)
-				default:
-					// fmt.Printf("Param:Default: %#v -> %#q\n\n", iobj, iobj)
-				}
-			}
-
-			defs = append(defs, FunctionDefinition{
-				Func:      ftype,
-				Interface: intr,
-				Returns:   returns,
-				Args:      arguments,
-				Name:      nameIdent.Name,
-			})
-
 			continue
 		}
 
