@@ -1040,14 +1040,24 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 
 // GetVariableDeclaration returns a variable type name as exported from the base package
 // returning the string representation.
-func GetVariableDeclaration(item interface{}) string {
-	return getName(item)
+func GetVariableDeclaration(item interface{}) (string, error) {
+	nameDeclr := getName(item)
+	if nameDeclr == "" {
+		return "", errors.New("Unknown type")
+	}
+
+	return nameDeclr, nil
 }
 
 // GetVariableDeclarationAsExported returns a variable type name as exported from the base package
 // returning the string representation.
-func GetVariableDeclarationAsExported(item interface{}, basePkg string) string {
-	return getNameAsFromOuter(item, basePkg)
+func GetVariableDeclarationAsExported(item interface{}, basePkg string) (string, error) {
+	nameDeclr := getNameAsFromOuter(item, basePkg)
+	if nameDeclr == "" {
+		return "", errors.New("Unknown type")
+	}
+
+	return nameDeclr, nil
 }
 
 var (
