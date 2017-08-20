@@ -17,7 +17,7 @@ var (
 
 // MongoAPIAnnotationGenerator defines a code generator for struct declarations that generate a
 // mongo CRUD code for the use of mongodb as the underline db store.
-func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	updateAction := str
 	createAction := str
 
@@ -29,13 +29,13 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 
 	default:
 		if newAction, ok := str.Associations["New"]; ok {
-			if action, err := ast.FindStructType(pkg, newAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, newAction.TypeName); err == nil {
 				createAction = action
 			}
 		}
 
 		if upAction, ok := str.Associations["Update"]; ok {
-			if action, err := ast.FindStructType(pkg, upAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, upAction.TypeName); err == nil {
 				updateAction = action
 			}
 		}
@@ -65,7 +65,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct       ast.StructDeclaration
@@ -112,7 +112,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
 						"mapJSON":   ast.MapOutFieldsToJSON,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct       ast.StructDeclaration
@@ -148,7 +148,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					string(templates.Must("mongoapi/mongo-api.tml")),
 					template.FuncMap{
 						"map":     ast.MapOutFields,
-						"hasFunc": ast.HasFunctionFor(pkg),
+						"hasFunc": ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct       ast.StructDeclaration

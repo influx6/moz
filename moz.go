@@ -38,7 +38,7 @@ func RegisterAnnotation(name string, generator interface{}) bool {
 
 // MustParseWith calls the ParseWith method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRegistry, forceWrite bool, packageDeclrs ...ast.PackageDeclaration) {
+func MustParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRegistry, forceWrite bool, packageDeclrs ...ast.Package) {
 	if err := ParseWith(toDir, log, provider, forceWrite, packageDeclrs...); err != nil {
 		panic(err)
 	}
@@ -46,13 +46,13 @@ func MustParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRe
 
 // ParseWith takes the provided package declarations and annotation registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
-func ParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRegistry, forceWrite bool, packageDeclrs ...ast.PackageDeclaration) error {
+func ParseWith(toDir string, log metrics.Metrics, provider *ast.AnnotationRegistry, forceWrite bool, packageDeclrs ...ast.Package) error {
 	return ast.Parse(toDir, log, provider, forceWrite, packageDeclrs...)
 }
 
 // MustParse calls the Parse method to attempt to parse the ast.PackageDeclarations
 // and panics if it encounters an error.
-func MustParse(toDir string, log metrics.Metrics, forceWrite bool, packageDeclrs ...ast.PackageDeclaration) {
+func MustParse(toDir string, log metrics.Metrics, forceWrite bool, packageDeclrs ...ast.Package) {
 	if err := Parse(toDir, log, forceWrite, packageDeclrs...); err != nil {
 		panic(err)
 	}
@@ -60,61 +60,6 @@ func MustParse(toDir string, log metrics.Metrics, forceWrite bool, packageDeclrs
 
 // Parse takes the provided package declarations and the default Annotations registry and attempts
 // parsing all internals structuers with the appropriate generators suited to the type and annotations.
-func Parse(toDir string, log metrics.Metrics, forceWrite bool, packageDeclrs ...ast.PackageDeclaration) error {
+func Parse(toDir string, log metrics.Metrics, forceWrite bool, packageDeclrs ...ast.Package) error {
 	return ast.Parse(toDir, log, annotations, forceWrite, packageDeclrs...)
 }
-
-// MustWriteDirectives calls the WriteDirectives method to attempt to parse the ast.PackageDeclarations
-// and panics if it encounters an error.
-// func MustWriteDirectives(log metrics.Metrics, rootDir string, directives ...gen.WriteDirective) {
-// 	if err := WriteDirectives(log, rootDir, directives...); err != nil {
-// 		panic(err)
-// 	}
-// }
-
-// // WriteDirectives defines a funtion to sync the slices of WriteDirectives into a giving directory
-// // root.
-// func WriteDirectives(log metrics.Metrics, rootDir string, directives ...gen.WriteDirective) error {
-// 	{
-// 	directiveloop:
-// 		for _, directive := range directives {
-//
-// 			if filepath.IsAbs(directive.Dir) {
-// 				log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
-// 					With("root-dir", rootDir).With("directive-dir", directive.Dir))
-//
-// 				continue directiveloop
-// 			}
-//
-// 			namedFileDir := filepath.Join(rootDir, directive.Dir)
-// 			namedFile := filepath.Join(namedFileDir, directive.FileName)
-//
-// 			if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-// 				return err
-// 			}
-//
-// 			newFile, err := os.Open(namedFile)
-// 			if err != nil {
-// 				log.Emit(stdout.Error("IOError: Unable to create file").
-// 					With("file", namedFile).With("dir", namedFileDir).With("error", err))
-// 				return err
-// 			}
-//
-// 			if _, err := directive.Writer.WriteTo(newFile); err != nil && err != io.EOF {
-// 				log.Emit(stdout.Error("IOError: Unable to write to file").
-// 					With("file", namedFile).With("dir", namedFileDir).With("error", err))
-//
-// 				newFile.Close()
-//
-// 				return err
-// 			}
-//
-// 			log.Emit(stdout.Info("Directive Resolved").With("file", namedFile).With("dir", namedFileDir))
-//
-// 			// Close giving file
-// 			newFile.Close()
-// 		}
-// 	}
-//
-// 	return nil
-// }

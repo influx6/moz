@@ -89,28 +89,37 @@ func PackageFile(file string, mode parser.Mode) (*token.FileSet, *ast.File, erro
 //===========================================================================================================
 
 // ParseFileAnnotations parses the package from the provided file.
-func ParseFileAnnotations(log metrics.Metrics, path string) (PackageDeclaration, error) {
+func ParseFileAnnotations(log metrics.Metrics, path string) (Package, error) {
 	dir := filepath.Dir(path)
 
 	tokenFiles, file, err := PackageFile(path, parser.ParseComments)
 	if err != nil {
 		log.Emit(stdout.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file))
-		return PackageDeclaration{}, err
+		return Package{}, err
 	}
 
-	return parseFileToPackage(log, dir, path, filepath.Base(dir), tokenFiles, file)
+	res, err := parseFileToPackage(log, dir, path, filepath.Base(dir), tokenFiles, file)
+	if err != nil {
+		return Package{}, err
+	}
+
+	return Package{
+		Path:     res.Path,
+		Package:  res.Package,
+		Packages: []PackageDeclaration{res},
+	}, nil
 }
 
 // ParseAnnotations parses the package which generates a series of ast with associated
 // annotation for processing.
-func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, error) {
+func ParseAnnotations(log metrics.Metrics, dir string) ([]Package, error) {
 	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
 	if err != nil {
 		log.Emit(stdout.Error(err).With("message", "Failed to parse directory").With("dir", dir))
 		return nil, err
 	}
 
-	var packageDeclrs []PackageDeclaration
+	packageDeclrs := make(map[string]Package)
 
 	for _, pkg := range packages {
 		for path, file := range pkg.Files {
@@ -119,11 +128,26 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]PackageDeclaration, er
 				return nil, err
 			}
 
-			packageDeclrs = append(packageDeclrs, res)
+			if owner, ok := packageDeclrs[res.Package]; ok {
+				owner.Packages = append(owner.Packages, res)
+				continue
+			}
+
+			packageDeclrs[res.Package] = Package{
+				Path:     res.Path,
+				Package:  res.Package,
+				Packages: []PackageDeclaration{res},
+			}
 		}
 	}
 
-	return packageDeclrs, nil
+	var pkgs []Package
+
+	for _, pkg := range packageDeclrs {
+		pkgs = append(pkgs, pkg)
+	}
+
+	return pkgs, nil
 }
 
 func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName string, tokenFiles *token.FileSet, file *ast.File) (PackageDeclaration, error) {
@@ -361,13 +385,23 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 //===========================================================================================================
 
-// Parse takes the provided package declrations parsing all internals with the
-// appropriate generators suited to the type and annotations.
-func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, packageDeclrs ...PackageDeclaration) error {
+// Parse takes the provided packages parsing all internals declarations with the appropriate generators suited to the type and annotations.
+func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs ...Package) error {
+	for _, pkg := range pkgDeclrs {
+		if err := ParsePackage(toDir, log, provider, doFileOverwrite, pkg); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
+func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
 	{
 	parseloop:
-		for _, pkg := range packageDeclrs {
-			wdrs, err := provider.ParseDeclr(pkg, toDir)
+		for _, pkg := range pkgDeclrs.Packages {
+			wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
 			if err != nil {
 				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
 					With("error", err.Error()).With("package", pkg.Package))
@@ -475,7 +509,7 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFi
 
 // WhichPackage is an utility function which returns the appropriate package name to use
 // if a toDir is provided as destination.
-func WhichPackage(toDir string, pkg PackageDeclaration) string {
+func WhichPackage(toDir string, pkg Package) string {
 	if toDir != "" && toDir != "./" && toDir != "." {
 		return strings.ToLower(filepath.Base(toDir))
 	}
@@ -498,6 +532,69 @@ type AnnotationDeclaration struct {
 type ImportDeclaration struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
+}
+
+// Package defines the central repository of all PackageDeclaration.
+type Package struct {
+	Package  string               `json:"package"`
+	Path     string               `json:"path"`
+	Packages []PackageDeclaration `json:"packages"`
+}
+
+// HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
+func (pkg Package) HasFunctionFor(str StructDeclaration, funcName string) bool {
+	for _, elem := range pkg.Packages {
+		if elem.HasFunctionFor(str, funcName) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AnnotationsFor returns all annotations with the giving name.
+func (pkg Package) AnnotationsFor(typeName string) []AnnotationDeclaration {
+	var found []AnnotationDeclaration
+
+	for _, elem := range pkg.Packages {
+		found = append(found, elem.AnnotationsFor(typeName)...)
+	}
+
+	return found
+}
+
+// FunctionsForName returns a slice of FuncDeclaration for the giving name.
+func (pkg Package) FunctionsForName(objName string) []FuncDeclaration {
+	var funcs []FuncDeclaration
+
+	for _, elem := range pkg.Packages {
+		funcs = append(funcs, elem.FunctionsForName(objName)...)
+	}
+
+	return funcs
+}
+
+// ImportFor returns the ImportDeclaration associated with the giving handle.
+// Returns error if the import is not found.
+func (pkg Package) ImportFor(imp string) (ImportDeclaration, error) {
+	for _, elem := range pkg.Packages {
+		if impDeclr, err := elem.ImportFor(imp); err == nil {
+			return impDeclr, nil
+		}
+	}
+
+	return ImportDeclaration{}, errors.New("Not found")
+}
+
+// FunctionsFor returns a slice of FuncDeclaration for the giving object.
+func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
+	var funcs []FuncDeclaration
+
+	for _, elem := range pkg.Packages {
+		funcs = append(funcs, elem.FunctionsFor(obj)...)
+	}
+
+	return funcs
 }
 
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
@@ -576,17 +673,7 @@ func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 		return funcs
 	}
 
-	var funcs []FuncDeclaration
-
-	for obj, list := range pkg.ObjectFunc {
-		if obj.Name != obj.Name {
-			continue
-		}
-
-		funcs = append(funcs, list...)
-	}
-
-	return funcs
+	return pkg.FunctionsForName(obj.Name)
 }
 
 // HasFunctionFor returns true/false if the giving function name exists for the package.
@@ -1272,25 +1359,25 @@ type TypeDeclaration struct {
 // Annotation for a non-struct, non-interface type declaration. This allows you to apply and create
 // new sources specifically for a giving type(non-struct, non-interface).
 // It is responsible to fully contain all operations required to both generator any source and write such to
-type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 
 // StructAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving struct type.
 // It is responsible to fully contain all operations required to both generator any source and write such to.
-type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 
 // InterfaceAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving interface type.
 // It is responsible to fully contain all operations required to both generator any source and write such to
 // appropriate files as intended, meta-data about package, and file paths are already include in the PackageDeclaration.
-type InterfaceAnnotationGenerator func(string, AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type InterfaceAnnotationGenerator func(string, AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 
 // PackageAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation for a package. This allows you to apply and create new sources specifically because of a
 // package wide annotation.
 // It is responsible to fully contain all operations required to both generator any source and write such to
 // All generators are expected to return
-type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 
 //===========================================================================================================
 
@@ -1416,44 +1503,17 @@ type AnnotationWriteDirective struct {
 
 // ParseDeclr runs the generators suited for each declaration and type returning a slice of
 // Annotationgen.WriteDirective that delivers the content to be created for each piece.
-func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration, toDir string) ([]AnnotationWriteDirective, error) {
+func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, toDir string) ([]AnnotationWriteDirective, error) {
 	var directives []AnnotationWriteDirective
-
-	var defferedAnnotations []AnnotationDeclaration
 
 	// Generate directives for package level
 	for _, annotation := range declr.Annotations {
-		if annotation.Defer {
-			defferedAnnotations = append(defferedAnnotations, annotation)
-			continue
-		}
-
 		generator, err := a.GetPackage(annotation.Name)
 		if err != nil {
 			continue
 		}
 
-		drs, err := generator(toDir, annotation, declr)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, directive := range drs {
-			directives = append(directives, AnnotationWriteDirective{
-				WriteDirective: directive,
-				Annotation:     annotation.Name,
-			})
-		}
-	}
-
-	// Handle deffered annotations
-	for _, annotation := range defferedAnnotations {
-		generator, err := a.GetPackage(annotation.Name)
-		if err != nil {
-			continue
-		}
-
-		drs, err := generator(toDir, annotation, declr)
+		drs, err := generator(toDir, annotation, declr, pkg)
 		if err != nil {
 			return nil, err
 		}
@@ -1473,7 +1533,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration, toDir string) 
 				continue
 			}
 
-			drs, err := generator(toDir, annotation, inter, declr)
+			drs, err := generator(toDir, annotation, inter, declr, pkg)
 			if err != nil {
 				return nil, err
 			}
@@ -1494,7 +1554,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration, toDir string) 
 				continue
 			}
 
-			drs, err := generator(toDir, annotation, structs, declr)
+			drs, err := generator(toDir, annotation, structs, declr, pkg)
 			if err != nil {
 				return nil, err
 			}
@@ -1515,7 +1575,7 @@ func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration, toDir string) 
 				continue
 			}
 
-			drs, err := generator(toDir, annotation, typ, declr)
+			drs, err := generator(toDir, annotation, typ, declr, pkg)
 			if err != nil {
 				return nil, err
 			}
@@ -1652,25 +1712,25 @@ func (a *AnnotationRegistry) Register(name string, generator interface{}) error 
 	case PackageAnnotationGenerator:
 		a.RegisterPackage(name, gen)
 		return nil
-	case func(string, AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error):
 		a.RegisterPackage(name, gen)
 		return nil
 	case TypeAnnotationGenerator:
 		a.RegisterType(name, gen)
 		return nil
-	case func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error):
 		a.RegisterType(name, gen)
 		return nil
 	case StructAnnotationGenerator:
 		a.RegisterStructType(name, gen)
 		return nil
-	case func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error):
 		a.RegisterStructType(name, gen)
 		return nil
 	case InterfaceAnnotationGenerator:
 		a.RegisterInterfaceType(name, gen)
 		return nil
-	case func(string, AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error):
+	case func(string, AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error):
 		a.RegisterInterfaceType(name, gen)
 		return nil
 	default:

@@ -18,7 +18,7 @@ var (
 
 // IFaceAnnotationGenerator defines a code generator for creating a struct implementations for giving interface declaration.
 // Annotation associated with this Generator is: @iface.
-func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr ast.InterfaceDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr ast.InterfaceDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	interfaceName := itr.Object.Name.Name
 	interfaceNameLower := strings.ToLower(interfaceName)
 
@@ -67,7 +67,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 					string(templates.Must("iface/iface.tml")),
 					struct {
 						InterfaceName string
-						Package       ast.PackageDeclaration
+						Package       ast.Package
 						Methods       []ast.FunctionDefinition
 					}{
 						Package:       pkg,
@@ -102,7 +102,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 					gen.SourceText(
 						string(templates.Must("iface/iface-little-snitch.tml")),
 						struct {
-							Package       ast.PackageDeclaration
+							Package       ast.Package
 							InterfaceName string
 							Methods       []ast.FunctionDefinition
 						}{
@@ -138,7 +138,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 						string(templates.Must("iface/iface-test.tml")),
 						struct {
 							InterfaceName string
-							Package       ast.PackageDeclaration
+							Package       ast.Package
 							Methods       []ast.FunctionDefinition
 						}{
 							Package:       pkg,

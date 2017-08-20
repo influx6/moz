@@ -22,7 +22,7 @@ var (
 // Annotation: @assets
 // Arguments(Optional): (PackageName, FileExtensionsToSupport, DirectorNameForFiles)
 // 	e.g @assets(assets, ".tml : .bol : .go : .js", mytemplates).
-func AssetsAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func AssetsAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	var directives []gen.WriteDirective
 
 	var extensions []string

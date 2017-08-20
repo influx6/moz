@@ -12,7 +12,7 @@ var (
 )
 
 // DimeGenerator defines a generator that creates a doc.go file which contains a template to create channel based code specified type names.
-func DimeGenerator(toDir string, an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func DimeGenerator(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	docGen := gen.Block(
 		gen.Commentary(
 			gen.Fmt("Package %s contains a template within it's comments to generate code based off.", pkg.Package),

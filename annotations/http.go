@@ -18,7 +18,7 @@ var (
 )
 
 // HTTPRestAnnotationGenerator defines a code generator for creating a restful HTTP for a giving struct.
-func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.StructDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	updateAction := str
 	createAction := str
 
@@ -36,7 +36,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 
 	default:
 		if newAction, ok := str.Associations["New"]; ok {
-			if action, err := ast.FindStructType(pkg, newAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, newAction.TypeName); err == nil {
 				if action.Object != str.Object {
 					isSameCreate = false
 				}
@@ -46,7 +46,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 		}
 
 		if upAction, ok := str.Associations["Update"]; ok {
-			if action, err := ast.FindStructType(pkg, upAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, upAction.TypeName); err == nil {
 				if action.Object != str.Object {
 					isSameUpdate = false
 				}
@@ -114,7 +114,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
 						"mapJSON":   ast.MapOutFieldsToJSON,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct       ast.StructDeclaration
@@ -138,7 +138,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					"map":       ast.MapOutFields,
 					"mapValues": ast.MapOutValues,
 					"mapJSON":   ast.MapOutFieldsToJSON,
-					"hasFunc":   ast.HasFunctionFor(pkg),
+					"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 				},
 				struct {
 					Struct       ast.StructDeclaration
@@ -167,7 +167,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
 						"mapJSON":   ast.MapOutFieldsToJSON,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct       ast.StructDeclaration
@@ -207,7 +207,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 						"randField": ast.RandomFieldAssign,
 					},
 					struct {
@@ -244,7 +244,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct          ast.StructDeclaration
@@ -283,7 +283,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					template.FuncMap{
 						"map":       ast.MapOutFields,
 						"mapValues": ast.MapOutValues,
-						"hasFunc":   ast.HasFunctionFor(pkg),
+						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
 						Struct          ast.StructDeclaration

@@ -16,14 +16,14 @@ var (
 
 // MongoAnnotationGenerator defines a code generator for struct declarations that generate a
 // mongo CRUD code for the use of mongodb as the underline db store.
-func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 
 	mongoReadmeGen := gen.Block(
 		gen.Block(
 			gen.SourceText(
 				string(templates.Must("mongo/readme.tml")),
 				struct {
-					Package ast.PackageDeclaration
+					Package ast.Package
 				}{
 					Package: pkg,
 				},
@@ -50,10 +50,10 @@ func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkg as
 					string(templates.Must("mongo/api.tml")),
 					template.FuncMap{
 						"map":     ast.MapOutFields,
-						"hasFunc": ast.HasFunctionFor(pkg),
+						"hasFunc": ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
-						Package ast.PackageDeclaration
+						Package ast.Package
 					}{
 						Package: pkg,
 					},

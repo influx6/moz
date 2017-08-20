@@ -55,7 +55,7 @@ func (t TypeMap) Get(key string) string {
 // @templaterTypesFor(id => Mob, filename => bob_gen.go, TYPE1 => int32, TYPE2 => int32, TYPE3 => int64)
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
-func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.StructDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.StructDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	templaterId, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
@@ -97,7 +97,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 		TypeForAnnotation  ast.AnnotationDeclaration
 		TemplateAnnotation ast.AnnotationDeclaration
 		StructDeclr        ast.StructDeclaration
-		Package            ast.PackageDeclaration
+		Package            ast.Package
 	}{
 		StructDeclr:        ty,
 		Package:            pkg,
@@ -173,7 +173,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 // @templaterTypesFor(id => Mob, filename => bob_gen.go, TYPE1 => int32, TYPE2 => int32, TYPE3 => int64)
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
-func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.InterfaceDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.InterfaceDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	templaterId, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
@@ -215,7 +215,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 		TypeForAnnotation  ast.AnnotationDeclaration
 		TemplateAnnotation ast.AnnotationDeclaration
 		InterfaceDeclr     ast.InterfaceDeclaration
-		Package            ast.PackageDeclaration
+		Package            ast.Package
 	}{
 		InterfaceDeclr:     ty,
 		Package:            pkg,
@@ -291,7 +291,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 // @templaterTypesFor(id => Mob, filename => bob_gen.go, TYPE1 => int32, TYPE2 => int32, TYPE3 => int64)
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
-func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	templaterId, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
@@ -332,7 +332,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 		TemplateForParams  TypeMap
 		TypeForAnnotation  ast.AnnotationDeclaration
 		TemplateAnnotation ast.AnnotationDeclaration
-		Package            ast.PackageDeclaration
+		Package            ast.Package
 	}{
 		Package:            pkg,
 		TypeForAnnotation:  an,
@@ -407,7 +407,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 // @templaterTypesFor(id => Mob, filename => bob_gen.go, TYPE1 => int32, TYPE2 => int32, TYPE3 => int64)
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
-func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.TypeDeclaration, pkg ast.PackageDeclaration) ([]gen.WriteDirective, error) {
+func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.TypeDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
 	templaterId, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
@@ -449,7 +449,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		TypeForAnnotation  ast.AnnotationDeclaration
 		TemplateAnnotation ast.AnnotationDeclaration
 		TypeDeclr          ast.TypeDeclaration
-		Package            ast.PackageDeclaration
+		Package            ast.Package
 	}{
 		TypeDeclr:          ty,
 		Package:            pkg,

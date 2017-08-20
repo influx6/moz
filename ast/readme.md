@@ -36,7 +36,7 @@ what an annotation produces.
 _See [Annotations](./annotations) for code samples of different annotation functions._
 
 ```go
-type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 ```
 
 *This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
@@ -46,7 +46,7 @@ type StructAnnotationGenerator func(string, AnnotationDeclaration, StructDeclara
 This functions are specific to provide code generation instructions for interface declarations which the given annotation is attached to.
 
 ```go
-type InterfaceAnnotationGenerator func(string,AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type InterfaceAnnotationGenerator func(string,AnnotationDeclaration, InterfaceDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 ```
 
 *This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
@@ -56,7 +56,7 @@ type InterfaceAnnotationGenerator func(string,AnnotationDeclaration, InterfaceDe
 This functions are specific to provide code generation instructions for given annotation declared on the package comment block.
 
 ```go
-type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 ```
 
 *This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
@@ -66,7 +66,7 @@ type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDecla
 This functions are specific to provide code generation instructions for non-struct and non-interface declarations which the given annotation is attached to.
 
 ```go
-type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration) ([]gen.WriteDirective, error)
+type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 ```
 
 *This function is expected to return a slice of `WriteDirective` which contains file name, `WriterTo` object and a possible `Dir` relative path which the contents should be written to.*
