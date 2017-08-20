@@ -29,6 +29,12 @@ var (
 		"title": func(b string) string {
 			return strings.ToTitle(b)
 		},
+		"hasSuffix": func(b, suff string) bool {
+			return strings.HasSuffix(b, suff)
+		},
+		"hasPrefix": func(b, pre string) bool {
+			return strings.HasPrefix(b, pre)
+		},
 		"lower": func(b string) string {
 			return strings.ToLower(b)
 		},
@@ -40,6 +46,18 @@ var (
 		},
 		"basePathName": func(b string) string {
 			return path.Base(b)
+		},
+		"joinSlice": func(jn string, vals []string) string {
+			return strings.Join(vals, jn)
+		},
+		"join": func(jn string, vals ...string) string {
+			return strings.Join(vals, jn)
+		},
+		"splitAfter": func(b string, sp string, n int) []string {
+			return strings.SplitAfterN(b, sp, n)
+		},
+		"split": func(b string, sp string) []string {
+			return strings.Split(b, sp)
 		},
 		"indent": func(b string) string {
 			return strings.Join(strings.Split(b, "\n"), "\n\t")
