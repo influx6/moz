@@ -491,6 +491,7 @@ type AnnotationDeclaration struct {
 	Template  string            `json:"template"`
 	Arguments []string          `json:"arguments"`
 	Params    map[string]string `json:"params"`
+	Defer     bool              `json:"defer"`
 }
 
 // ImportDeclaration defines a type to contain import declaration within a package.
@@ -1418,8 +1419,35 @@ type AnnotationWriteDirective struct {
 func (a *AnnotationRegistry) ParseDeclr(declr PackageDeclaration, toDir string) ([]AnnotationWriteDirective, error) {
 	var directives []AnnotationWriteDirective
 
+	var defferedAnnotations []AnnotationDeclaration
+
 	// Generate directives for package level
 	for _, annotation := range declr.Annotations {
+		if annotation.Defer {
+			defferedAnnotations = append(defferedAnnotations, annotation)
+			continue
+		}
+
+		generator, err := a.GetPackage(annotation.Name)
+		if err != nil {
+			continue
+		}
+
+		drs, err := generator(toDir, annotation, declr)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, directive := range drs {
+			directives = append(directives, AnnotationWriteDirective{
+				WriteDirective: directive,
+				Annotation:     annotation.Name,
+			})
+		}
+	}
+
+	// Handle deffered annotations
+	for _, annotation := range defferedAnnotations {
 		generator, err := a.GetPackage(annotation.Name)
 		if err != nil {
 			continue

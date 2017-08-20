@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -64,10 +65,21 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 				}
 			}
 
+			var deferred bool
+
+			// Find out if we are to be deferred
+			defered, ok := params["defer"]
+			if !ok {
+				defered, ok = params["Defer"]
+			}
+
+			deferred, _ = strconv.ParseBool(defered)
+
 			annotations = append(annotations, AnnotationDeclaration{
 				Arguments: parts,
 				Name:      argName,
 				Params:    params,
+				Defer:     deferred,
 			})
 
 			continue
