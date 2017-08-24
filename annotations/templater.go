@@ -132,7 +132,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 
 		var packageName string
 
-		switch len(targetTemplater.Params["packageName"]) == 0 {
+		switch len(an.Params["packageName"]) == 0 {
 		case true:
 			packageName = ast.WhichPackage(toDir, pkg)
 		case false:
@@ -277,7 +277,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 
 		var packageName string
 
-		switch len(targetTemplater.Params["packageName"]) == 0 {
+		switch len(an.Params["packageName"]) == 0 {
 		case true:
 			packageName = ast.WhichPackage(toDir, pkg)
 		case false:
@@ -420,7 +420,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 
 		var packageName string
 
-		switch len(targetTemplater.Params["packageName"]) == 0 {
+		switch len(an.Params["packageName"]) == 0 {
 		case true:
 			packageName = ast.WhichPackage(toDir, pkg)
 		case false:
@@ -564,7 +564,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 	case "partial.go":
 		var packageName string
 
-		switch len(targetTemplater.Params["packageName"]) == 0 {
+		switch len(an.Params["packageName"]) == 0 {
 		case true:
 			packageName = ast.WhichPackage(toDir, pkg)
 		case false:
