@@ -15,6 +15,9 @@ Example can be found in `Dap` package: [Dap](../examples/dap)
 
 *@templatorTypesFor* provides a template-base annotation for generating content from the provided template associated with a annotation `templater`, which has the template identified by the `id` which will be used to generate the new code for the `filename` provided on this annotation.
 
+To deal with larger templates and to minimize decoration of code files with template text, any `templater` can have a `file` attribute that points to a file relative to the
+package where it is declared, and the `templatorTypesFor` annotation will load that file's content and use that as the template to generate code.
+
 Example can be found in `Temples` package: [Temples](../examples/temples)
 
  ### @httpapi

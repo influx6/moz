@@ -3,6 +3,8 @@ package annotations
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -75,8 +77,26 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 		break
 	}
 
-	if targetTemplater.Template == "" {
-		return nil, errors.New("Expected Template from annotation")
+	var templateData string
+
+	switch len(targetTemplater.Template) == 0 {
+	case true:
+		templateFilePath, ok := targetTemplater.Params["file"]
+		if !ok && targetTemplater.Template == "" {
+			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
+		}
+
+		baseDir := filepath.Dir(pkgDeclr.FilePath)
+		templateFile := filepath.Join(baseDir, templateFilePath)
+
+		data, err := ioutil.ReadFile(templateFile)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to find template file: %+q", err)
+		}
+
+		templateData = string(data)
+	case false:
+		templateData = targetTemplater.Template
 	}
 
 	var directives []gen.WriteDirective
@@ -89,7 +109,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
 	}
 
-	typeGen := gen.Block(gen.SourceTextWith(targetTemplater.Template, template.FuncMap{
+	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
 		"sel": TypeMap(an.Params).Get,
 	}, struct {
 		TemplateParams     TypeMap
@@ -193,8 +213,26 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 		break
 	}
 
-	if targetTemplater.Template == "" {
-		return nil, errors.New("Expected Template from annotation")
+	var templateData string
+
+	switch len(targetTemplater.Template) == 0 {
+	case true:
+		templateFilePath, ok := targetTemplater.Params["file"]
+		if !ok && targetTemplater.Template == "" {
+			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
+		}
+
+		baseDir := filepath.Dir(pkgDeclr.FilePath)
+		templateFile := filepath.Join(baseDir, templateFilePath)
+
+		data, err := ioutil.ReadFile(templateFile)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to find template file: %+q", err)
+		}
+
+		templateData = string(data)
+	case false:
+		templateData = targetTemplater.Template
 	}
 
 	var directives []gen.WriteDirective
@@ -207,7 +245,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
 	}
 
-	typeGen := gen.Block(gen.SourceTextWith(targetTemplater.Template, template.FuncMap{
+	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
 		"sel": TypeMap(an.Params).Get,
 	}, struct {
 		TemplateParams     TypeMap
@@ -311,8 +349,26 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 		break
 	}
 
-	if targetTemplater.Template == "" {
-		return nil, errors.New("Expected Template from annotation")
+	var templateData string
+
+	switch len(targetTemplater.Template) == 0 {
+	case true:
+		templateFilePath, ok := targetTemplater.Params["file"]
+		if !ok && targetTemplater.Template == "" {
+			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
+		}
+
+		baseDir := filepath.Dir(pkgDeclr.FilePath)
+		templateFile := filepath.Join(baseDir, templateFilePath)
+
+		data, err := ioutil.ReadFile(templateFile)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to find template file: %+q", err)
+		}
+
+		templateData = string(data)
+	case false:
+		templateData = targetTemplater.Template
 	}
 
 	var directives []gen.WriteDirective
@@ -325,7 +381,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
 	}
 
-	typeGen := gen.Block(gen.SourceTextWith(targetTemplater.Template, template.FuncMap{
+	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
 		"sel": TypeMap(an.Params).Get,
 	}, struct {
 		TemplateParams     TypeMap
@@ -427,8 +483,26 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		break
 	}
 
-	if targetTemplater.Template == "" {
-		return nil, errors.New("Expected Template from annotation")
+	var templateData string
+
+	switch len(targetTemplater.Template) == 0 {
+	case true:
+		templateFilePath, ok := targetTemplater.Params["file"]
+		if !ok && targetTemplater.Template == "" {
+			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
+		}
+
+		baseDir := filepath.Dir(pkgDeclr.FilePath)
+		templateFile := filepath.Join(baseDir, templateFilePath)
+
+		data, err := ioutil.ReadFile(templateFile)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to find template file: %+q", err)
+		}
+
+		templateData = string(data)
+	case false:
+		templateData = targetTemplater.Template
 	}
 
 	var directives []gen.WriteDirective
@@ -441,7 +515,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
 	}
 
-	typeGen := gen.Block(gen.SourceTextWith(targetTemplater.Template, template.FuncMap{
+	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
 		"sel": TypeMap(an.Params).Get,
 	}, struct {
 		TemplateParams     TypeMap
