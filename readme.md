@@ -30,6 +30,11 @@ Future Plans
 
 - Extend Plugin to HotLoad with `go.18 Plugin`.
 
+Projects Using Moz
+--------------------
+
+- [Gu](https://github.com/gu-io/gu)
+- [Dime](https://github.com/influx6/dime)
 
 Code Generation with Moz
 --------------------------
