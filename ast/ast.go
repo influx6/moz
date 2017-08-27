@@ -1539,9 +1539,6 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 		generator, err := a.GetPackage(annotation.Name)
 		if err != nil {
-			a.metrics.Emit(stdout.Error("Directive Generation").
-				With("error", err).
-				With("Level", "Package").With("Annotaton", annotation.Name).With("Params", annotation.Params).With("Arguments", annotation.Arguments).With("Template", annotation.Template))
 			continue
 		}
 
