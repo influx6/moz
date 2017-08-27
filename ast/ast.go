@@ -419,7 +419,7 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 			log.Emit(stdout.Info("ParseSuccess").With("From", pkg.FilePath).With("package", pkg.Package).With("Directives", len(wdrs)))
 
 			for _, item := range wdrs {
-				log.Emit(stdout.Info("WriteFile", item.FileName).With("FromAnnotation", item.Annotation).With("From", pkg.FilePath).With("package", pkg.Package))
+				log.Emit(stdout.Info("WriteFile").With("File", item.FileName).With("FromAnnotation", item.Annotation).With("From", pkg.FilePath).With("package", pkg.Package))
 
 				if filepath.IsAbs(item.Dir) {
 					log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
