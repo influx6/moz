@@ -1433,7 +1433,7 @@ func (a *AnnotationRegistry) Clone() Annotations {
 	a.ml.RLock()
 	defer a.ml.RUnlock()
 
-	var cloned Annotations
+	cloned := make(Annotations)
 
 	for name, item := range a.pkgAnnotations {
 		cloned.Packages[name] = item
