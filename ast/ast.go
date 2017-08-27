@@ -125,11 +125,15 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]Package, error) {
 		for path, file := range pkg.Files {
 			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file)
 			if err != nil {
+				log.Emit(stdout.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
 				return nil, err
 			}
 
+			log.Emit(stdout.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
+
 			if owner, ok := packageDeclrs[res.Package]; ok {
 				owner.Packages = append(owner.Packages, res)
+				packageDeclrs[res.Package] = owner
 				continue
 			}
 
