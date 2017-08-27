@@ -317,7 +317,7 @@ func generatePackageCLI(c *cli.Context) {
 		return
 	}
 
-	events.Emit(stdout.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir))
+	events.Emit(stdout.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkgs)))
 
 	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkgs...); err != nil {
 		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
