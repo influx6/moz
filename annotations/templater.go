@@ -142,9 +142,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 		packageName = fmt.Sprintf("%s_test", packageName)
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -169,9 +167,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 		}
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -316,9 +312,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 		packageName = fmt.Sprintf("%s_test", packageName)
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -343,9 +337,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 		}
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -488,9 +480,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 		packageName = fmt.Sprintf("%s_test", packageName)
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -515,9 +505,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 		}
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -662,9 +650,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		packageName = fmt.Sprintf("%s_test", packageName)
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
@@ -688,9 +674,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		}
 
 		pkgGen := gen.Block(
-			gen.Commentary(
-				gen.Text(" "),
-			),
+
 			gen.Package(
 				gen.Name(packageName),
 				typeGen,
