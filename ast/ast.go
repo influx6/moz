@@ -474,7 +474,7 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 
 				fileStat, err := os.Stat(namedFile)
 				if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
-					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must no over-write").With("annotation", item.Annotation).
+					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must not over-write").With("annotation", item.Annotation).
 						With("dir", namedFileDir).
 						With("package", pkg.Package).
 						With("file", pkg.File).
