@@ -58,7 +58,7 @@ func (t TypeMap) Get(key string) string {
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.StructDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterId, ok := an.Params["id"]
+	templaterID, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
 	}
@@ -70,7 +70,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 
 	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
 	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterId {
+		if targetTemplater.Params["id"] != templaterID {
 			continue
 		}
 
@@ -102,11 +102,11 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 	var directives []gen.WriteDirective
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	genID := strings.ToLower(targetTemplater.Params["id"])
+	//genID := strings.ToLower(targetTemplater.Params["id"])
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
-		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
+		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(ty.Object.Name.Name))
 	}
 
 	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
@@ -232,7 +232,7 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.InterfaceDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterId, ok := an.Params["id"]
+	templaterID, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
 	}
@@ -244,7 +244,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 
 	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
 	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterId {
+		if targetTemplater.Params["id"] != templaterID {
 			continue
 		}
 
@@ -276,11 +276,11 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 	var directives []gen.WriteDirective
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	genID := strings.ToLower(targetTemplater.Params["id"])
+	//genID := strings.ToLower(targetTemplater.Params["id"])
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
-		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
+		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(ty.Object.Name.Name))
 	}
 
 	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
@@ -406,7 +406,7 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterId, ok := an.Params["id"]
+	templaterID, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
 	}
@@ -418,7 +418,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 
 	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
 	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterId {
+		if targetTemplater.Params["id"] != templaterID {
 			continue
 		}
 
@@ -450,11 +450,11 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 	var directives []gen.WriteDirective
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	genID := strings.ToLower(targetTemplater.Params["id"])
+	//genID := strings.ToLower(targetTemplater.Params["id"])
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
-		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
+		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(genName))
 	}
 
 	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
@@ -578,7 +578,7 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.TypeDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterId, ok := an.Params["id"]
+	templaterID, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
 	}
@@ -590,7 +590,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 
 	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
 	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterId {
+		if targetTemplater.Params["id"] != templaterID {
 			continue
 		}
 
@@ -622,11 +622,11 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 	var directives []gen.WriteDirective
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	genID := strings.ToLower(targetTemplater.Params["id"])
+	//genID := strings.ToLower(targetTemplater.Params["id"])
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
-		fileName = fmt.Sprintf("%s_templater_types_for_gen.%s", genID, genName)
+		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(ty.Object.Name.Name))
 	}
 
 	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
