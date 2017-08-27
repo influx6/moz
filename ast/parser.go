@@ -169,7 +169,6 @@ func readTemplate(reader *bufio.Reader) string {
 		bu.WriteString(twoWord)
 	}
 
-	return bu.String()
 }
 
 func cleanWord(word []byte) []byte {

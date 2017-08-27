@@ -17,8 +17,9 @@ func CopyAnnotations(registry *ast.AnnotationRegistry) {
 }
 
 // CopyAnnotationsTo copies all default annotation to the provided AnnotationRegistry.
-func CopyAnnotationsTo(registry *ast.AnnotationRegistry) {
+func CopyAnnotationsTo(registry *ast.AnnotationRegistry) *ast.AnnotationRegistry {
 	registry.Copy(annotations, ast.OursOverTheirs)
+	return registry
 }
 
 // RegisterAnnotation which adds the generator depending on it's type into the appropriate

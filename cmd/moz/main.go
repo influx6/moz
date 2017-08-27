@@ -21,7 +21,10 @@ import (
 	_ "github.com/influx6/moz/annotations"
 )
 
-var events = metrics.New(stdout.Stdout{})
+var (
+	events      = metrics.New(stdout.Stdout{})
+	annotations = moz.CopyAnnotationsTo(ast.NewAnnotationRegistryWith(events))
+)
 
 // Version defines the version number for the cli.
 var Version = "0.1"
@@ -275,7 +278,9 @@ func generateFileCLI(c *cli.Context) {
 		return
 	}
 
-	if err := moz.Parse(toDir, events, forceWrite, pkg); err != nil {
+	events.Emit(stdout.Info("Begin Annotation Execution").With("toDir", toDir).With("fromFile", fromFile))
+
+	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg); err != nil {
 		events.Emit(stdout.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
@@ -312,7 +317,9 @@ func generatePackageCLI(c *cli.Context) {
 		return
 	}
 
-	if err := moz.Parse(toDir, events, forceWrite, pkgs...); err != nil {
+	events.Emit(stdout.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir))
+
+	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkgs...); err != nil {
 		events.Emit(stdout.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 

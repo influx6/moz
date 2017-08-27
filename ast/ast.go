@@ -397,9 +397,14 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFi
 
 // ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
+	log.Emit(stdout.Info("Begin ParsePackage").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkgDeclrs.Package))
+
 	{
 	parseloop:
 		for _, pkg := range pkgDeclrs.Packages {
+			log.Emit(stdout.Info("ParsePackage: Parse PackageDeclaration").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkg.Package).
+				With("From", pkg.FilePath))
+
 			wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
 			if err != nil {
 				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
@@ -407,9 +412,10 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 				continue
 			}
 
-			log.Emit(stdout.Info("ParseSuccess: Package %q", pkg.Package).With("package", pkg.Package))
+			log.Emit(stdout.Info("ParseSuccess").With("From", pkg.FilePath).With("package", pkg.Package).With("Directives", len(wdrs)))
 
 			for _, item := range wdrs {
+				log.Emit(stdout.Info("WriteFile", item.FileName).With("FromAnnotation", item.Annotation).With("From", pkg.FilePath).With("package", pkg.Package))
 
 				if filepath.IsAbs(item.Dir) {
 					log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
@@ -1391,6 +1397,7 @@ type Annotations struct {
 // AnnotationRegistry defines a structure which contains giving list of possible
 // annotation generators for both package level and type level declaration.
 type AnnotationRegistry struct {
+	metrics              metrics.Metrics
 	ml                   sync.RWMutex
 	typeAnnotations      map[string]TypeAnnotationGenerator
 	structAnnotations    map[string]StructAnnotationGenerator
@@ -1401,6 +1408,18 @@ type AnnotationRegistry struct {
 // NewAnnotationRegistry returns a new instance of a AnnotationRegistry.
 func NewAnnotationRegistry() *AnnotationRegistry {
 	return &AnnotationRegistry{
+		metrics:              metrics.New(),
+		typeAnnotations:      make(map[string]TypeAnnotationGenerator),
+		structAnnotations:    make(map[string]StructAnnotationGenerator),
+		pkgAnnotations:       make(map[string]PackageAnnotationGenerator),
+		interfaceAnnotations: make(map[string]InterfaceAnnotationGenerator),
+	}
+}
+
+// NewAnnotationRegistryWith returns a new instance of a AnnotationRegistry.
+func NewAnnotationRegistryWith(log metrics.Metrics) *AnnotationRegistry {
+	return &AnnotationRegistry{
+		metrics:              log,
 		typeAnnotations:      make(map[string]TypeAnnotationGenerator),
 		structAnnotations:    make(map[string]StructAnnotationGenerator),
 		pkgAnnotations:       make(map[string]PackageAnnotationGenerator),
@@ -1507,15 +1526,32 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	// Generate directives for package level
 	for _, annotation := range declr.Annotations {
+		a.metrics.Emit(stdout.Info("Directive Generation").
+			With("Level", "Package").With("Annotaton", annotation.Name).With("Params", annotation.Params).With("Arguments", annotation.Arguments).With("Template", annotation.Template))
+
 		generator, err := a.GetPackage(annotation.Name)
 		if err != nil {
+			a.metrics.Emit(stdout.Error("Directive Generation").
+				With("error", err).
+				With("Level", "Package").With("Annotaton", annotation.Name).With("Params", annotation.Params).With("Arguments", annotation.Arguments).With("Template", annotation.Template))
 			continue
 		}
 
 		drs, err := generator(toDir, annotation, declr, pkg)
 		if err != nil {
+			a.metrics.Emit(stdout.Error("Directive Generation").
+				With("error", err).
+				With("Level", "Package").With("Annotaton", annotation.Name).With("Params", annotation.Params).With("Arguments", annotation.Arguments).With("Template", annotation.Template))
 			return nil, err
 		}
+
+		a.metrics.Emit(stdout.Info("Directive Generation: Success").
+			With("Level", "Package").
+			With("Directive", len(drs)).
+			With("Annotaton", annotation.Name).
+			With("Params", annotation.Params).
+			With("Arguments", annotation.Arguments).
+			With("Template", annotation.Template))
 
 		for _, directive := range drs {
 			directives = append(directives, AnnotationWriteDirective{
@@ -1527,15 +1563,48 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	for _, inter := range declr.Interfaces {
 		for _, annotation := range inter.Annotations {
+			a.metrics.Emit(stdout.Info("Directive Generation").
+				With("Level", "Interface").
+				With("Annotaton", annotation.Name).
+				With("Interface", inter.Object.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
+
 			generator, err := a.GetInterfaceType(annotation.Name)
 			if err != nil {
+				a.metrics.Emit(stdout.Error("Directive Generation").
+					With("error", err).
+					With("Level", "Interface").
+					With("Annotaton", annotation.Name).
+					With("Interface", inter.Object.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
 				continue
 			}
 
 			drs, err := generator(toDir, annotation, inter, declr, pkg)
 			if err != nil {
+				a.metrics.Emit(stdout.Error("Directive Generation").
+					With("error", err).
+					With("Level", "Interface").
+					With("Annotaton", annotation.Name).
+					With("Interface", inter.Object.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
 				return nil, err
 			}
+
+			a.metrics.Emit(stdout.Info("Directive Generation: Success").
+				With("Level", "Struct").
+				With("Directive", len(drs)).
+				With("Annotaton", annotation.Name).
+				With("nterface", inter.Object.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
 
 			for _, directive := range drs {
 				directives = append(directives, AnnotationWriteDirective{
@@ -1548,15 +1617,48 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	for _, structs := range declr.Structs {
 		for _, annotation := range structs.Annotations {
+			a.metrics.Emit(stdout.Info("Directive Generation").
+				With("Level", "Struct").
+				With("Annotaton", annotation.Name).
+				With("Struct", structs.Object.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
+
 			generator, err := a.GetStructType(annotation.Name)
 			if err != nil {
+				a.metrics.Emit(stdout.Error("Directive Generation").
+					With("error", err).
+					With("Level", "Struct").
+					With("Annotaton", annotation.Name).
+					With("Struct", structs.Object.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
 				continue
 			}
 
 			drs, err := generator(toDir, annotation, structs, declr, pkg)
 			if err != nil {
+				a.metrics.Emit(stdout.Error("Directive Generation").
+					With("error", err).
+					With("Level", "Struct").
+					With("Annotaton", annotation.Name).
+					With("Struct", structs.Object.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
 				return nil, err
 			}
+
+			a.metrics.Emit(stdout.Info("Directive Generation: Success").
+				With("Level", "Struct").
+				With("Directive", len(drs)).
+				With("Annotaton", annotation.Name).
+				With("Struct", structs.Object.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
 
 			for _, directive := range drs {
 				directives = append(directives, AnnotationWriteDirective{
@@ -1569,15 +1671,48 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	for _, typ := range declr.Types {
 		for _, annotation := range typ.Annotations {
+			a.metrics.Emit(stdout.Info("Directive Generation").
+				With("Level", "Type").
+				With("Annotaton", annotation.Name).
+				With("Type", typ.Object.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
+
 			generator, err := a.GetType(annotation.Name)
 			if err != nil {
+				a.metrics.Emit(stdout.Error("Directive Generation").
+					With("error", err).
+					With("Level", "Type").
+					With("Annotaton", annotation.Name).
+					With("Type", typ.Object.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
 				continue
 			}
 
 			drs, err := generator(toDir, annotation, typ, declr, pkg)
 			if err != nil {
+				a.metrics.Emit(stdout.Error("Directive Generation").
+					With("error", err).
+					With("Level", "Type").
+					With("Annotaton", annotation.Name).
+					With("Type", typ.Object.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
 				return nil, err
 			}
+
+			a.metrics.Emit(stdout.Info("Directive Generation: Success").
+				With("Level", "Type").
+				With("Directive", len(drs)).
+				With("Annotaton", annotation.Name).
+				With("Type", typ.Object.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
 
 			for _, directive := range drs {
 				directives = append(directives, AnnotationWriteDirective{
