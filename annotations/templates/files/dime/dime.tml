@@ -729,8 +729,8 @@ type {{ sel "Name" }}Distributor struct {
 	sendWaitBeforeAbort time.Duration
 }
 
-// New{{sel "Name"}}Disributor returns a new instance of a {{ sel "Name" }}Distributor.
-func New{{sel "Name"}}Disributor(buffer int, sendWaitBeforeAbort time.Duration) *{{ sel "Name" }}Distributor {
+// New{{sel "Name"}}Distributor returns a new instance of a {{ sel "Name" }}Distributor.
+func New{{sel "Name"}}Distributor(buffer int, sendWaitBeforeAbort time.Duration) *{{ sel "Name" }}Distributor {
 	if sendWaitBeforeAbort <= 0 {
 		sendWaitBeforeAbort = defaultSendWithBeforeAbort
 	}
