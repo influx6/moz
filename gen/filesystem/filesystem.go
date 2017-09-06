@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"path"
 	"time"
@@ -37,6 +38,13 @@ func Meta(name string, val interface{}) MetaOption {
 	}
 }
 
+// MetaText sets the key(name) to the val in a map.
+func MetaText(name string, message string, vals ...interface{}) MetaOption {
+	return func(meta map[string]interface{}) {
+		meta[name] = fmt.Sprintf(message, vals...)
+	}
+}
+
 // Version sets the "version" key to the provided string in a map.
 func Version(ver string) MetaOption {
 	return func(meta map[string]interface{}) {
@@ -45,9 +53,9 @@ func Version(ver string) MetaOption {
 }
 
 // Description sets the "description" key to the provided string in a map.
-func Description(desc string) MetaOption {
+func Description(desc string, items ...interface{}) MetaOption {
 	return func(meta map[string]interface{}) {
-		meta["description"] = desc
+		meta["description"] = fmt.Sprintf(desc, items...)
 	}
 }
 

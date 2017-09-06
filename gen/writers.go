@@ -33,7 +33,7 @@ func (fm *FromReader) WriteTo(w io.Writer) (int64, error) {
 		}
 
 		if read >= dataSize {
-			written, err := w.Write(data)
+			written, err := w.Write(data[:read])
 			if err != nil {
 				return totalWritten, err
 			}

@@ -5,7 +5,7 @@ directories and files, represented by a composition of functions.
 
 
 ## API
-To create an in-memory file system with simple
+To create an in-memory file system with simple function composition.
 
 ```go
 dockerFS = FileSystem(
