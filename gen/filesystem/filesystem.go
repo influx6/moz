@@ -6,9 +6,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/influx6/moz/gen"
@@ -126,6 +128,61 @@ func Dir(name string, files ...interface{}) DirWriter {
 	return dir
 }
 
+// GetDir returns the associated DirWriter for the giving relative filepath.
+// Absolute path will be rejected.
+func (dirs DirWriter) GetDir(dirPath string) (DirWriter, error) {
+	if path.IsAbs(dirPath) {
+		return DirWriter{}, errors.New("Absolute paths not allowed")
+	}
+
+	if dirPath == "" || dirPath == "." {
+		return dirs, nil
+	}
+
+	levels := strings.Split(dirPath, "/")
+	initial := levels[0]
+	rest := path.Join(levels[1:]...)
+
+	for _, dir := range dirs.ChildDirs {
+		if dir.Name == initial {
+			return dir.GetDir(rest)
+		}
+	}
+
+	return DirWriter{}, fmt.Errorf("Dir %q not found in %q", initial, dirs.Name)
+}
+
+// GetFile returns the associated FileWriter for the giving relative filepath.
+// Absolute path will be rejected.
+func (dirs DirWriter) GetFile(filePath string) (FileWriter, error) {
+	if path.IsAbs(filePath) {
+		return FileWriter{}, errors.New("Absolute paths not allowed")
+	}
+
+	filedir, fileName := path.Split(filePath)
+	if filedir == "" || filedir == "." {
+		for _, file := range dirs.ChildFiles {
+			if file.Name == fileName {
+				return file, nil
+			}
+		}
+
+		return FileWriter{}, fmt.Errorf("File %q not found in %q", fileName, dirs.Name)
+	}
+
+	levels := strings.Split(filedir, "/")
+	initial := levels[0]
+	rest := path.Join(append(levels[1:], fileName)...)
+
+	for _, dir := range dirs.ChildDirs {
+		if dir.Name == initial {
+			return dir.GetFile(rest)
+		}
+	}
+
+	return FileWriter{}, fmt.Errorf("File %q not found in %q", fileName, dirs.Name)
+}
+
 // Files runs through all child directory returning appropriate path and
 // current item associated for that DirWriter.
 func (dirs DirWriter) Files(rootDir string, cb func(hostFilePath string, hostFile FileWriter) error) error {
@@ -174,6 +231,18 @@ func FileSystem(content ...interface{}) MemoryFileSystem {
 	}
 
 	return fsw
+}
+
+// GetDir returns the associated FileWriter for the giving relative filepath.
+// Absolute path will be rejected.
+func (mfs MemoryFileSystem) GetDir(dirPath string) (DirWriter, error) {
+	return mfs.Dir.GetDir(dirPath)
+}
+
+// GetFile returns the associated FileWriter for the giving relative filepath.
+// Absolute path will be rejected.
+func (mfs MemoryFileSystem) GetFile(filePath string) (FileWriter, error) {
+	return mfs.Dir.GetFile(filePath)
 }
 
 // Dirs runs through all filesystem child directories

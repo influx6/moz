@@ -11,14 +11,19 @@ var (
 
 // FromReader implements io.WriterTo by wrapping a provided io.Reader.
 type FromReader struct {
-	R io.Reader
+	R             io.Reader
+	ReadBlockSize int
 }
 
 // WriteTo implements io.WriterTo.
 func (fm *FromReader) WriteTo(w io.Writer) (int64, error) {
+	if fm.ReadBlockSize <= 0 {
+		fm.ReadBlockSize = dataSize
+	}
+
 	buf := bufio.NewReader(fm.R)
 
-	data := make([]byte, dataSize)
+	data := make([]byte, fm.ReadBlockSize)
 
 	var totalWritten int64
 
