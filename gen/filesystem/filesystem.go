@@ -281,6 +281,13 @@ func runThroughFiles(base DirWriter, rootDir string, cb func(hostDirPath string,
 
 //======================================================================================
 
+// Filesystem defines a interface which expose a an underline compressed/uncompressed filesystem which can
+// be written out into a writer or produce a reader for reading has a single binary stream of bytes.
+type Filesystem interface {
+	io.WriterTo
+	ToReader() (io.Reader, error)
+}
+
 // JSONFileSystem implements io.WriteTo and transforms the MemoryFileSystem into a
 // json hashmap using the encoding/json encoders.
 type JSONFileSystem struct {
