@@ -293,6 +293,17 @@ func JSONFS(fs MemoryFileSystem, indent bool) JSONFileSystem {
 	return JSONFileSystem{FS: fs, indent: indent}
 }
 
+// ToReader returns a new reader from the contents of the GzipTarFileSystem.
+// Each reader is unique and contains a complete data of all contents.
+func (jfs *JSONFileSystem) ToReader() (io.Reader, error) {
+	var comBuff bytes.Buffer
+	if _, err := jfs.WriteTo(&comBuff); err != nil {
+		return nil, err
+	}
+
+	return &comBuff, nil
+}
+
 // WriteTo implements io.WriterTo interface.
 func (jfs *JSONFileSystem) WriteTo(w io.Writer) (int64, error) {
 	archive := make(map[string]string)
@@ -348,6 +359,17 @@ type ZipFileSystem struct {
 // ZipFS returns a new instance of the ZipFileSystem.
 func ZipFS(fs MemoryFileSystem) ZipFileSystem {
 	return ZipFileSystem{FS: fs}
+}
+
+// ToReader returns a new reader from the contents of the GzipTarFileSystem.
+// Each reader is unique and contains a complete data of all contents.
+func (zfs *ZipFileSystem) ToReader() (io.Reader, error) {
+	var comBuff bytes.Buffer
+	if _, err := zfs.WriteTo(&comBuff); err != nil {
+		return nil, err
+	}
+
+	return &comBuff, nil
 }
 
 // WriteTo implements io.WriterTo interface.
@@ -406,6 +428,17 @@ func TarFS(fs MemoryFileSystem) TarFileSystem {
 	return TarFileSystem{FS: fs}
 }
 
+// ToReader returns a new reader from the contents of the GzipTarFileSystem.
+// Each reader is unique and contains a complete data of all contents.
+func (tfs *TarFileSystem) ToReader() (io.Reader, error) {
+	var comBuff bytes.Buffer
+	if _, err := tfs.WriteTo(&comBuff); err != nil {
+		return nil, err
+	}
+
+	return &comBuff, nil
+}
+
 // WriteTo implements io.WriterTo interface.
 func (tfs *TarFileSystem) WriteTo(w io.Writer) (int64, error) {
 	archive := tar.NewWriter(w)
@@ -445,6 +478,17 @@ type GzipTarFileSystem struct {
 // GzipTarFS returns a new instance of the GzipTarFileSystem.
 func GzipTarFS(fs MemoryFileSystem) GzipTarFileSystem {
 	return GzipTarFileSystem{FS: fs}
+}
+
+// ToReader returns a new reader from the contents of the GzipTarFileSystem.
+// Each reader is unique and contains a complete data of all contents.
+func (gfs *GzipTarFileSystem) ToReader() (io.Reader, error) {
+	var comBuff bytes.Buffer
+	if _, err := gfs.WriteTo(&comBuff); err != nil {
+		return nil, err
+	}
+
+	return &comBuff, nil
 }
 
 // WriteTo implements io.WriterTo interface.
