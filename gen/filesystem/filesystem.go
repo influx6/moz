@@ -405,6 +405,10 @@ func (zfs ZipFileSystem) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 
+	if err := archive.Flush(); err != nil {
+		return 0, err
+	}
+
 	return totalWritten, nil
 }
 
@@ -471,6 +475,10 @@ func (tfs TarFileSystem) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 
+	if err := archive.Flush(); err != nil {
+		return 0, err
+	}
+
 	return totalWritten, nil
 }
 
@@ -520,6 +528,10 @@ func (gfs GzipTarFileSystem) WriteTo(w io.Writer) (int64, error) {
 		totalWritten += total
 		return err
 	}); err != nil {
+		return 0, err
+	}
+
+	if err := archive.Flush(); err != nil {
 		return 0, err
 	}
 
