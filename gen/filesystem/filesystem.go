@@ -508,7 +508,10 @@ func (gfs GzipTarFileSystem) ToReader() (io.Reader, error) {
 
 // WriteTo implements io.WriterTo interface.
 func (gfs GzipTarFileSystem) WriteTo(w io.Writer) (int64, error) {
-	archive := tar.NewWriter(gzip.NewWriter(w))
+	gzw := gzip.NewWriter(w)
+	archive := tar.NewWriter(gzw)
+
+	defer gzw.Close()
 	defer archive.Close()
 
 	var totalWritten int64
@@ -532,6 +535,10 @@ func (gfs GzipTarFileSystem) WriteTo(w io.Writer) (int64, error) {
 	}
 
 	if err := archive.Flush(); err != nil {
+		return 0, err
+	}
+
+	if err := gzw.Flush(); err != nil {
 		return 0, err
 	}
 
