@@ -442,11 +442,11 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 	var directives []gen.WriteDirective
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	//genID := strings.ToLower(targetTemplater.Params["id"])
+	name := strings.ToLower(targetTemplater.Params["name"])
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
-		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(genName))
+		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(name))
 	}
 
 	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
@@ -610,7 +610,6 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 	var directives []gen.WriteDirective
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	//genID := strings.ToLower(targetTemplater.Params["id"])
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
