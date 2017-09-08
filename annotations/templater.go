@@ -440,9 +440,15 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 	}
 
 	var directives []gen.WriteDirective
+	var name string
 
 	genName := strings.ToLower(targetTemplater.Params["gen"])
-	name := strings.ToLower(targetTemplater.Params["name"])
+
+	if paramName, ok := an.Params["Name"]; ok {
+		name = strings.ToLower(paramName)
+	} else {
+		name = strings.ToLower(an.Params["name"])
+	}
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
