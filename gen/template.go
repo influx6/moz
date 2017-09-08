@@ -26,6 +26,12 @@ var (
 
 			return strings.ToUpper(b[:1]) + b[1:]
 		},
+		"notempty": func(b string) bool {
+			return strings.TrimSpace(b) != ""
+		},
+		"empty": func(b string) bool {
+			return strings.TrimSpace(b) == ""
+		},
 		"title": func(b string) string {
 			return strings.ToTitle(b)
 		},
