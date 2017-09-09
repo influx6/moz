@@ -66,7 +66,7 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 		params := make(map[string]string, 0)
 
 		if !strings.Contains(trimmedline, "(") {
-			annotations = append(annotations, AnnotationDeclaration{Name: trimmedline, Params: params})
+			annotations = append(annotations, AnnotationDeclaration{Name: trimmedline, Params: params, Attrs: make(map[string]interface{})})
 			continue
 		}
 
@@ -113,6 +113,7 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 				Name:      argName,
 				Params:    params,
 				Defer:     deferred,
+				Attrs:     make(map[string]interface{}),
 			})
 
 			continue
