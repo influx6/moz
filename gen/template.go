@@ -114,30 +114,7 @@ var (
 		"notequal": func(b, a interface{}) bool {
 			return b != a
 		},
-		"quote": func(b interface{}) string {
-			switch bo := b.(type) {
-			case string:
-				return strconv.Quote(bo)
-			case int:
-				return strconv.Quote(strconv.Itoa(bo))
-			case bool:
-				return strconv.Quote(strconv.FormatBool(bo))
-			case int64:
-				return strconv.Quote(strconv.Itoa(int(bo)))
-			case float32:
-				mo := strconv.FormatFloat(float64(bo), 'f', 4, 32)
-				return strconv.Quote(mo)
-			case float64:
-				mo := strconv.FormatFloat(bo, 'f', 4, 32)
-				return strconv.Quote(mo)
-			case byte:
-				return strconv.QuoteRune(rune(bo))
-			case rune:
-				return strconv.QuoteRune(bo)
-			default:
-				return "Unconvertible Type"
-			}
-		},
+		"quote": quote,
 		"prefixInt": func(prefix string, b int) string {
 			return fmt.Sprintf("%s%d", prefix, b)
 		},
@@ -165,33 +142,66 @@ var (
 		"divide": func(a, b int) int {
 			return a / b
 		},
-		"len": func(b interface{}) int {
-			switch bo := b.(type) {
-			case []string:
-				return len(bo)
-			case string:
-				return len(bo)
-			case []int:
-				return len(bo)
-			case []bool:
-				return len(bo)
-			case []int64:
-				return len(bo)
-			case []float32:
-				return len(bo)
-			case []float64:
-				return len(bo)
-			case []byte:
-				return len(bo)
-			default:
-				return 0
-			}
+		"lenNotEqual": func(b interface{}, target int) bool {
+			return lenOff(b) != target
 		},
+		"lenEqual": func(b interface{}, target int) bool {
+			return lenOff(b) == target
+		},
+		"lenOf": lenOff,
 		"percentage": func(a, b float64) float64 {
 			return (a / b) * 100
 		},
 	}
 )
+
+func quote(b interface{}) string {
+	switch bo := b.(type) {
+	case string:
+		return strconv.Quote(bo)
+	case int:
+		return strconv.Quote(strconv.Itoa(bo))
+	case bool:
+		return strconv.Quote(strconv.FormatBool(bo))
+	case int64:
+		return strconv.Quote(strconv.Itoa(int(bo)))
+	case float32:
+		mo := strconv.FormatFloat(float64(bo), 'f', 4, 32)
+		return strconv.Quote(mo)
+	case float64:
+		mo := strconv.FormatFloat(bo, 'f', 4, 32)
+		return strconv.Quote(mo)
+	case byte:
+		return strconv.QuoteRune(rune(bo))
+	case rune:
+		return strconv.QuoteRune(bo)
+	default:
+		return "Unconvertible Type"
+	}
+}
+
+func lenOff(b interface{}) int {
+	switch bo := b.(type) {
+	case []string:
+		return len(bo)
+	case string:
+		return len(bo)
+	case []int:
+		return len(bo)
+	case []bool:
+		return len(bo)
+	case []int64:
+		return len(bo)
+	case []float32:
+		return len(bo)
+	case []float64:
+		return len(bo)
+	case []byte:
+		return len(bo)
+	default:
+		return 0
+	}
+}
 
 // ToTemplateFuncs returns a template.FuncMap which is a union of all key and values
 // from the provided map. It does not check for function type and will override any previos
