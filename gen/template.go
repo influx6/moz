@@ -65,6 +65,13 @@ var (
 		"join": func(vals []string, jn string) string {
 			return strings.Join(vals, jn)
 		},
+		"joinInterface": func(vals []interface{}, jn string) string {
+			var items []string
+			for _, val := range vals {
+				items = append(items, fmt.Sprintf("%+s", val))
+			}
+			return strings.Join(items, jn)
+		},
 		"joinSlice": func(vals []string, jn string) string {
 			return strings.Join(vals, jn)
 		},
