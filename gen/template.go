@@ -148,10 +148,11 @@ var (
 		"lenEqual": func(b interface{}, target int) bool {
 			return lenOff(b) == target
 		},
-		"lenOf": lenOff,
 		"percentage": func(a, b float64) float64 {
 			return (a / b) * 100
 		},
+		"lenOf": lenOff,
+		"nthOf": nthOf,
 	}
 )
 
@@ -180,8 +181,62 @@ func quote(b interface{}) string {
 	}
 }
 
+func nthOf(b interface{}, index int) (val interface{}) {
+	switch bo := b.(type) {
+	case []interface{}:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []string:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case string:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []int:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []bool:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []int64:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []float32:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []float64:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	case []byte:
+		if index >= len(bo) {
+			return
+		}
+		val = bo[index]
+	}
+
+	return
+}
+
 func lenOff(b interface{}) int {
 	switch bo := b.(type) {
+	case []interface{}:
+		return len(bo)
 	case []string:
 		return len(bo)
 	case string:
