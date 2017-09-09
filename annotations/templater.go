@@ -21,14 +21,6 @@ var (
 	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterInterfaceTypesForAnnotationGenerator)
 )
 
-// TypeMap defines a map type of a giving series of key-value pairs.
-type TypeMap map[string]string
-
-// Get returns the value associated with the giving key.
-func (t TypeMap) Get(key string) string {
-	return t[key]
-}
-
 // TemplaterStructTypesForAnnotationGenerator defines a struct level annotation generator which builds a go package in
 // root of the package by using the content it receives from the annotation has a template for its output.
 // package.
@@ -58,145 +50,17 @@ func (t TypeMap) Get(key string) string {
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.StructDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterID, ok := an.Params["id"]
-	if !ok {
-		return nil, errors.New("No templater id provided")
-	}
-
-	// Get all templaters AnnotationDeclaration.
-	templaters := pkg.AnnotationsFor("templater")
-
-	var targetTemplater ast.AnnotationDeclaration
-
-	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
-	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterID {
-			continue
-		}
-
-		break
-	}
-
-	var templateData string
-
-	switch len(targetTemplater.Template) == 0 {
-	case true:
-		templateFilePath, ok := targetTemplater.Params["file"]
-		if !ok && targetTemplater.Template == "" {
-			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
-		}
-
-		baseDir := filepath.Dir(pkgDeclr.FilePath)
-		templateFile := filepath.Join(baseDir, templateFilePath)
-
-		data, err := ioutil.ReadFile(templateFile)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to find template file: %+q", err)
-		}
-
-		templateData = string(data)
-	case false:
-		templateData = targetTemplater.Template
-	}
-
-	var directives []gen.WriteDirective
-
-	genName := strings.ToLower(targetTemplater.Params["gen"])
-	//genID := strings.ToLower(targetTemplater.Params["id"])
-
-	fileName, ok := an.Params["filename"]
-	if !ok {
-		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(ty.Object.Name.Name))
-	}
-
-	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
-		"sel": TypeMap(an.Params).Get,
-	}, struct {
-		TemplateParams     TypeMap
-		TemplateForParams  TypeMap
-		TypeForAnnotation  ast.AnnotationDeclaration
-		TemplateAnnotation ast.AnnotationDeclaration
-		StructDeclr        ast.StructDeclaration
-		Package            ast.Package
+	return handleGeneration(toDir, an, pkgDeclr, pkg, struct {
+		Annotation  ast.AnnotationDeclaration
+		PkgDeclr    ast.PackageDeclaration
+		Package     ast.Package
+		StructDeclr ast.StructDeclaration
 	}{
-		StructDeclr:        ty,
-		Package:            pkg,
-		TypeForAnnotation:  an,
-		TemplateAnnotation: targetTemplater,
-		TemplateParams:     TypeMap(targetTemplater.Params),
-		TemplateForParams:  TypeMap(an.Params),
-	}))
-
-	switch genName {
-	case "partial_test.go":
-
-		var packageName string
-
-		switch len(an.Params["packageName"]) == 0 {
-		case true:
-			packageName = ast.WhichPackage(toDir, pkg)
-		case false:
-			packageName = targetTemplater.Params["packageName"]
-		}
-
-		packageName = fmt.Sprintf("%s_test", packageName)
-
-		pkgGen := gen.Block(
-
-			gen.Package(
-				gen.Name(packageName),
-				typeGen,
-			),
-		)
-
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-			Writer:       fmtwriter.New(pkgGen, true, true),
-		})
-
-	case "partial.go":
-
-		var packageName string
-
-		switch len(an.Params["packageName"]) == 0 {
-		case true:
-			packageName = ast.WhichPackage(toDir, pkg)
-		case false:
-			packageName = targetTemplater.Params["packageName"]
-		}
-
-		pkgGen := gen.Block(
-
-			gen.Package(
-				gen.Name(packageName),
-				typeGen,
-			),
-		)
-
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-			Writer:       fmtwriter.New(pkgGen, true, true),
-		})
-
-	case "go":
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-
-			Writer: fmtwriter.New(typeGen, true, true),
-		})
-
-	default:
-		directives = append(directives, gen.WriteDirective{
-			Writer:       typeGen,
-			DontOverride: true,
-			FileName:     fileName,
-		})
-	}
-
-	return directives, nil
+		PkgDeclr:    pkgDeclr,
+		Annotation:  an,
+		Package:     pkg,
+		StructDeclr: ty,
+	})
 }
 
 // TemplaterInterfaceTypesForAnnotationGenerator defines a package level annotation generator which builds a go package in
@@ -228,145 +92,17 @@ func TemplaterStructTypesForAnnotationGenerator(toDir string, an ast.AnnotationD
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.InterfaceDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterID, ok := an.Params["id"]
-	if !ok {
-		return nil, errors.New("No templater id provided")
-	}
-
-	// Get all templaters AnnotationDeclaration.
-	templaters := pkg.AnnotationsFor("templater")
-
-	var targetTemplater ast.AnnotationDeclaration
-
-	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
-	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterID {
-			continue
-		}
-
-		break
-	}
-
-	var templateData string
-
-	switch len(targetTemplater.Template) == 0 {
-	case true:
-		templateFilePath, ok := targetTemplater.Params["file"]
-		if !ok && targetTemplater.Template == "" {
-			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
-		}
-
-		baseDir := filepath.Dir(pkgDeclr.FilePath)
-		templateFile := filepath.Join(baseDir, templateFilePath)
-
-		data, err := ioutil.ReadFile(templateFile)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to find template file: %+q", err)
-		}
-
-		templateData = string(data)
-	case false:
-		templateData = targetTemplater.Template
-	}
-
-	var directives []gen.WriteDirective
-
-	genName := strings.ToLower(targetTemplater.Params["gen"])
-	//genID := strings.ToLower(targetTemplater.Params["id"])
-
-	fileName, ok := an.Params["filename"]
-	if !ok {
-		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(ty.Object.Name.Name))
-	}
-
-	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
-		"sel": TypeMap(an.Params).Get,
-	}, struct {
-		TemplateParams     TypeMap
-		TemplateForParams  TypeMap
-		TypeForAnnotation  ast.AnnotationDeclaration
-		TemplateAnnotation ast.AnnotationDeclaration
-		InterfaceDeclr     ast.InterfaceDeclaration
-		Package            ast.Package
+	return handleGeneration(toDir, an, pkgDeclr, pkg, struct {
+		Annotation     ast.AnnotationDeclaration
+		PkgDeclr       ast.PackageDeclaration
+		Package        ast.Package
+		InterfaceDeclr ast.InterfaceDeclaration
 	}{
-		InterfaceDeclr:     ty,
-		Package:            pkg,
-		TypeForAnnotation:  an,
-		TemplateAnnotation: targetTemplater,
-		TemplateParams:     TypeMap(targetTemplater.Params),
-		TemplateForParams:  TypeMap(an.Params),
-	}))
-
-	switch genName {
-	case "partial_test.go":
-
-		var packageName string
-
-		switch len(an.Params["packageName"]) == 0 {
-		case true:
-			packageName = ast.WhichPackage(toDir, pkg)
-		case false:
-			packageName = targetTemplater.Params["packageName"]
-		}
-
-		packageName = fmt.Sprintf("%s_test", packageName)
-
-		pkgGen := gen.Block(
-
-			gen.Package(
-				gen.Name(packageName),
-				typeGen,
-			),
-		)
-
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-			Writer:       fmtwriter.New(pkgGen, true, true),
-		})
-
-	case "partial.go":
-
-		var packageName string
-
-		switch len(an.Params["packageName"]) == 0 {
-		case true:
-			packageName = ast.WhichPackage(toDir, pkg)
-		case false:
-			packageName = targetTemplater.Params["packageName"]
-		}
-
-		pkgGen := gen.Block(
-
-			gen.Package(
-				gen.Name(packageName),
-				typeGen,
-			),
-		)
-
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-
-			Writer: fmtwriter.New(pkgGen, true, true),
-		})
-
-	case "go":
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-			Writer:       fmtwriter.New(typeGen, true, true),
-		})
-
-	default:
-		directives = append(directives, gen.WriteDirective{
-			Writer:       typeGen,
-			DontOverride: true,
-			FileName:     fileName,
-		})
-	}
-
-	return directives, nil
+		PkgDeclr:       pkgDeclr,
+		Annotation:     an,
+		Package:        pkg,
+		InterfaceDeclr: ty,
+	})
 }
 
 // TemplaterPackageTypesForAnnotationGenerator defines a package level annotation generator which builds a go package in
@@ -398,149 +134,15 @@ func TemplaterInterfaceTypesForAnnotationGenerator(toDir string, an ast.Annotati
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
-	templaterID, ok := an.Params["id"]
-	if !ok {
-		return nil, errors.New("No templater id provided")
-	}
-
-	// Get all templaters AnnotationDeclaration.
-	templaters := pkg.AnnotationsFor("templater")
-
-	var targetTemplater ast.AnnotationDeclaration
-
-	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
-	for _, targetTemplater = range templaters {
-		if targetTemplater.Params["id"] != templaterID {
-			continue
-		}
-
-		break
-	}
-
-	var templateData string
-
-	switch len(targetTemplater.Template) == 0 {
-	case true:
-		templateFilePath, ok := targetTemplater.Params["file"]
-		if !ok && targetTemplater.Template == "" {
-			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
-		}
-
-		baseDir := filepath.Dir(pkgDeclr.FilePath)
-		templateFile := filepath.Join(baseDir, templateFilePath)
-
-		data, err := ioutil.ReadFile(templateFile)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to find template file: %+q", err)
-		}
-
-		templateData = string(data)
-	case false:
-		templateData = targetTemplater.Template
-	}
-
-	var directives []gen.WriteDirective
-	var name string
-
-	genName := strings.ToLower(targetTemplater.Params["gen"])
-
-	if paramName, ok := an.Params["Name"]; ok {
-		name = strings.ToLower(paramName)
-	} else {
-		name = strings.ToLower(an.Params["name"])
-	}
-
-	fileName, ok := an.Params["filename"]
-	if !ok {
-		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(name))
-	}
-
-	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
-		"sel": TypeMap(an.Params).Get,
-	}, struct {
-		TemplateParams     TypeMap
-		TemplateForParams  TypeMap
-		TypeForAnnotation  ast.AnnotationDeclaration
-		TemplateAnnotation ast.AnnotationDeclaration
-		Package            ast.Package
+	return handleGeneration(toDir, an, pkgDeclr, pkg, struct {
+		Annotation ast.AnnotationDeclaration
+		PkgDeclr   ast.PackageDeclaration
+		Package    ast.Package
 	}{
-		Package:            pkg,
-		TypeForAnnotation:  an,
-		TemplateAnnotation: targetTemplater,
-		TemplateParams:     TypeMap(targetTemplater.Params),
-		TemplateForParams:  TypeMap(an.Params),
-	}))
-
-	switch genName {
-	case "partial_test.go":
-
-		var packageName string
-
-		switch len(an.Params["packageName"]) == 0 {
-		case true:
-			packageName = ast.WhichPackage(toDir, pkg)
-		case false:
-			packageName = targetTemplater.Params["packageName"]
-		}
-
-		packageName = fmt.Sprintf("%s_test", packageName)
-
-		pkgGen := gen.Block(
-
-			gen.Package(
-				gen.Name(packageName),
-				typeGen,
-			),
-		)
-
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-			Writer:       fmtwriter.New(pkgGen, true, true),
-		})
-
-	case "partial.go":
-
-		var packageName string
-
-		switch len(an.Params["packageName"]) == 0 {
-		case true:
-			packageName = ast.WhichPackage(toDir, pkg)
-		case false:
-			packageName = targetTemplater.Params["packageName"]
-		}
-
-		pkgGen := gen.Block(
-
-			gen.Package(
-				gen.Name(packageName),
-				typeGen,
-			),
-		)
-
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-			Writer:       fmtwriter.New(pkgGen, true, true),
-		})
-
-	case "go":
-		directives = append(directives, gen.WriteDirective{
-			FileName:     fileName,
-			DontOverride: true,
-
-			Writer: fmtwriter.New(typeGen, true, true),
-		})
-
-	default:
-		directives = append(directives, gen.WriteDirective{
-			Writer:       typeGen,
-			DontOverride: true,
-			FileName:     fileName,
-		})
-	}
-
-	return directives, nil
+		PkgDeclr:   pkgDeclr,
+		Annotation: an,
+		Package:    pkg,
+	})
 }
 
 // TemplaterTypesForAnnotationGenerator defines a package level annotation generator which builds a go package in
@@ -572,6 +174,20 @@ func TemplaterPackageTypesForAnnotationGenerator(toDir string, an ast.Annotation
 // @templaterTypesFor(id => Mob, filename => bib_gen.go, TYPE1 => int, TYPE2 => int, TYPE3 => int64)
 //
 func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, ty ast.TypeDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package) ([]gen.WriteDirective, error) {
+	return handleGeneration(toDir, an, pkgDeclr, pkg, struct {
+		Annotation ast.AnnotationDeclaration
+		TypeDeclr  ast.TypeDeclaration
+		Package    ast.Package
+		PkgDeclr   ast.PackageDeclaration
+	}{
+		Annotation: an,
+		TypeDeclr:  ty,
+		PkgDeclr:   pkgDeclr,
+		Package:    pkg,
+	})
+}
+
+func handleGeneration(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.PackageDeclaration, pkg ast.Package, binding interface{}) ([]gen.WriteDirective, error) {
 	templaterID, ok := an.Params["id"]
 	if !ok {
 		return nil, errors.New("No templater id provided")
@@ -579,7 +195,6 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 
 	// Get all templaters AnnotationDeclaration.
 	templaters := pkg.AnnotationsFor("templater")
-
 	var targetTemplater ast.AnnotationDeclaration
 
 	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
@@ -619,26 +234,28 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 
 	fileName, ok := an.Params["filename"]
 	if !ok {
-		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(ty.Object.Name.Name))
+		fileName = fmt.Sprintf("%s_impl_gen.go", strings.ToLower(an.Name))
 	}
 
 	typeGen := gen.Block(gen.SourceTextWith(templateData, template.FuncMap{
-		"sel": TypeMap(an.Params).Get,
-	}, struct {
-		TemplateParams     TypeMap
-		TemplateForParams  TypeMap
-		TypeForAnnotation  ast.AnnotationDeclaration
-		TemplateAnnotation ast.AnnotationDeclaration
-		TypeDeclr          ast.TypeDeclaration
-		Package            ast.Package
-	}{
-		TypeDeclr:          ty,
-		Package:            pkg,
-		TypeForAnnotation:  an,
-		TemplateAnnotation: targetTemplater,
-		TemplateParams:     TypeMap(targetTemplater.Params),
-		TemplateForParams:  TypeMap(an.Params),
-	}))
+		"sel":                 an.Param,
+		"param":               an.Param,
+		"attr":                an.Attr,
+		"hasArg":              an.HasArg,
+		"annotationDefer":     func() bool { return an.Defer },
+		"annotationTemplate":  func() string { return an.Template },
+		"annotationParams":    func() map[string]string { return an.Params },
+		"annotationAttrs":     func() map[string]interface{} { return an.Attrs },
+		"annotationArguments": func() []string { return an.Arguments },
+		"targetSel":           targetTemplater.Param,
+		"targetAttr":          targetTemplater.Attr,
+		"targetHasArg":        targetTemplater.HasArg,
+		"targetDefer":         func() bool { return targetTemplater.Defer },
+		"targetTemplate":      func() string { return targetTemplater.Template },
+		"targetArguments":     func() []string { return targetTemplater.Arguments },
+		"targetParams":        func() map[string]string { return targetTemplater.Params },
+		"targetAttrs":         func() map[string]interface{} { return targetTemplater.Attrs },
+	}, binding))
 
 	switch genName {
 	case "partial_test.go":
@@ -669,6 +286,7 @@ func TemplaterTypesForAnnotationGenerator(toDir string, an ast.AnnotationDeclara
 		})
 
 	case "partial.go":
+
 		var packageName string
 
 		switch len(an.Params["packageName"]) == 0 {
