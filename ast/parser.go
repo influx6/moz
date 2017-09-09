@@ -3,11 +3,43 @@ package ast
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"io"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+// AnnotationDeclaration defines a annotation type which holds detail about a giving annotation.
+type AnnotationDeclaration struct {
+	Name      string                 `json:"name"`
+	Template  string                 `json:"template"`
+	Arguments []string               `json:"arguments"`
+	Params    map[string]string      `json:"params"`
+	Attrs     map[string]interface{} `json:"attrs"`
+	Defer     bool                   `json:"defer"`
+}
+
+// HasArg returns true/false if the giving AnnotationDeclaration has a giving key in its Arguments.
+func (ad AnnotationDeclaration) HasArg(name string) bool {
+	for _, item := range ad.Arguments {
+		if item == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Param returns the associated  param value with giving key ("name").
+func (ad AnnotationDeclaration) Param(name string) string {
+	return ad.Params[name]
+}
+
+// Attrs returns the associated  param value with giving key ("name").
+func (ad AnnotationDeclaration) Attr(name string) interface{} {
+	return ad.Attrs[name]
+}
 
 // ReadAnnotationsFromCommentry returns a slice of all annotation passed from the provided list.
 func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
@@ -61,7 +93,8 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 				// If we are dealing with key value pairs then split, trimspace and set
 				// in params. We only expect 2 values, any more and we wont consider the rest.
 				if kvPieces := strings.Split(trimmed, "=>"); len(kvPieces) > 1 {
-					params[strings.TrimSpace(kvPieces[0])] = strings.TrimSpace(kvPieces[1])
+					val := strings.TrimSpace(kvPieces[1])
+					params[strings.TrimSpace(kvPieces[0])] = val
 				}
 			}
 
@@ -102,17 +135,42 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 			// If we are dealing with key value pairs then split, trimspace and set
 			// in params. We only expect 2 values, any more and we wont consider the rest.
 			if kvPieces := strings.Split(trimmed, "=>"); len(kvPieces) > 1 {
-				params[strings.TrimSpace(kvPieces[0])] = strings.TrimSpace(kvPieces[1])
+				val := strings.TrimSpace(kvPieces[1])
+
+				params[strings.TrimSpace(kvPieces[0])] = val
 			}
 		}
 
 		template := strings.TrimSpace(readTemplate(reader))
+
+		var asJSON bool
+		for _, item := range parts {
+			if item == "asJSON" {
+				asJSON = true
+				break
+			}
+		}
+
+		if _, ok := params["asJSON"]; ok {
+			asJSON = true
+		}
+
+		var attrs map[string]interface{}
+
+		if asJSON {
+			if err := json.Unmarshal([]byte(template), &attrs); err == nil {
+				template = ""
+			}
+		} else {
+			attrs = make(map[string]interface{})
+		}
 
 		annotations = append(annotations, AnnotationDeclaration{
 			Arguments: parts,
 			Name:      argName,
 			Template:  template,
 			Params:    params,
+			Attrs:     attrs,
 		})
 
 	}

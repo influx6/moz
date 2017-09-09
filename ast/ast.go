@@ -528,15 +528,6 @@ func WhichPackage(toDir string, pkg Package) string {
 
 //===========================================================================================================
 
-// AnnotationDeclaration defines a annotation type which holds detail about a giving annotation.
-type AnnotationDeclaration struct {
-	Name      string            `json:"name"`
-	Template  string            `json:"template"`
-	Arguments []string          `json:"arguments"`
-	Params    map[string]string `json:"params"`
-	Defer     bool              `json:"defer"`
-}
-
 // ImportDeclaration defines a type to contain import declaration within a package.
 type ImportDeclaration struct {
 	Name string `json:"name"`
