@@ -137,7 +137,6 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 			// in params. We only expect 2 values, any more and we wont consider the rest.
 			if kvPieces := strings.Split(trimmed, "=>"); len(kvPieces) > 1 {
 				val := strings.TrimSpace(kvPieces[1])
-
 				params[strings.TrimSpace(kvPieces[0])] = val
 			}
 		}
