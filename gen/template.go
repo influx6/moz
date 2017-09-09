@@ -62,10 +62,13 @@ var (
 		"basePathName": func(b string) string {
 			return path.Base(b)
 		},
-		"joinSlice": func(jn string, vals []string) string {
+		"join": func(vals []string, jn string) string {
 			return strings.Join(vals, jn)
 		},
-		"join": func(jn string, vals ...string) string {
+		"joinSlice": func(vals []string, jn string) string {
+			return strings.Join(vals, jn)
+		},
+		"joinVariadic": func(jn string, vals ...string) string {
 			return strings.Join(vals, jn)
 		},
 		"splitAfter": func(b string, sp string, n int) []string {
