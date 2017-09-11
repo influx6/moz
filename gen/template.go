@@ -151,15 +151,17 @@ var (
 		"percentage": func(a, b float64) float64 {
 			return (a / b) * 100
 		},
-		"lenOf":        lenOff,
-		"nthOf":        nthOf,
-		"doCut":        cutList,
-		"doPrefix":     doPrefix,
-		"doSuffix":     doSuffix,
-		"doCutSplit":   doCutSplit,
-		"doPrefixCut":  cutListPrefix,
-		"doSuffixCut":  cutListSuffix,
-		"intsToString": doStringConvert,
+		"lenOf":         lenOff,
+		"nthOf":         nthOf,
+		"doCut":         cutList,
+		"doTimesPrefix": doTimePrefix,
+		"doTimesSuffix": doTimeSuffix,
+		"doPrefix":      doPrefix,
+		"doSuffix":      doSuffix,
+		"doCutSplit":    doCutSplit,
+		"doPrefixCut":   cutListPrefix,
+		"doSuffixCut":   cutListSuffix,
+		"intsToString":  doStringConvert,
 	}
 )
 
@@ -216,7 +218,27 @@ func cutList(sets []string, cut string) []string {
 	return do
 }
 
-func doSuffix(times int, suffix string) []string {
+func doSuffix(elems []string, suffix string) []string {
+	var do []string
+
+	for _, item := range elems {
+		do = append(do, fmt.Sprintf("%s%s", item, suffix))
+	}
+
+	return do
+}
+
+func doPrefix(elems []string, prefix string) []string {
+	var do []string
+
+	for _, item := range elems {
+		do = append(do, fmt.Sprintf("%s%s", prefix, item))
+	}
+
+	return do
+}
+
+func doTimeSuffix(times int, suffix string) []string {
 	var do []string
 
 	for i := 0; i < times; i++ {
@@ -226,7 +248,7 @@ func doSuffix(times int, suffix string) []string {
 	return do
 }
 
-func doPrefix(times int, prefix string) []string {
+func doTimePrefix(times int, prefix string) []string {
 	var do []string
 
 	for i := 0; i < times; i++ {
