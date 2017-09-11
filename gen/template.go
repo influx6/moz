@@ -163,12 +163,12 @@ var (
 	}
 )
 
-func doStringConvert(vals []interface{}, jn string) string {
+func doStringConvert(vals []interface{}, jn string) []string {
 	var items []string
 	for _, val := range vals {
 		items = append(items, fmt.Sprintf("%+s", val))
 	}
-	return strings.Join(items, jn)
+	return items
 }
 
 func cutListSuffix(sets []string, cutsuffix string) []string {
