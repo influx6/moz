@@ -151,15 +151,25 @@ var (
 		"percentage": func(a, b float64) float64 {
 			return (a / b) * 100
 		},
-		"lenOf":       lenOff,
-		"nthOf":       nthOf,
-		"doCut":       cutList,
-		"doPrefix":    doPrefix,
-		"doSuffix":    doSuffix,
-		"doPrefixCut": cutListPrefix,
-		"doSuffixCut": cutListSuffix,
+		"lenOf":        lenOff,
+		"nthOf":        nthOf,
+		"doCut":        cutList,
+		"doPrefix":     doPrefix,
+		"doSuffix":     doSuffix,
+		"doCutSplit":   doCutSplit,
+		"doPrefixCut":  cutListPrefix,
+		"doSuffixCut":  cutListSuffix,
+		"intsToString": doStringConvert,
 	}
 )
+
+func doStringConvert(vals []interface{}, jn string) string {
+	var items []string
+	for _, val := range vals {
+		items = append(items, fmt.Sprintf("%+s", val))
+	}
+	return strings.Join(items, jn)
+}
 
 func cutListSuffix(sets []string, cutsuffix string) []string {
 	var do []string
@@ -176,6 +186,21 @@ func cutListPrefix(sets []string, cutprefix string) []string {
 
 	for _, set := range sets {
 		do = append(do, strings.TrimPrefix(set, cutprefix))
+	}
+
+	return do
+}
+
+func doCutSplit(sets []string, sp string, index int) []string {
+	var do []string
+
+	for _, set := range sets {
+		parts := strings.Split(set, sp)
+		if len(parts) >= index {
+			continue
+		}
+
+		do = append(do, parts[index])
 	}
 
 	return do
