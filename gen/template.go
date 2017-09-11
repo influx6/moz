@@ -151,10 +151,65 @@ var (
 		"percentage": func(a, b float64) float64 {
 			return (a / b) * 100
 		},
-		"lenOf": lenOff,
-		"nthOf": nthOf,
+		"lenOf":       lenOff,
+		"nthOf":       nthOf,
+		"doCut":       cutList,
+		"doPrefix":    doPrefix,
+		"doSuffix":    doSuffix,
+		"doPrefixCut": cutListPrefix,
+		"doSuffixCut": cutListSuffix,
 	}
 )
+
+func cutListSuffix(sets []string, cutsuffix string) []string {
+	var do []string
+
+	for _, set := range sets {
+		do = append(do, strings.TrimSuffix(set, cutsuffix))
+	}
+
+	return do
+}
+
+func cutListPrefix(sets []string, cutprefix string) []string {
+	var do []string
+
+	for _, set := range sets {
+		do = append(do, strings.TrimPrefix(set, cutprefix))
+	}
+
+	return do
+}
+
+func cutList(sets []string, cut string) []string {
+	var do []string
+
+	for _, set := range sets {
+		do = append(do, strings.Trim(set, cut))
+	}
+
+	return do
+}
+
+func doSuffix(times int, suffix string) []string {
+	var do []string
+
+	for i := 0; i < times; i++ {
+		do = append(do, fmt.Sprintf("%d%s", i, suffix))
+	}
+
+	return do
+}
+
+func doPrefix(times int, prefix string) []string {
+	var do []string
+
+	for i := 0; i < times; i++ {
+		do = append(do, fmt.Sprintf("%s%d", prefix, i))
+	}
+
+	return do
+}
 
 func quote(b interface{}) string {
 	switch bo := b.(type) {
