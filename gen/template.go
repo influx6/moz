@@ -198,7 +198,7 @@ func doCutSplit(sets []string, sp string, index int) []string {
 
 	for _, set := range sets {
 		parts := strings.Split(set, sp)
-		if len(parts) >= index {
+		if index >= len(parts) {
 			continue
 		}
 
