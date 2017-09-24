@@ -10,7 +10,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/faux/metrics"
-	"github.com/influx6/faux/metrics/sentries/stdout"
+	"github.com/influx6/faux/metrics/stdout"
 	"github.com/influx6/moz"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/cmd/moz/templates"

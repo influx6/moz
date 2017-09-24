@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/influx6/faux/metrics"
-	"github.com/influx6/faux/metrics/sentries/stdout"
+	"github.com/influx6/faux/metrics/stdout"
 )
 
 // WriteFile copies the data from the writer into the desired path, creating
