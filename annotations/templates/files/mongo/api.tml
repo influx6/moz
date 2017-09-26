@@ -21,8 +21,8 @@ func New(m metrics.Metrics,  mo Mongod) *DB{
 
 // WithIndex applies the provided index slice to the provided collection configuration.
 func (mdb *DB) WithIndex(ctx context.Context, col string, indexes ...mgo.Index) error {
-    m := stdout.Info("DB.WithIndex").Trace("DB.WithIndex")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("DB.WithIndex")
+    defer mdb.metrics.Emit(metrics.Info("DB.WithIndex").WithTrace(m.End()))
 
     if len(indexes) == 0 {
         return nil
@@ -30,7 +30,7 @@ func (mdb *DB) WithIndex(ctx context.Context, col string, indexes ...mgo.Index) 
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to create session for indexes").
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session for indexes").
         With("collection", col).
         With("error", err.Error()))
         return err
@@ -43,7 +43,7 @@ func (mdb *DB) WithIndex(ctx context.Context, col string, indexes ...mgo.Index) 
     for _, index := range indexes {
 
         if err := collection.EnsureIndex(index); err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to ensure session index").
+            mdb.metrics.Emit(metrics.Errorf("Failed to ensure session index").
             With("collection", col).
             With("index", index).
             With("error", err.Error()))
@@ -51,13 +51,13 @@ func (mdb *DB) WithIndex(ctx context.Context, col string, indexes ...mgo.Index) 
             return err
         }
 
-        mdb.metrics.Emit(stdout.Info("Succeeded in ensuring collection index").
+        mdb.metrics.Emit(metrics.Info("Succeeded in ensuring collection index").
         With("collection", col).
         With("index", index))
     }
 
 
-    mdb.metrics.Emit(stdout.Notice("Finished adding index").
+    mdb.metrics.Emit(metrics.Info("Finished adding index").
     With("collection", col))
 
     return nil
@@ -65,12 +65,12 @@ func (mdb *DB) WithIndex(ctx context.Context, col string, indexes ...mgo.Index) 
 
 // Exec provides a function which allows the execution of a custom function against the collection.
 func (mdb *DB) Exec(ctx context.Context, col string, fx func(col *mgo.Collection) error) error {
-    m := stdout.Info("DB.Exec").Trace("DB.Exec")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("DB.Exec")
+    defer mdb.metrics.Emit(metrics.Info("DB.Exec").WithTrace(m.End()))
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to execute operation").
+        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
         With("collection", col).
         With("error", err.Error()))
         return err
@@ -78,7 +78,7 @@ func (mdb *DB) Exec(ctx context.Context, col string, fx func(col *mgo.Collection
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to create session").
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
         With("collection", col).
         With("error", err.Error()))
         return err
@@ -88,20 +88,20 @@ func (mdb *DB) Exec(ctx context.Context, col string, fx func(col *mgo.Collection
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to finish, context has expired").
+        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
         With("collection", col).
         With("error", err.Error()))
         return err
     }
 
     if err := fx(database.C(col)); err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to execute operation").
+        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
         With("collection", col).
         With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(stdout.Notice("Operation executed").
+    mdb.metrics.Emit(metrics.Info("Operation executed").
     With("collection", col))
 
     return nil

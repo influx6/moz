@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/influx6/faux/metrics"
-	"github.com/influx6/faux/metrics/stdout"
 )
 
 // WriteFile copies the data from the writer into the desired path, creating
@@ -15,14 +14,14 @@ func WriteFile(events metrics.Metrics, writer io.WriterTo, toPath string) error 
 	dirPath := filepath.Dir(toPath)
 
 	if err := os.MkdirAll(dirPath, 0700); err != nil && !os.IsExist(err) {
-		events.Emit(stdout.Error(err).With("dir", dirPath).With("targetPath", toPath).
+		events.Emit(metrics.Error(err).With("dir", dirPath).With("targetPath", toPath).
 			With("message", "Failed to create new package directory: generate.go"))
 		return err
 	}
 
 	toFile, err := os.Create(toPath)
 	if err != nil {
-		events.Emit(stdout.Error(err).With("targetPath", toPath).With("dir", dirPath).
+		events.Emit(metrics.Error(err).With("targetPath", toPath).With("dir", dirPath).
 			With("message", "Failed to create new source file"))
 		return err
 	}
@@ -30,7 +29,7 @@ func WriteFile(events metrics.Metrics, writer io.WriterTo, toPath string) error 
 	defer toFile.Close()
 
 	if _, err = writer.WriteTo(toFile); err != nil {
-		events.Emit(stdout.Error(err).With("targetPath", toPath).With("dir", dirPath).
+		events.Emit(metrics.Error(err).With("targetPath", toPath).With("dir", dirPath).
 			With("message", "Failed to write new source file"))
 		return err
 	}

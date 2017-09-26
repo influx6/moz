@@ -1,4 +1,4 @@
-// {{.Struct.Object.Name}}Fields defines an interface which exposes method to return a map of all 
+// {{.Struct.Object.Name}}Fields defines an interface which exposes method to return a map of all
 // attributes associated with the defined structure as decided by the structure.
 type {{.Struct.Object.Name}}Fields  interface {
 	Fields() map[string]interface{}
@@ -18,13 +18,13 @@ func (m mapFields) Fields() map[string]interface{} {
     return m
 }
 
-// {{.Struct.Object.Name}}DB defines a structure which provide DB CRUD operations 
+// {{.Struct.Object.Name}}DB defines a structure which provide DB CRUD operations
 // using sql as the underline db.
 type {{.Struct.Object.Name}}DB struct{
   col string
   sx sql.DB
   dx *sql.SQL
-  metrics metrics.Metrics   
+  metrics metrics.Metrics
   table db.TableIdentity
 }
 
@@ -42,15 +42,15 @@ func New(table string, m metrics.Metrics, sx sql.DB, tm ...tables.TableMigration
 }
 
 // Delete attempts to remove the record from the db using the provided publicID.
-// Records using this DB must have a public id value, expressed either by a bson or json tag 
+// Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Package}}.{{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID string) error {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.Delete").With("publicID", publicID).Trace("{{.Struct.Object.Name}}DB.Delete")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Delete")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Delete").With("publicID", publicID).WithTrace(m.End()))
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to delete record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to delete record").
         With("publicID", publicID).
         With("table", mdb.col).
         With("error", err.Error()))
@@ -58,31 +58,31 @@ func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID strin
     }
 
     if err := mdb.dx.Delete(mdb.table, "public_id", publicID); err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to delete record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to delete record").
         With("table", mdb.col).
         With("publicID", publicID).
         With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(stdout.Notice("Deleted record").
+    mdb.metrics.Emit(metrics.Info("Deleted record").
     With("table", mdb.col).
     With("publicID", publicID))
 
     return nil
 }
 
-// Create attempts to add the record into the db using the provided instance of the 
+// Create attempts to add the record into the db using the provided instance of the
 // {{.Struct.Package}}.{{.Struct.Object.Name}}.
-// Records using this DB must have a public id value, expressed either by a bson or json tag 
+// Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.Create").With("publicID", elem.PublicID).Trace("{{.Struct.Object.Name}}DB.Create")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Create")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Create").With("publicID", elem.PublicID).WithTrace(m.End()))
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to create record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to create record").
         With("publicID", elem.PublicID).
         With("table", mdb.col).
         With("error", err.Error()))
@@ -91,7 +91,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}Fields); ok {
         if err := mdb.dx.Save(mdb.table, mapFields(fields.Fields())); err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to create {{.Struct.Object.Name}} record").
+            mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record").
             With("table", mdb.col).
             With("elem", elem).
             With("error", err.Error()))
@@ -99,7 +99,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
             return err
         }
 
-        mdb.metrics.Emit(stdout.Notice("Create record").
+        mdb.metrics.Emit(metrics.Info("Create record").
         With("table", mdb.col).
         With("elem", elem))
 
@@ -109,7 +109,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
 
-        mdb.metrics.Emit(stdout.Error("Failed to create record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to create record").
         With("publicID", elem.PublicID).
         With("table", mdb.col).
         With("error", err.Error()))
@@ -119,14 +119,14 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
     content := mapFields({{ mapoutFields .CreateAction "elem" "bson" "json" }})
 
     if err := mdb.dx.Save(mdb.table, content); err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to create {{.Struct.Object.Name}} record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record").
         With("table", mdb.col).
         With("query", content).
         With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(stdout.Notice("Create record").
+    mdb.metrics.Emit(metrics.Info("Create record").
     With("table", mdb.col).
     With("query", content))
 
@@ -134,15 +134,15 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 }
 
 // GetAll retrieves all records from the db and returns a slice of {{.Struct.Package}}.{{.Struct.Object.Name}} type.
-// Records using this DB must have a public id value, expressed either by a bson or json tag 
+// Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, orderby string, page int, responsePerPage int)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}}, int, error) {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.GetAll").Trace("{{.Struct.Object.Name}}DB.GetAll")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.GetAll")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetAll").WithTrace(m.End()))
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
         With("table", mdb.col).
         With("error", err.Error()))
 
@@ -152,9 +152,9 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
     {{ if ( hasFunc .Struct "Consume"  ) }}
         var ritems []{{.Struct.Package}}.{{.Struct.Object.Name}}
 
-        items, total, err := mdb.dx.GetAllPerPage(mdb.table, order, orderby, page, responsePerPage); 
+        items, total, err := mdb.dx.GetAllPerPage(mdb.table, order, orderby, page, responsePerPage);
         if err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
             With("table", mdb.col).
             With("error", err.Error()))
 
@@ -165,7 +165,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
             var elem {{.Struct.Package}}.{{.Struct.Object.Name}}
 
             if err := elem.Consume(item); err != nil {
-                mdb.metrics.Emit(stdout.Error("Failed to consume record data for {{.Struct.Object.Name}} from db").
+                mdb.metrics.Emit(metrics.Errorf("Failed to consume record data for {{.Struct.Object.Name}} from db").
                 With("table", mdb.col).
                 With("data", item).
                 With("error", err.Error()))
@@ -185,7 +185,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
                 var ritem {{.Struct.Package}}.{{.Struct.Object.Name}}
 
                 if err := rows.StructScan(&ritem); err != nil {
-                    mdb.metrics.Emit(stdout.Error(err).WithFields(metrics.Fields{
+                    mdb.metrics.Emit(metrics.Errorf(err).WithFields(metrics.Fields{
                         "err":   err,
                         "table": mdb.table.Table(),
                     }))
@@ -197,10 +197,10 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
             }
 
             return nil
-        }); 
-        
+        });
+
         if err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to consume record data for {{.Struct.Object.Name}} from db").
+            mdb.metrics.Emit(metrics.Errorf("Failed to consume record data for {{.Struct.Object.Name}} from db").
             With("table", mdb.col).
             With("error", err.Error()))
 
@@ -212,26 +212,26 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
 }
 
 // Get retrieves a record from the db using the publicID and returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
-// Records using this DB must have a public id value, expressed either by a bson or json tag 
+// Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string)  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.Get").With("publicID", publicID).Trace("{{.Struct.Object.Name}}DB.Get")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Get")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Get").With("publicID", publicID).WithTrace(m.End()))
 
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to retrieve record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
         With("publicID", publicID).
         With("table", mdb.col).
         With("error", err.Error()))
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
-    
+
     {{ if ( hasFunc .Struct "Consume"  ) }}
-        item, err := mdb.dx.Get(mdb.table, "public_id", publicID); 
+        item, err := mdb.dx.Get(mdb.table, "public_id", publicID);
         if err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
             With("table", mdb.col).
             With("error", err.Error()))
 
@@ -241,7 +241,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
         var elem {{.Struct.Package}}.{{.Struct.Object.Name}}
 
         if err := elem.Consume(item); err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to consume record data for {{.Struct.Object.Name}} from db").
+            mdb.metrics.Emit(metrics.Errorf("Failed to consume record data for {{.Struct.Object.Name}} from db").
             With("table", mdb.col).
             With("data", item).
             With("error", err.Error()))
@@ -259,7 +259,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 
         if err := mdb.dx.GetBy(mdb.table, func(row *sqlx.Row) error {
             if err := row.StructScan(&elem); err != nil {
-                mdb.metrics.Emit(stdout.Error(err).WithFields(metrics.Fields{
+                mdb.metrics.Emit(metrics.Errorf(err).WithFields(metrics.Fields{
                     "err":   err,
                     "table": mdb.table.Table(),
                 }))
@@ -269,7 +269,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 
             return nil
         }, "{{$ptag.Value}}", publicID); err != nil {
-            mdb.metrics.Emit(stdout.Error("Failed to consume record data for {{.Struct.Object.Name}} from db").
+            mdb.metrics.Emit(metrics.Errorf("Failed to consume record data for {{.Struct.Object.Name}} from db").
             With("table", mdb.col).
             With("error", err.Error()))
 
@@ -282,15 +282,15 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 
 
 // Update uses a record from the db using the publicID and returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
-// Records using this DB must have a public id value, expressed either by a bson or json tag 
+// Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID string, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.Update").With("publicID", publicID).Trace("{{.Struct.Object.Name}}DB.Update")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Update")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Update").With("publicID", publicID).WithTrace(m.End()))
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to finish, context has expired").
+        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
         With("table", mdb.col).
         With("public_id", publicID).
         With("error", err.Error()))
@@ -309,7 +309,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     {{ $ptag := getTag $pfield "sql" }}
 
     if err := mdb.dx.Update(mdb.table, data, "{{$ptag.Value}}", publicID); err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to update {{.Struct.Object.Name}} record").
+        mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record").
         With("query", data).
         With("table", mdb.col).
         With("{{$ptag.Value}}", publicID).
@@ -317,7 +317,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         return err
     }
 
-    mdb.metrics.Emit(stdout.Notice("Update record").
+    mdb.metrics.Emit(metrics.Info("Update record").
     With("table", mdb.col).
     With("{{$ptag.Value}}", publicID).
     With("query", data))
@@ -327,25 +327,25 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 
 // Exec provides a function which allows the execution of a custom function against the table.
 func (mdb *{{.Struct.Object.Name}}DB) Exec(ctx context.Context, fx func(*sql.SQL, sql.DB) error) error {
-    m := stdout.Info("{{.Struct.Object.Name}}DB.Exec").Trace("{{.Struct.Object.Name}}DB.Exec")
-    defer mdb.metrics.Emit(m.End())
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Exec")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Exec").WithTrace(m.End()))
 
     if ctx.IsExpired() {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(stdout.Error("Failed to execute operation").
+        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
         With("table", mdb.col).
         With("error", err.Error()))
         return err
     }
 
     if err := fx(mdb.dx, mdb.sx); err != nil {
-        mdb.metrics.Emit(stdout.Error("Failed to execute operation").
+        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
         With("table", mdb.col).
         With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(stdout.Notice("Operation executed").
+    mdb.metrics.Emit(metrics.Info("Operation executed").
     With("table", mdb.col))
 
     return nil

@@ -21,7 +21,6 @@ import (
 
 	"github.com/icrowley/fake"
 	"github.com/influx6/faux/metrics"
-	"github.com/influx6/faux/metrics/stdout"
 	"github.com/influx6/moz/gen"
 )
 
@@ -94,7 +93,7 @@ func ParseFileAnnotations(log metrics.Metrics, path string) (Package, error) {
 
 	tokenFiles, file, err := PackageFile(path, parser.ParseComments)
 	if err != nil {
-		log.Emit(stdout.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file))
+		log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file))
 		return Package{}, err
 	}
 
@@ -115,7 +114,7 @@ func ParseFileAnnotations(log metrics.Metrics, path string) (Package, error) {
 func ParseAnnotations(log metrics.Metrics, dir string) ([]Package, error) {
 	tokenFiles, packages, err := PackageDir(dir, parser.ParseComments)
 	if err != nil {
-		log.Emit(stdout.Error(err).With("message", "Failed to parse directory").With("dir", dir))
+		log.Emit(metrics.Error(err).With("message", "Failed to parse directory").With("dir", dir))
 		return nil, err
 	}
 
@@ -125,11 +124,11 @@ func ParseAnnotations(log metrics.Metrics, dir string) ([]Package, error) {
 		for path, file := range pkg.Files {
 			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file)
 			if err != nil {
-				log.Emit(stdout.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
+				log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
 				return nil, err
 			}
 
-			log.Emit(stdout.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
+			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
 
 			if owner, ok := packageDeclrs[res.Package]; ok {
 				owner.Packages = append(owner.Packages, res)
@@ -195,7 +194,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		if file.Doc != nil {
 			annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(file.Doc.Text()))
 
-			log.Emit(stdout.Info("Annotations in Package comments").
+			log.Emit(metrics.Info("Annotations in Package comments").
 				With("dir", dir).
 				With("annotations", len(annotationRead)).
 				With("file", file.Name.Name))
@@ -264,7 +263,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(rdeclr.Doc.Text()))
 
 					for _, item := range annotationRead {
-						log.Emit(stdout.Info("Annotation in Decleration comment").
+						log.Emit(metrics.Info("Annotation in Decleration comment").
 							With("dir", dir).
 							With("annotation", item.Name).
 							With("position", rdeclr.Pos()).
@@ -272,7 +271,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 						switch item.Name {
 						case "associates":
-							log.Emit(stdout.Error("Association Annotation in Decleration is incomplete: Expects 3 elements").
+							log.Emit(metrics.Error(errors.New("Association Annotation in Decleration is incomplete: Expects 3 elements")).
 								With("dir", dir).
 								With("association", item.Arguments).
 								With("position", rdeclr.Pos()).
@@ -309,7 +308,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 						switch robj := obj.Type.(type) {
 						case *ast.StructType:
 
-							log.Emit(stdout.Info("Annotation in Decleration").
+							log.Emit(metrics.Info("Annotation in Decleration").
 								With("Type", "Struct").
 								With("Annotations", len(annotations)).
 								With("StructName", obj.Name))
@@ -330,7 +329,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							break
 
 						case *ast.InterfaceType:
-							log.Emit(stdout.Info("Annotation in Decleration").
+							log.Emit(metrics.Info("Annotation in Decleration").
 								With("Type", "Interface").
 								With("Annotations", len(annotations)).
 								With("StructName", obj.Name))
@@ -351,7 +350,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							break
 
 						default:
-							log.Emit(stdout.Info("Annotation in Decleration").
+							log.Emit(metrics.Info("Annotation in Decleration").
 								With("Type", "OtherType").
 								With("Marker", "NonStruct/NonInterface:Type").
 								With("Annotations", len(annotations)).
@@ -401,34 +400,34 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFi
 
 // ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
-	log.Emit(stdout.Info("Begin ParsePackage").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkgDeclrs.Package))
+	log.Emit(metrics.Info("Begin ParsePackage").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkgDeclrs.Package))
 
 	{
 	parseloop:
 		for _, pkg := range pkgDeclrs.Packages {
-			log.Emit(stdout.Info("ParsePackage: Parse PackageDeclaration").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkg.Package).
+			log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkg.Package).
 				With("From", pkg.FilePath))
 
 			wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
 			if err != nil {
-				log.Emit(stdout.Error("ParseFailure: Package %q", pkg.Package).
+				log.Emit(metrics.Error(fmt.Errorf("ParseFailure: Package %q", pkg.Package)).
 					With("error", err.Error()).With("package", pkg.Package))
 				continue
 			}
 
-			log.Emit(stdout.Info("ParseSuccess").With("From", pkg.FilePath).With("package", pkg.Package).With("Directives", len(wdrs)))
+			log.Emit(metrics.Info("ParseSuccess").With("From", pkg.FilePath).With("package", pkg.Package).With("Directives", len(wdrs)))
 
 			for _, item := range wdrs {
-				log.Emit(stdout.Info("WriteFile").With("File", item.FileName).With("FromAnnotation", item.Annotation).With("From", pkg.FilePath).With("package", pkg.Package))
+				log.Emit(metrics.Info("WriteFile").With("File", item.FileName).With("FromAnnotation", item.Annotation).With("From", pkg.FilePath).With("package", pkg.Package))
 
 				if filepath.IsAbs(item.Dir) {
-					log.Emit(stdout.Error("gen.WriteDirectiveError: Expected relative Dir path not absolute").
+					log.Emit(metrics.Error(errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")).
 						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
 
 					continue parseloop
 				}
 
-				log.Emit(stdout.Info("Executing WriteDirective").
+				log.Emit(metrics.Info("Executing WriteDirective").
 					With("annotation", item.Annotation).
 					With("fileName", item.FileName).
 					With("toDir", item.Dir))
@@ -445,13 +444,13 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 				}
 
 				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-					log.Emit(stdout.Error("IOError: Unable to create writer directory").
+					log.Emit(metrics.Error(errors.New("IOError: Unable to create writer directory")).
 						With("dir", namedFileDir).With("error", err.Error()))
 					return err
 				}
 
 				if item.Writer == nil {
-					log.Emit(stdout.Info("Annotation Resolved").
+					log.Emit(metrics.Info("Annotation Resolved").
 						With("annotation", item.Annotation).
 						With("dir", namedFileDir))
 					continue
@@ -467,14 +466,14 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 					namedFile = filepath.Join(namedFileDir, item.FileName)
 				}
 
-				log.Emit(stdout.Info("OS:Operation for annotation").
+				log.Emit(metrics.Info("OS:Operation for annotation").
 					With("annotation", item.Annotation).
 					With("file", namedFile).
 					With("dir", namedFileDir))
 
 				fileStat, err := os.Stat(namedFile)
 				if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
-					log.Emit(stdout.Info("Annotation Unresolved: File already exists and must not over-write").With("annotation", item.Annotation).
+					log.Emit(metrics.Info("Annotation Unresolved: File already exists and must not over-write").With("annotation", item.Annotation).
 						With("dir", namedFileDir).
 						With("package", pkg.Package).
 						With("file", pkg.File).
@@ -485,7 +484,7 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 
 				newFile, err := os.Create(namedFile)
 				if err != nil {
-					log.Emit(stdout.Error("IOError: Unable to create file").
+					log.Emit(metrics.Error(errors.New("IOError: Unable to create file")).
 						With("dir", namedFileDir).
 						With("file", namedFile).With("error", err.Error()))
 					continue
@@ -493,13 +492,13 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 
 				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
 					newFile.Close()
-					log.Emit(stdout.Error("IOError: Unable to write content to file").
+					log.Emit(metrics.Error(errors.New("IOError: Unable to write content to file")).
 						With("dir", namedFileDir).
 						With("file", namedFile).With("error", err.Error()))
 					continue
 				}
 
-				log.Emit(stdout.Info("Annotation Resolved").With("annotation", item.Annotation).
+				log.Emit(metrics.Info("Annotation Resolved").With("annotation", item.Annotation).
 					With("dir", namedFileDir).
 					With("package", pkg.Package).
 					With("file", pkg.File).
@@ -1525,7 +1524,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	// Generate directives for package level
 	for _, annotation := range declr.Annotations {
-		a.metrics.Emit(stdout.Info("Directive Generation").
+		a.metrics.Emit(metrics.Info("Directive Generation").
 			With("Level", "Package").With("Annotaton", annotation.Name).With("Params", annotation.Params).With("Arguments", annotation.Arguments).With("Template", annotation.Template))
 
 		generator, err := a.GetPackage(annotation.Name)
@@ -1535,13 +1534,13 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 		drs, err := generator(toDir, annotation, declr, pkg)
 		if err != nil {
-			a.metrics.Emit(stdout.Error("Directive Generation").
+			a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 				With("error", err).
 				With("Level", "Package").With("Annotaton", annotation.Name).With("Params", annotation.Params).With("Arguments", annotation.Arguments).With("Template", annotation.Template))
 			return nil, err
 		}
 
-		a.metrics.Emit(stdout.Info("Directive Generation: Success").
+		a.metrics.Emit(metrics.Info("Directive Generation: Success").
 			With("Level", "Package").
 			With("Directive", len(drs)).
 			With("Annotaton", annotation.Name).
@@ -1559,7 +1558,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	for _, inter := range declr.Interfaces {
 		for _, annotation := range inter.Annotations {
-			a.metrics.Emit(stdout.Info("Directive Generation").
+			a.metrics.Emit(metrics.Info("Directive Generation").
 				With("Level", "Interface").
 				With("Annotaton", annotation.Name).
 				With("Interface", inter.Object.Name.Name).
@@ -1569,7 +1568,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 			generator, err := a.GetInterfaceType(annotation.Name)
 			if err != nil {
-				a.metrics.Emit(stdout.Error("Directive Generation").
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 					With("error", err).
 					With("Level", "Interface").
 					With("Annotaton", annotation.Name).
@@ -1582,7 +1581,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 			drs, err := generator(toDir, annotation, inter, declr, pkg)
 			if err != nil {
-				a.metrics.Emit(stdout.Error("Directive Generation").
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 					With("error", err).
 					With("Level", "Interface").
 					With("Annotaton", annotation.Name).
@@ -1593,7 +1592,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 				return nil, err
 			}
 
-			a.metrics.Emit(stdout.Info("Directive Generation: Success").
+			a.metrics.Emit(metrics.Info("Directive Generation: Success").
 				With("Level", "Struct").
 				With("Directive", len(drs)).
 				With("Annotaton", annotation.Name).
@@ -1613,7 +1612,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	for _, structs := range declr.Structs {
 		for _, annotation := range structs.Annotations {
-			a.metrics.Emit(stdout.Info("Directive Generation").
+			a.metrics.Emit(metrics.Info("Directive Generation").
 				With("Level", "Struct").
 				With("Annotaton", annotation.Name).
 				With("Struct", structs.Object.Name.Name).
@@ -1623,7 +1622,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 			generator, err := a.GetStructType(annotation.Name)
 			if err != nil {
-				a.metrics.Emit(stdout.Error("Directive Generation").
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 					With("error", err).
 					With("Level", "Struct").
 					With("Annotaton", annotation.Name).
@@ -1636,7 +1635,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 			drs, err := generator(toDir, annotation, structs, declr, pkg)
 			if err != nil {
-				a.metrics.Emit(stdout.Error("Directive Generation").
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 					With("error", err).
 					With("Level", "Struct").
 					With("Annotaton", annotation.Name).
@@ -1647,7 +1646,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 				return nil, err
 			}
 
-			a.metrics.Emit(stdout.Info("Directive Generation: Success").
+			a.metrics.Emit(metrics.Info("Directive Generation: Success").
 				With("Level", "Struct").
 				With("Directive", len(drs)).
 				With("Annotaton", annotation.Name).
@@ -1667,7 +1666,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 	for _, typ := range declr.Types {
 		for _, annotation := range typ.Annotations {
-			a.metrics.Emit(stdout.Info("Directive Generation").
+			a.metrics.Emit(metrics.Info("Directive Generation").
 				With("Level", "Type").
 				With("Annotaton", annotation.Name).
 				With("Type", typ.Object.Name.Name).
@@ -1677,7 +1676,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 			generator, err := a.GetType(annotation.Name)
 			if err != nil {
-				a.metrics.Emit(stdout.Error("Directive Generation").
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 					With("error", err).
 					With("Level", "Type").
 					With("Annotaton", annotation.Name).
@@ -1690,7 +1689,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 
 			drs, err := generator(toDir, annotation, typ, declr, pkg)
 			if err != nil {
-				a.metrics.Emit(stdout.Error("Directive Generation").
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
 					With("error", err).
 					With("Level", "Type").
 					With("Annotaton", annotation.Name).
@@ -1701,7 +1700,7 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 				return nil, err
 			}
 
-			a.metrics.Emit(stdout.Info("Directive Generation: Success").
+			a.metrics.Emit(metrics.Info("Directive Generation: Success").
 				With("Level", "Type").
 				With("Directive", len(drs)).
 				With("Annotaton", annotation.Name).

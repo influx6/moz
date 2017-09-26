@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"path/filepath"
 
@@ -19,11 +20,11 @@ import (
 
 	"github.com/influx6/faux/metrics"
 
-	"github.com/influx6/faux/metrics/sentries/stdout"
+	"github.com/influx6/faux/metrics/custom"
 )
 
 func main() {
-	events := metrics.New(stdout.Stdout{})
+	events := metrics.New(custom.BlockDisplay(os.Stdout))
 
 	items, err := vfiles.ParseDir("files", []string{
 
@@ -85,7 +86,7 @@ func main() {
 
 	dir := filepath.Join(".", "templates.go")
 	if err := utils.WriteFile(events, fmtwriter.New(assetGen, true, true), dir); err != nil {
-		events.Emit(stdout.Error(err).With("dir", dir).
+		events.Emit(metrics.Error(err).With("dir", dir).
 			With("message", "Failed to create new package file: templates.go"))
 		panic(err)
 	}
