@@ -102,6 +102,20 @@ func (pkg Package) HasFunctionFor(str StructDeclaration, funcName string) bool {
 	return false
 }
 
+// PackagesWithAnnotation returns a slice of all PackageDeclaration which have the annotation at package level.
+func (pkg Package) PackagesWithAnnotation(name string) []PackageDeclaration {
+	var pkgs []PackageDeclaration
+
+	for _, elem := range pkg.Packages {
+		if !elem.HasAnnotation(name) {
+			continue
+		}
+		pkgs = append(pkgs, elem)
+	}
+
+	return pkgs
+}
+
 // AnnotationsFor returns all annotations with the giving name.
 func (pkg Package) AnnotationsFor(typeName string) []AnnotationDeclaration {
 	var found []AnnotationDeclaration
@@ -183,6 +197,20 @@ func (pkg PackageDeclaration) HasFunctionFor(str StructDeclaration, funcName str
 	}
 
 	return true
+}
+
+// HasAnnotation returns true/false if giving PackageDeclaration has annotation at package level.
+func (pkg PackageDeclaration) HasAnnotation(typeName string) bool {
+	typeName = strings.TrimPrefix(typeName, "@")
+	for _, item := range pkg.Annotations {
+		if strings.TrimPrefix(item.Name, "@") != typeName {
+			continue
+		}
+
+		return true
+	}
+
+	return false
 }
 
 // AnnotationsFor returns all annotations with the giving name.
@@ -300,6 +328,34 @@ type FuncDeclaration struct {
 	PackageDeclr  *PackageDeclaration                         `json:"-"`
 	Annotations   []AnnotationDeclaration                     `json:"annotations"`
 	Associations  map[string]AnnotationAssociationDeclaration `json:"associations"`
+}
+
+// GetAnnotation returns AnnotationDeclaration if giving FuncDeclaration has annotation at package level.
+func (fun FuncDeclaration) GetAnnotation(typeName string) (AnnotationDeclaration, bool) {
+	typeName = strings.TrimPrefix(typeName, "@")
+	for _, item := range fun.Annotations {
+		if strings.TrimPrefix(item.Name, "@") != typeName {
+			continue
+		}
+
+		return item, true
+	}
+
+	return AnnotationDeclaration{}, false
+}
+
+// HasAnnotation returns true/false if giving FuncDeclaration has annotation at package level.
+func (fun FuncDeclaration) HasAnnotation(typeName string) bool {
+	typeName = strings.TrimPrefix(typeName, "@")
+	for _, item := range fun.Annotations {
+		if strings.TrimPrefix(item.Name, "@") != typeName {
+			continue
+		}
+
+		return true
+	}
+
+	return false
 }
 
 // Functions defines a slice of FuncDeclaration.
