@@ -85,6 +85,7 @@ type ImportDeclaration struct {
 type Package struct {
 	Package  string               `json:"package"`
 	Path     string               `json:"path"`
+	Files    []string             `json:"files"`
 	BuildPkg *build.Package       `json:"build_package"`
 	Doc      *doc.Package         `json:"doc"`
 	Packages []PackageDeclaration `json:"packages"`

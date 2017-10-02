@@ -71,6 +71,12 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 	packageBuilds := make(map[string]*build.Package)
 
 	for _, pkg := range packages {
+		var pkgFiles []string
+
+		for path := range pkg.Files {
+			pkgFiles = append(pkgFiles, path)
+		}
+
 		for path, file := range pkg.Files {
 			pathPkg := filepath.Dir(path)
 			buildPkg, ok := packageBuilds[pathPkg]
@@ -114,6 +120,7 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				Path:     res.Path,
 				Package:  res.Package,
 				BuildPkg: buildPkg,
+				Files:    pkgFiles,
 				Packages: []PackageDeclaration{res},
 				Doc:      doc.New(pkg, buildPkg.ImportPath, doc.AllMethods),
 			}
@@ -158,6 +165,12 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 	packageBuilds := make(map[string]*build.Package)
 
 	for _, pkg := range packages {
+		var pkgFiles []string
+
+		for path := range pkg.Files {
+			pkgFiles = append(pkgFiles, path)
+		}
+
 		for path, file := range pkg.Files {
 			pathPkg := filepath.Dir(path)
 			buildPkg, ok := packageBuilds[pathPkg]
@@ -199,6 +212,7 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 
 			packageDeclrs[res.Package] = Package{
 				Path:     res.Path,
+				Files:    pkgFiles,
 				Package:  res.Package,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
@@ -261,10 +275,14 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 	}
 
 	var declrs []PackageDeclaration
+	var pkgFiles []string
+
 	for fpath, file := range pkg.Files {
 		if fpath != path {
 			continue
 		}
+
+		pkgFiles = append(pkgFiles, fpath)
 
 		res, err := parseFileToPackage(log, dir, path, buildPkg.Name, tokenFiles, file, pkg)
 		if err != nil {
@@ -277,6 +295,7 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 
 	return Package{
 		Path:     buildPkg.Dir,
+		Files:    pkgFiles,
 		BuildPkg: buildPkg,
 		Package:  buildPkg.ImportPath,
 		Packages: declrs,
