@@ -43,7 +43,7 @@ func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDec
 				gen.Import("gopkg.in/mgo.v2/bson", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import("github.com/influx6/faux/metrics/custom", ""),
 			),
 			gen.Block(
 				gen.SourceTextWith(

@@ -54,7 +54,7 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 				gen.Import("github.com/influx6/faux/db/sql", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import("github.com/influx6/faux/metrics/custom", ""),
 				gen.Import("github.com/go-sql-driver/mysql", "_"),
 				gen.Import("github.com/lib/pq", "_"),
 				gen.Import("github.com/mattn/go-sqlite3", "_"),

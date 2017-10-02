@@ -8,18 +8,14 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/faux/metrics"
 	"github.com/influx6/faux/metrics/custom"
 	"github.com/influx6/gobuild/build"
 	"github.com/influx6/moz"
 	"github.com/influx6/moz/ast"
-	"github.com/influx6/moz/cmd/moz/templates"
-	"github.com/influx6/moz/gen"
-	"github.com/influx6/moz/utils"
 	"github.com/minio/cli"
 
-	_ "github.com/influx6/moz/annotations"
+	annons "github.com/influx6/moz/annotations"
 )
 
 var (
@@ -178,84 +174,63 @@ func assetsCLI(c *cli.Context) {
 
 	pkgName := c.String("name")
 
-	rootCMD := c.String("root")
-	if rootCMD == "" {
-		rootCMD = "./"
+	rootDir := c.String("root")
+	if rootDir == "" {
+		rootDir = "./"
 	}
 
 	inDir := "files"
-	rootDir := filepath.Join(rootCMD, pkgName)
-	assetDir := filepath.Join(rootDir, inDir)
 
-	genFile := gen.Package(
-		gen.Name(pkgName),
-		gen.Text("//go:generate go run generate.go"),
-	)
+	directives, err := annons.AssetsAnnotationGenerator(rootDir,
+		ast.AnnotationDeclaration{Arguments: []string{pkgName, strings.Join(extensions, ":"), inDir}},
+		ast.PackageDeclaration{FilePath: rootDir}, ast.Package{})
 
-	mainFile := gen.Block(
-		gen.Commentary(
-			gen.Text("+build ignore"),
-		),
-		gen.Text("\n"),
-		gen.Package(
-			gen.Name("main"),
-			gen.Imports(
-				gen.Import("fmt", ""),
-				gen.Import("path/filepath", ""),
-				gen.Import("github.com/influx6/moz/gen", ""),
-				gen.Import("github.com/influx6/moz/utils", ""),
-				gen.Import("github.com/influx6/faux/vfiles", ""),
-				gen.Import("github.com/influx6/faux/fmtwriter", ""),
-				gen.Import("github.com/influx6/faux/metrics", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
-			),
-			gen.Function(
-				gen.Name("main"),
-				gen.Constructor(),
-				gen.Returns(),
-				gen.Block(
-					gen.SourceText(
-						templates.Must("main.tml"),
-						struct {
-							Extensions       []string
-							TargetDir        string
-							Package          string
-							GenerateTemplate string
-						}{
-							TargetDir:  inDir,
-							Extensions: extensions,
-							Package:    pkgName,
-							GenerateTemplate: `{{range $key, $value := .Files}}
-								files[{{quote $key}}] = []byte("{{$value}}")
-							{{end}}`,
-						},
-					),
-				),
-			),
-		),
-	)
-
-	if err := os.MkdirAll(assetDir, 0700); err != nil && !os.IsExist(err) {
-		events.Emit(metrics.Error(err).With("dir", rootCMD).
-			With("targetDir", rootDir).
-			With("message", "Failed to create new package directory"))
-		panic(err)
+	if err != nil {
+		events.Emit(metrics.Error(err).With("dir", rootDir).With("message", "Failed to generation assets"))
+		return
 	}
 
-	genDir := filepath.Join(rootDir, pkgName+".go")
-	if err := utils.WriteFile(events, fmtwriter.New(genFile, true, true), genDir); err != nil {
-		events.Emit(metrics.Error(err).With("dir", rootCMD).
-			With("targetDir", rootDir).
-			With("message", "Failed to create new package directory: generate.go"))
-		panic(err)
-	}
+	for _, directive := range directives {
+		if directive.Dir != "" {
+			coDir := filepath.Join(rootDir, directive.Dir)
 
-	dir := filepath.Join(rootDir, "generate.go")
-	if err := utils.WriteFile(events, fmtwriter.New(mainFile, true, true), dir); err != nil {
-		events.Emit(metrics.Error(err).With("dir", rootCMD).
-			With("targetDir", rootDir).
-			With("message", "Failed to create new package directory: generate.go"))
-		panic(err)
+			if _, err := os.Stat(coDir); err != nil {
+				fmt.Printf("- Creating package directory: %q\n", coDir)
+				if err := os.MkdirAll(coDir, 0700); err != nil && err != os.ErrExist {
+					events.Emit(metrics.Error(err).With("dir", coDir).With("message", "Failed to create directory"))
+					return
+				}
+			}
+
+		}
+
+		if directive.Writer == nil {
+			continue
+		}
+
+		coFile := filepath.Join(rootDir, directive.Dir, directive.FileName)
+
+		if _, err := os.Stat(coFile); err == nil {
+			if directive.DontOverride {
+				continue
+			}
+		}
+
+		dFile, err := os.Create(coFile)
+		if err != nil {
+			events.Emit(metrics.Error(err).With("dir", rootDir).With("file", coFile).With("message", "Failed to create file"))
+			return
+		}
+
+		if _, err := directive.Writer.WriteTo(dFile); err != nil {
+			events.Emit(metrics.Error(err).With("dir", rootDir).With("file", coFile).With("message", "Failed to write to file"))
+			return
+		}
+
+		rel, _ := filepath.Rel(rootDir, coFile)
+		fmt.Printf("- Add file to package directory: %q\n", rel)
+
+		dFile.Close()
 	}
 }
 

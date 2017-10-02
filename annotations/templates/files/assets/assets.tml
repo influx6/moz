@@ -1,4 +1,4 @@
-events := metrics.New(metrics.Stdout{})
+var events = metrics.New(custom.StackDisplay(os.Stdout))
 
 items, err := vfiles.ParseDir("{{.TargetDir}}", []string{
     {{range .Extensions}}

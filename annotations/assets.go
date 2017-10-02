@@ -73,7 +73,7 @@ func AssetsAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDe
 				gen.Import("github.com/influx6/faux/vfiles", ""),
 				gen.Import("github.com/influx6/faux/fmtwriter", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import("github.com/influx6/faux/metrics/custom", ""),
 			),
 			gen.Function(
 				gen.Name("main"),

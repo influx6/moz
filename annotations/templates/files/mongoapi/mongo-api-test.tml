@@ -1,5 +1,5 @@
 var (
-    events = metrics.New(stdout.Stdout{})
+    events = metrics.New(custom.StackDisplay(os.Stdout))
 
     config = mongo.Config{
         Mode: mgo.Monotonic,
@@ -13,7 +13,7 @@ var (
     testCol = "{{lower .Struct.Object.Name.Name}}_test_collection"
 )
 
-// TestGet{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}} 
+// TestGet{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}}
 // record from a mongodb.
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
     api := mongoapi.New(testCol, events, mongo.New(config))
@@ -109,7 +109,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     tests.Passed("Successfully retrieved atleast 1 record for {{.Struct.Object.Name}} from db.")
 }
 
-// Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 
+// Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}}
 // record with a mongodb.
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
     api := mongoapi.New(testCol, events, mongo.New(config))
@@ -130,7 +130,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
     tests.Passed("Successfully added record for {{.Struct.Object.Name}} into db.")
 }
 
-// Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
+// Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}}
 // record with a mongodb.
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
     api := mongoapi.New(testCol, events, mongo.New(config))
@@ -169,7 +169,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     tests.Passed("Successfully matched updated record with inserted record for {{.Struct.Object.Name}}.")
 }
 
-// Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 
+// Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}}
 // record from a mongodb.
 func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     api := mongoapi.New(testCol, events, mongo.New(config))
