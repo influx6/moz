@@ -386,6 +386,40 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					comment = rdeclr.Doc.Text()
 				}
 
+				var annotations []AnnotationDeclaration
+				associations := make(map[string]AnnotationAssociationDeclaration, 0)
+
+				if rdeclr.Doc != nil {
+					annotationRead := ReadAnnotationsFromCommentry(bytes.NewBufferString(rdeclr.Doc.Text()))
+
+					for _, item := range annotationRead {
+						log.Emit(metrics.Info("Annotation in Function Decleration comment").
+							With("dir", dir).
+							With("annotation", item.Name).
+							With("position", rdeclr.Pos()))
+
+						switch item.Name {
+						case "associates":
+							log.Emit(metrics.Error(errors.New("Association Annotation in Decleration is incomplete: Expects 3 elements")).
+								With("dir", dir).
+								With("association", item.Arguments).
+								With("position", rdeclr.Pos()))
+
+							if len(item.Arguments) >= 3 {
+								associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
+									Record:     item,
+									Template:   item.Template,
+									Action:     item.Arguments[1],
+									TypeName:   item.Arguments[2],
+									Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
+								}
+							}
+						default:
+							annotations = append(annotations, item)
+						}
+					}
+				}
+
 				var defFunc FuncDeclaration
 
 				defFunc.Comments = comment
@@ -401,6 +435,8 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				defFunc.From = beginPosition.Offset
 				defFunc.Package = packageDeclr.Package
 				defFunc.FilePath = packageDeclr.FilePath
+				defFunc.Annotations = annotations
+				defFunc.Associations = associations
 
 				if rdeclr.Type != nil {
 					defFunc.Returns = rdeclr.Type.Results

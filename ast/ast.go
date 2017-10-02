@@ -278,25 +278,27 @@ type TypeDeclaration struct {
 // FuncDeclaration defines a type used to annotate a giving type declaration
 // associated with a ast for a function.
 type FuncDeclaration struct {
-	From          int                 `json:"from"`
-	Length        int                 `json:"length"`
-	Package       string              `json:"package"`
-	Path          string              `json:"path"`
-	FilePath      string              `json:"filepath"`
-	File          string              `json:"file"`
-	FuncName      string              `json:"funcName"`
-	RecieverName  string              `json:"receiverName"`
-	Source        string              `json:"source"`
-	Comments      string              `json:"comments"`
-	Position      token.Pos           `json:"position"`
-	FuncDeclr     *ast.FuncDecl       `json:"funcdeclr"`
-	Type          *ast.FuncType       `json:"type"`
-	Reciever      *ast.Object         `json:"receiver"`
-	RecieverIdent *ast.Ident          `json:"receiverIdent"`
-	FuncType      *ast.FieldList      `json:"funcType"`
-	Returns       *ast.FieldList      `json:"returns"`
-	Arguments     *ast.FieldList      `json:"arguments"`
-	PackageDeclr  *PackageDeclaration `json:"-"`
+	From          int                                         `json:"from"`
+	Length        int                                         `json:"length"`
+	Package       string                                      `json:"package"`
+	Path          string                                      `json:"path"`
+	FilePath      string                                      `json:"filepath"`
+	File          string                                      `json:"file"`
+	FuncName      string                                      `json:"funcName"`
+	RecieverName  string                                      `json:"receiverName"`
+	Source        string                                      `json:"source"`
+	Comments      string                                      `json:"comments"`
+	Position      token.Pos                                   `json:"position"`
+	FuncDeclr     *ast.FuncDecl                               `json:"funcdeclr"`
+	Type          *ast.FuncType                               `json:"type"`
+	Reciever      *ast.Object                                 `json:"receiver"`
+	RecieverIdent *ast.Ident                                  `json:"receiverIdent"`
+	FuncType      *ast.FieldList                              `json:"funcType"`
+	Returns       *ast.FieldList                              `json:"returns"`
+	Arguments     *ast.FieldList                              `json:"arguments"`
+	PackageDeclr  *PackageDeclaration                         `json:"-"`
+	Annotations   []AnnotationDeclaration                     `json:"annotations"`
+	Associations  map[string]AnnotationAssociationDeclaration `json:"associations"`
 }
 
 // Functions defines a slice of FuncDeclaration.

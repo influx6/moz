@@ -16,6 +16,11 @@ import (
 // It is responsible to fully contain all operations required to both generator any source and write such to
 type TypeAnnotationGenerator func(string, AnnotationDeclaration, TypeDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
 
+// FunctionAnnotationGenerator defines a function which generates specific code related to the giving
+// Annotation. This allows you to generate a new source file containg source code for a giving struct type.
+// It is responsible to fully contain all operations required to both generator any source and write such to.
+type FunctionAnnotationGenerator func(string, AnnotationDeclaration, FuncDeclaration, PackageDeclaration, Package) ([]gen.WriteDirective, error)
+
 // StructAnnotationGenerator defines a function which generates specific code related to the giving
 // Annotation. This allows you to generate a new source file containg source code for a giving struct type.
 // It is responsible to fully contain all operations required to both generator any source and write such to.
@@ -40,6 +45,7 @@ type PackageAnnotationGenerator func(string, AnnotationDeclaration, PackageDecla
 type Annotations struct {
 	Types      map[string]TypeAnnotationGenerator
 	Structs    map[string]StructAnnotationGenerator
+	Functions  map[string]FunctionAnnotationGenerator
 	Packages   map[string]PackageAnnotationGenerator
 	Interfaces map[string]InterfaceAnnotationGenerator
 }
@@ -53,6 +59,7 @@ type AnnotationRegistry struct {
 	structAnnotations    map[string]StructAnnotationGenerator
 	pkgAnnotations       map[string]PackageAnnotationGenerator
 	interfaceAnnotations map[string]InterfaceAnnotationGenerator
+	functionAnnotations  map[string]FunctionAnnotationGenerator
 }
 
 // NewAnnotationRegistry returns a new instance of a AnnotationRegistry.
@@ -63,6 +70,7 @@ func NewAnnotationRegistry() *AnnotationRegistry {
 		structAnnotations:    make(map[string]StructAnnotationGenerator),
 		pkgAnnotations:       make(map[string]PackageAnnotationGenerator),
 		interfaceAnnotations: make(map[string]InterfaceAnnotationGenerator),
+		functionAnnotations:  make(map[string]FunctionAnnotationGenerator),
 	}
 }
 
@@ -74,6 +82,7 @@ func NewAnnotationRegistryWith(log metrics.Metrics) *AnnotationRegistry {
 		structAnnotations:    make(map[string]StructAnnotationGenerator),
 		pkgAnnotations:       make(map[string]PackageAnnotationGenerator),
 		interfaceAnnotations: make(map[string]InterfaceAnnotationGenerator),
+		functionAnnotations:  make(map[string]FunctionAnnotationGenerator),
 	}
 }
 
@@ -88,9 +97,14 @@ func (a *AnnotationRegistry) Clone() Annotations {
 	cloned.Structs = make(map[string]StructAnnotationGenerator)
 	cloned.Packages = make(map[string]PackageAnnotationGenerator)
 	cloned.Interfaces = make(map[string]InterfaceAnnotationGenerator)
+	cloned.Functions = make(map[string]FunctionAnnotationGenerator)
 
 	for name, item := range a.pkgAnnotations {
 		cloned.Packages[name] = item
+	}
+
+	for name, item := range a.functionAnnotations {
+		cloned.Functions[name] = item
 	}
 
 	for name, item := range a.structAnnotations {
@@ -131,6 +145,13 @@ func (a *AnnotationRegistry) Copy(registry *AnnotationRegistry, strategy CopyStr
 
 		if !ok || (ok && strategy == TheirsOverOurs) {
 			a.pkgAnnotations[name] = item
+		}
+	}
+
+	for name, item := range cloned.Functions {
+		_, ok := a.functionAnnotations[name]
+		if !ok || (ok && strategy == TheirsOverOurs) {
+			a.functionAnnotations[name] = item
 		}
 	}
 
@@ -320,6 +341,60 @@ func (a *AnnotationRegistry) ParseDeclr(pkg Package, declr PackageDeclaration, t
 		}
 	}
 
+	for _, typ := range declr.Functions {
+		for _, annotation := range typ.Annotations {
+			a.metrics.Emit(metrics.Info("Directive Generation").
+				With("Level", "Type").
+				With("Annotaton", annotation.Name).
+				With("Function", typ.FuncDeclr.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
+
+			generator, err := a.GetFunctionType(annotation.Name)
+			if err != nil {
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
+					With("error", err).
+					With("Level", "Type").
+					With("Annotaton", annotation.Name).
+					With("Function", typ.FuncDeclr.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
+				continue
+			}
+
+			drs, err := generator(toDir, annotation, typ, declr, pkg)
+			if err != nil {
+				a.metrics.Emit(metrics.Error(errors.New("Directive Generation")).
+					With("error", err).
+					With("Level", "Type").
+					With("Annotaton", annotation.Name).
+					With("Function", typ.FuncDeclr.Name.Name).
+					With("Params", annotation.Params).
+					With("Arguments", annotation.Arguments).
+					With("Template", annotation.Template))
+				return nil, err
+			}
+
+			a.metrics.Emit(metrics.Info("Directive Generation: Success").
+				With("Level", "Type").
+				With("Directive", len(drs)).
+				With("Annotaton", annotation.Name).
+				With("Function", typ.FuncDeclr.Name.Name).
+				With("Params", annotation.Params).
+				With("Arguments", annotation.Arguments).
+				With("Template", annotation.Template))
+
+			for _, directive := range drs {
+				directives = append(directives, AnnotationWriteDirective{
+					WriteDirective: directive,
+					Annotation:     annotation.Name,
+				})
+			}
+		}
+	}
+
 	for _, typ := range declr.Types {
 		for _, annotation := range typ.Annotations {
 			a.metrics.Emit(metrics.Info("Directive Generation").
@@ -405,6 +480,35 @@ func (a *AnnotationRegistry) MustInterfaceType(annotation string) InterfaceAnnot
 	}
 
 	panic(err)
+}
+
+// MustFunctionType returns the annotation generator associated with the giving annotation name.
+func (a *AnnotationRegistry) MustFunctionType(annotation string) FunctionAnnotationGenerator {
+	annon, err := a.GetFunctionType(annotation)
+	if err == nil {
+		return annon
+	}
+
+	panic(err)
+}
+
+// GetFunctionType returns the annotation generator associated with the giving annotation name.
+func (a *AnnotationRegistry) GetFunctionType(annotation string) (FunctionAnnotationGenerator, error) {
+	annotation = strings.TrimPrefix(annotation, "@")
+	var annon FunctionAnnotationGenerator
+	var ok bool
+
+	a.ml.RLock()
+	{
+		annon, ok = a.functionAnnotations[annotation]
+	}
+	a.ml.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("Function/Method Annotation @%s not found", annotation)
+	}
+
+	return annon, nil
 }
 
 // GetInterfaceType returns the annotation generator associated with the giving annotation name.
