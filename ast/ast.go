@@ -213,6 +213,19 @@ func (pkg PackageDeclaration) HasAnnotation(typeName string) bool {
 	return false
 }
 
+// GetAnnotation returns the first annotation with the giving name.
+func (pkg PackageDeclaration) GetAnnotation(typeName string) (AnnotationDeclaration, bool) {
+	typeName = strings.TrimPrefix(typeName, "@")
+	for _, item := range pkg.Annotations {
+		if strings.TrimPrefix(item.Name, "@") != typeName {
+			continue
+		}
+		return item, true
+	}
+
+	return AnnotationDeclaration{}, false
+}
+
 // AnnotationsFor returns all annotations with the giving name.
 func (pkg PackageDeclaration) AnnotationsFor(typeName string) []AnnotationDeclaration {
 	typeName = strings.TrimPrefix(typeName, "@")
