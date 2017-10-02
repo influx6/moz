@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/doc"
 	"go/parser"
 	"go/token"
 	"io"
@@ -102,8 +103,6 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				return RootPackage{}, err
 			}
 
-			res.PackageObject = pkg
-
 			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
 
 			if owner, ok := packageDeclrs[res.Package]; ok {
@@ -117,6 +116,7 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				Package:  res.Package,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
+				Doc:      doc.New(pkg, "./", 0),
 			}
 		}
 	}
@@ -204,6 +204,7 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 				Package:  res.Package,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
+				Doc:      doc.New(pkg, "./", 0),
 			}
 		}
 	}
@@ -281,7 +282,7 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 		BuildPkg: buildPkg,
 		Package:  buildPkg.ImportPath,
 		Packages: declrs,
-		// Doc: doc.New(pkg, "./", 0),
+		Doc:      doc.New(pkg, "./", 0),
 	}, nil
 }
 
@@ -302,12 +303,10 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 	var packageDeclr PackageDeclaration
 
 	{
-
 		pkgSource, _ := readSource(path)
 
 		packageDeclr.Package = pkgName
 		packageDeclr.FilePath = path
-		packageDeclr.PackageObject = pkgAstObj
 		packageDeclr.Source = string(pkgSource)
 		packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
 		packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)

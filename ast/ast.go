@@ -153,20 +153,19 @@ func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
 // giving package.
 type PackageDeclaration struct {
-	Package       string                            `json:"package"`
-	Path          string                            `json:"path"`
-	FilePath      string                            `json:"filepath"`
-	File          string                            `json:"file"`
-	Source        string                            `json:"source"`
-	Comments      []string                          `json:"comments"`
-	PackageObject *ast.Package                      `json:"package_obj"`
-	Imports       map[string]ImportDeclaration      `json:"imports"`
-	Annotations   []AnnotationDeclaration           `json:"annotations"`
-	Types         []TypeDeclaration                 `json:"types"`
-	Structs       []StructDeclaration               `json:"structs"`
-	Interfaces    []InterfaceDeclaration            `json:"interfaces"`
-	Functions     []FuncDeclaration                 `json:"functions"`
-	ObjectFunc    map[*ast.Object][]FuncDeclaration `json:"object_functions"`
+	Package     string                            `json:"package"`
+	Path        string                            `json:"path"`
+	FilePath    string                            `json:"filepath"`
+	File        string                            `json:"file"`
+	Source      string                            `json:"source"`
+	Comments    []string                          `json:"comments"`
+	Imports     map[string]ImportDeclaration      `json:"imports"`
+	Annotations []AnnotationDeclaration           `json:"annotations"`
+	Types       []TypeDeclaration                 `json:"types"`
+	Structs     []StructDeclaration               `json:"structs"`
+	Interfaces  []InterfaceDeclaration            `json:"interfaces"`
+	Functions   []FuncDeclaration                 `json:"functions"`
+	ObjectFunc  map[*ast.Object][]FuncDeclaration `json:"object_functions"`
 }
 
 // HasFunctionFor returns true/false if the giving function name exists for the package.
