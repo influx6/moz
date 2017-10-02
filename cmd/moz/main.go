@@ -11,6 +11,7 @@ import (
 	"github.com/influx6/faux/fmtwriter"
 	"github.com/influx6/faux/metrics"
 	"github.com/influx6/faux/metrics/custom"
+	"github.com/influx6/gobuild/build"
 	"github.com/influx6/moz"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/cmd/moz/templates"
@@ -80,6 +81,32 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "f,fromFile",
+					Value: "",
+					Usage: "-f=./",
+				},
+				cli.BoolFlag{
+					Name:  "fw,forceWrite",
+					Usage: "-fw=true",
+				},
+				cli.StringFlag{
+					Name:  "t,toDir",
+					Value: "",
+					Usage: "-t=./",
+				},
+			},
+		},
+		{
+			Name:        "generate-tag",
+			Action:      generatePackageCLIWithTag,
+			Description: "Runs the moz parser to parse and generate code for all annotations in the package directory where files have the provided build tag",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "tg,tag",
+					Value: "",
+					Usage: "-tg=maze",
+				},
+				cli.StringFlag{
+					Name:  "f,fromDir",
 					Value: "",
 					Usage: "-f=./",
 				},
@@ -311,15 +338,60 @@ func generatePackageCLI(c *cli.Context) {
 	events.Emit(metrics.Info("Using FromDir: %s", fromDir).With("dir", fromDir))
 	events.Emit(metrics.Info("Using ToDir: %s", toDir).With("dir", toDir))
 
-	pkgs, err := ast.ParseAnnotations(events, fromDir)
+	pkg, err := ast.ParseAnnotations(events, fromDir)
 	if err != nil {
 		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package annotations"))
 		return
 	}
 
-	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkgs)))
+	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg.Packages)))
 
-	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkgs...); err != nil {
+	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg.PackageList()...); err != nil {
+		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
+	}
+
+	events.Emit(metrics.Info("Finished").With("toDir", toDir).With("fromDir", fromDir))
+}
+
+func generatePackageCLIWithTag(c *cli.Context) {
+	var err error
+
+	forceWrite := c.Bool("forceWrite")
+	fromDir := c.String("fromDir")
+	toDir := c.String("toDir")
+	buildTag := c.String("tag")
+
+	if filepath.IsAbs(toDir) {
+		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
+		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+		return
+	}
+
+	if fromDir == "" {
+		fromDir, err = os.Getwd()
+		if err != nil {
+			events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+			return
+		}
+	}
+
+	events.Emit(metrics.Info("Using FromDir: %s", fromDir).With("dir", fromDir))
+	events.Emit(metrics.Info("Using ToDir: %s", toDir).With("dir", toDir))
+	events.Emit(metrics.Info("Using Build Tag").With("tag", buildTag))
+
+	var ctx build.Context
+	ctx.BuildTags = append(ctx.BuildTags, buildTag)
+	ctx.RequiredTags = append(ctx.RequiredTags, buildTag)
+
+	pkg, err := ast.FilteredPackageWithBuildCtx(events, fromDir, ctx)
+	if err != nil {
+		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package annotations"))
+		return
+	}
+
+	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg.Packages)))
+
+	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg.PackageList()...); err != nil {
 		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
