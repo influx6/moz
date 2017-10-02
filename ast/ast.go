@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/doc"
 	"go/token"
 	"io"
 	"math/rand"
@@ -76,8 +77,10 @@ func (r RootPackage) PackageList() []Package {
 
 // ImportDeclaration defines a type to contain import declaration within a package.
 type ImportDeclaration struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Source   string `json:"source"`
+	Comments string `json:"comments"`
 }
 
 // Package defines the central repository of all PackageDeclaration.
@@ -85,6 +88,7 @@ type Package struct {
 	Package  string               `json:"package"`
 	Path     string               `json:"path"`
 	BuildPkg *build.Package       `json:"build_package"`
+	Doc      *doc.Package         `json:"doc"`
 	Packages []PackageDeclaration `json:"packages"`
 }
 
@@ -144,20 +148,32 @@ func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	return funcs
 }
 
+//===========================================================================================================
+
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
 // giving package.
 type PackageDeclaration struct {
-	Package     string                            `json:"package"`
-	Path        string                            `json:"path"`
-	FilePath    string                            `json:"filepath"`
-	File        string                            `json:"file"`
-	Imports     map[string]ImportDeclaration      `json:"imports"`
-	Annotations []AnnotationDeclaration           `json:"annotations"`
-	Types       []TypeDeclaration                 `json:"types"`
-	Structs     []StructDeclaration               `json:"structs"`
-	Interfaces  []InterfaceDeclaration            `json:"interfaces"`
-	Functions   []FuncDeclaration                 `json:"functions"`
-	ObjectFunc  map[*ast.Object][]FuncDeclaration `json:"object_functions"`
+	Package       string                            `json:"package"`
+	Path          string                            `json:"path"`
+	FilePath      string                            `json:"filepath"`
+	File          string                            `json:"file"`
+	Source        string                            `json:"source"`
+	Comments      []string                          `json:"comments"`
+	PackageObject *ast.Package                      `json:"package_obj"`
+	Imports       map[string]ImportDeclaration      `json:"imports"`
+	Annotations   []AnnotationDeclaration           `json:"annotations"`
+	Types         []TypeDeclaration                 `json:"types"`
+	Structs       []StructDeclaration               `json:"structs"`
+	Interfaces    []InterfaceDeclaration            `json:"interfaces"`
+	Functions     []FuncDeclaration                 `json:"functions"`
+	ObjectFunc    map[*ast.Object][]FuncDeclaration `json:"object_functions"`
+}
+
+// HasFunctionFor returns true/false if the giving function name exists for the package.
+func HasFunctionFor(pkg PackageDeclaration) func(StructDeclaration, string) bool {
+	return func(str StructDeclaration, funcName string) bool {
+		return pkg.HasFunctionFor(str, funcName)
+	}
 }
 
 // HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
@@ -223,11 +239,41 @@ func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	return pkg.FunctionsForName(obj.Name)
 }
 
-// HasFunctionFor returns true/false if the giving function name exists for the package.
-func HasFunctionFor(pkg PackageDeclaration) func(StructDeclaration, string) bool {
-	return func(str StructDeclaration, funcName string) bool {
-		return pkg.HasFunctionFor(str, funcName)
-	}
+//===========================================================================================================
+
+// StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
+type StructDeclaration struct {
+	From         int                                         `json:"from"`
+	Length       int                                         `json:"length"`
+	Package      string                                      `json:"package"`
+	Path         string                                      `json:"path"`
+	FilePath     string                                      `json:"filepath"`
+	Source       string                                      `json:"source"`
+	Comments     string                                      `json:"comments"`
+	File         string                                      `json:"file"`
+	Struct       *ast.StructType                             `json:"struct"`
+	Object       *ast.TypeSpec                               `json:"object"`
+	Position     token.Pos                                   `json:"position"`
+	Annotations  []AnnotationDeclaration                     `json:"annotations"`
+	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	PackageDeclr *PackageDeclaration                         `json:"-"`
+}
+
+// TypeDeclaration defines a type which holds annotation data for a giving type declaration.
+type TypeDeclaration struct {
+	From         int                                         `json:"from"`
+	Length       int                                         `json:"length"`
+	Package      string                                      `json:"package"`
+	Path         string                                      `json:"path"`
+	FilePath     string                                      `json:"filepath"`
+	Source       string                                      `json:"source"`
+	Comments     string                                      `json:"comments"`
+	File         string                                      `json:"file"`
+	Object       *ast.TypeSpec                               `json:"object"`
+	Position     token.Pos                                   `json:"position"`
+	Annotations  []AnnotationDeclaration                     `json:"annotations"`
+	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 //===========================================================================================================
@@ -235,14 +281,16 @@ func HasFunctionFor(pkg PackageDeclaration) func(StructDeclaration, string) bool
 // FuncDeclaration defines a type used to annotate a giving type declaration
 // associated with a ast for a function.
 type FuncDeclaration struct {
-	LineNumber    int                 `json:"line_number"`
-	Column        int                 `json:"column"`
+	From          int                 `json:"from"`
+	Length        int                 `json:"length"`
 	Package       string              `json:"package"`
 	Path          string              `json:"path"`
 	FilePath      string              `json:"filepath"`
 	File          string              `json:"file"`
 	FuncName      string              `json:"funcName"`
 	RecieverName  string              `json:"receiverName"`
+	Source        string              `json:"source"`
+	Comments      string              `json:"comments"`
 	Position      token.Pos           `json:"position"`
 	FuncDeclr     *ast.FuncDecl       `json:"funcdeclr"`
 	Type          *ast.FuncType       `json:"type"`
@@ -282,10 +330,12 @@ type AnnotationAssociationDeclaration struct {
 
 // InterfaceDeclaration defines a type which holds annotation data for a giving interface type declaration.
 type InterfaceDeclaration struct {
-	LineNumber   int                                         `json:"line_number"`
-	Column       int                                         `json:"column"`
+	From         int                                         `json:"from"`
+	Length       int                                         `json:"length"`
 	Package      string                                      `json:"package"`
 	Path         string                                      `json:"path"`
+	Source       string                                      `json:"source"`
+	Comments     string                                      `json:"comments"`
 	FilePath     string                                      `json:"filepath"`
 	File         string                                      `json:"file"`
 	Interface    *ast.InterfaceType                          `json:"interface"`
@@ -325,9 +375,9 @@ type ArgType struct {
 // FunctionDefinition defines a type to represent the function/method declarations of an
 // interface type.
 type FunctionDefinition struct {
-	Name      string
-	Args      []ArgType
-	Returns   []ArgType
+	Name      string    `json:"name"`
+	Args      []ArgType `json:"args"`
+	Returns   []ArgType `json:"returns"`
 	Func      *ast.FuncType
 	Interface *ast.InterfaceType
 	Struct    *ast.StructType
@@ -865,39 +915,6 @@ func getName(item interface{}) string {
 	default:
 		return ""
 	}
-}
-
-//===========================================================================================================
-
-// StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
-type StructDeclaration struct {
-	LineNumber   int                                         `json:"line_number"`
-	Column       int                                         `json:"column"`
-	Package      string                                      `json:"package"`
-	Path         string                                      `json:"path"`
-	FilePath     string                                      `json:"filepath"`
-	File         string                                      `json:"file"`
-	Struct       *ast.StructType                             `json:"struct"`
-	Object       *ast.TypeSpec                               `json:"object"`
-	Position     token.Pos                                   `json:"position"`
-	Annotations  []AnnotationDeclaration                     `json:"annotations"`
-	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
-	PackageDeclr *PackageDeclaration                         `json:"-"`
-}
-
-// TypeDeclaration defines a type which holds annotation data for a giving type declaration.
-type TypeDeclaration struct {
-	LineNumber   int                                         `json:"line_number"`
-	Column       int                                         `json:"column"`
-	Package      string                                      `json:"package"`
-	Path         string                                      `json:"path"`
-	FilePath     string                                      `json:"filepath"`
-	File         string                                      `json:"file"`
-	Object       *ast.TypeSpec                               `json:"object"`
-	Position     token.Pos                                   `json:"position"`
-	Annotations  []AnnotationDeclaration                     `json:"annotations"`
-	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
-	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 //===========================================================================================================

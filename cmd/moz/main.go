@@ -277,13 +277,13 @@ func generateFileCLI(c *cli.Context) {
 		return
 	}
 
-	if fromFile == "" {
-		fromFile, err = os.Getwd()
-		if err != nil {
-			events.Emit(metrics.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
-			return
-		}
-	}
+	// if fromFile == "" {
+	// 	fromFile, err = os.Getwd()
+	// 	if err != nil {
+	// 		events.Emit(metrics.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
+	// 		return
+	// 	}
+	// }
 
 	// If its not an absolute path then get real absolute
 	if !filepath.IsAbs(fromFile) {
@@ -361,6 +361,14 @@ func generatePackageCLIWithTag(c *cli.Context) {
 	toDir := c.String("toDir")
 	buildTag := c.String("tag")
 
+	if toDir == "" {
+		toDir = "."
+	}
+
+	if buildTag == "" {
+		buildTag = c.Args().First()
+	}
+
 	if filepath.IsAbs(toDir) {
 		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
 		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
@@ -379,7 +387,7 @@ func generatePackageCLIWithTag(c *cli.Context) {
 	events.Emit(metrics.Info("Using ToDir: %s", toDir).With("dir", toDir))
 	events.Emit(metrics.Info("Using Build Tag").With("tag", buildTag))
 
-	var ctx build.Context
+	ctx := build.Default
 	ctx.BuildTags = append(ctx.BuildTags, buildTag)
 	ctx.RequiredTags = append(ctx.RequiredTags, buildTag)
 

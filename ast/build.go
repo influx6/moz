@@ -23,62 +23,6 @@ var (
 	ErrEmptyList = errors.New("Slice/List is empty")
 )
 
-// FilteredPackageFilesWithBuildCtx parses the package directory which generates a series of ast with associated
-// annotation for processing by using the golang token parser, it uses the build.Context to
-// collected context details for the package and only processes the files found by the build context.
-// If you need something more broad without filtering, use PackageWithBuildCtx.
-func FilteredPackageFilesWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (RootPackage, error) {
-	rootbuildPkg, err := ctx.ImportDir(dir, 0)
-	if err != nil {
-		log.Emit(metrics.Errorf("Failed to retrieve build.Package for root directory").
-			With("file", dir).
-			With("dir", dir).
-			With("error", err.Error()).
-			With("mode", build.FindOnly))
-		return RootPackage{}, err
-	}
-
-	log.Emit(metrics.Info("Generated build.Package").
-		With("file", dir).
-		With("dir", dir).
-		With("pkg", rootbuildPkg).
-		With("mode", build.FindOnly))
-
-	var rpkg RootPackage
-	rpkg.Path = rootbuildPkg.Dir
-	rpkg.BuildPkg = rootbuildPkg
-	rpkg.Package = rootbuildPkg.ImportPath
-
-	var rpkgDeclr []PackageDeclaration
-
-	tokenFiles := token.NewFileSet()
-
-	for _, file := range rootbuildPkg.GoFiles {
-		tfile, err := parser.ParseFile(tokenFiles, file, nil, parser.ParseComments)
-		if err != nil {
-			log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file))
-			return rpkg, err
-		}
-
-		res, err := parseFileToPackage(log, dir, filepath.Join(dir, file), file, tokenFiles, tfile)
-		if err != nil {
-			log.Emit(metrics.Error(err).With("message", "Failed to process file").With("dir", dir).With("file", file))
-			return rpkg, err
-		}
-
-		rpkgDeclr = append(rpkgDeclr, res)
-	}
-
-	rpkg.Packages[rootbuildPkg.ImportPath] = Package{
-		Path:     rootbuildPkg.Dir,
-		Package:  rootbuildPkg.ImportPath,
-		BuildPkg: rootbuildPkg,
-		Packages: rpkgDeclr,
-	}
-
-	return rpkg, nil
-}
-
 // FilteredPackageWithBuildCtx parses the package directory which generates a series of ast with associated
 // annotation for processing by using the golang token parser, it uses the build.Context to
 // collected context details for the package and only processes the files found by the build context.
@@ -106,6 +50,7 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 	}
 
 	filter := func(f os.FileInfo) bool {
+		log.Emit(metrics.Info("Parse Filtering file").With("incoming-file", f.Name()).With("allowed", allowed[f.Name()]))
 		return allowed[f.Name()]
 	}
 
@@ -122,32 +67,42 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 	}
 
 	packageDeclrs := make(map[string]Package)
+	packageBuilds := make(map[string]*build.Package)
+
 	for _, pkg := range packages {
 		for path, file := range pkg.Files {
 
-			buildPkg, err := ctx.ImportDir(filepath.Dir(path), 0)
-			if err != nil {
-				log.Emit(metrics.Errorf("Failed to retrieve build.Package").
+			pathPkg := filepath.Dir(path)
+			buildPkg, ok := packageBuilds[pathPkg]
+			if !ok {
+				buildPkg, err = ctx.ImportDir(pathPkg, 0)
+				if err != nil {
+					log.Emit(metrics.Errorf("Failed to retrieve build.Package").
+						With("file", path).
+						With("dir", dir).
+						With("file-dir", filepath.Dir(path)).
+						With("error", err.Error()).
+						With("mode", build.FindOnly))
+					return RootPackage{}, err
+				}
+
+				packageBuilds[pathPkg] = buildPkg
+
+				log.Emit(metrics.Info("Generated build.Package").
 					With("file", path).
-					With("dir", dir).
+					With("pkg", buildPkg).
 					With("file-dir", filepath.Dir(path)).
-					With("error", err.Error()).
+					With("dir", dir).
 					With("mode", build.FindOnly))
-				return RootPackage{}, err
 			}
 
-			log.Emit(metrics.Info("Generated build.Package").
-				With("file", path).
-				With("pkg", buildPkg).
-				With("file-dir", filepath.Dir(path)).
-				With("dir", dir).
-				With("mode", build.FindOnly))
-
-			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file)
+			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file, pkg)
 			if err != nil {
 				log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
 				return RootPackage{}, err
 			}
+
+			res.PackageObject = pkg
 
 			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
 
@@ -201,29 +156,36 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 	}
 
 	packageDeclrs := make(map[string]Package)
+	packageBuilds := make(map[string]*build.Package)
 
 	for _, pkg := range packages {
 		for path, file := range pkg.Files {
 
-			buildPkg, err := ctx.ImportDir(filepath.Dir(path), 0)
-			if err != nil {
-				log.Emit(metrics.Errorf("Failed to retrieve build.Package").
+			pathPkg := filepath.Dir(path)
+			buildPkg, ok := packageBuilds[pathPkg]
+			if !ok {
+				buildPkg, err = ctx.ImportDir(pathPkg, 0)
+				if err != nil {
+					log.Emit(metrics.Errorf("Failed to retrieve build.Package").
+						With("file", path).
+						With("dir", dir).
+						With("file-dir", filepath.Dir(path)).
+						With("error", err.Error()).
+						With("mode", build.FindOnly))
+					return RootPackage{}, err
+				}
+
+				packageBuilds[pathPkg] = buildPkg
+
+				log.Emit(metrics.Info("Generated build.Package").
 					With("file", path).
-					With("dir", dir).
+					With("pkg", buildPkg).
 					With("file-dir", filepath.Dir(path)).
-					With("error", err.Error()).
+					With("dir", dir).
 					With("mode", build.FindOnly))
-				return RootPackage{}, err
 			}
 
-			log.Emit(metrics.Info("Generated build.Package").
-				With("file", path).
-				With("pkg", buildPkg).
-				With("file-dir", filepath.Dir(path)).
-				With("dir", dir).
-				With("mode", build.FindOnly))
-
-			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file)
+			res, err := parseFileToPackage(log, dir, path, pkg.Name, tokenFiles, file, pkg)
 			if err != nil {
 				log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
 				return RootPackage{}, err
@@ -257,6 +219,7 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 // PackageFileWithBuildCtx parses the package from the provided file.
 func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context) (Package, error) {
 	dir := filepath.Dir(path)
+	fName := filepath.Base(path)
 
 	buildPkg, err := ctx.ImportDir(dir, 0)
 	if err != nil {
@@ -274,23 +237,51 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 		With("pkg", buildPkg).
 		With("mode", build.FindOnly))
 
+	allowed := map[string]bool{
+		fName: true,
+	}
+
+	filter := func(f os.FileInfo) bool {
+		log.Emit(metrics.Info("Parse Filtering file").With("incoming-file", f.Name()).With("allowed", allowed[f.Name()]))
+		return allowed[f.Name()]
+	}
+
 	tokenFiles := token.NewFileSet()
-	file, err := parser.ParseFile(tokenFiles, path, nil, parser.ParseComments)
+	packages, err := parser.ParseDir(tokenFiles, path, filter, parser.ParseComments)
 	if err != nil {
-		log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file))
+		log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", path))
 		return Package{}, err
 	}
 
-	res, err := parseFileToPackage(log, dir, path, filepath.Base(dir), tokenFiles, file)
-	if err != nil {
-		return Package{}, err
+	var pkg *ast.Package
+	for _, pkg = range packages {
+		if pkg.Name != buildPkg.Name {
+			continue
+		}
+		break
+	}
+
+	var declrs []PackageDeclaration
+	for fpath, file := range pkg.Files {
+		if fpath != path {
+			continue
+		}
+
+		res, err := parseFileToPackage(log, dir, path, buildPkg.Name, tokenFiles, file, pkg)
+		if err != nil {
+			log.Emit(metrics.Error(err).With("message", "Failed to parse file").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
+			return Package{}, err
+		}
+
+		declrs = append(declrs, res)
 	}
 
 	return Package{
-		Path:     res.Path,
-		Package:  res.Package,
+		Path:     buildPkg.Dir,
 		BuildPkg: buildPkg,
-		Packages: []PackageDeclaration{res},
+		Package:  buildPkg.ImportPath,
+		Packages: declrs,
+		// Doc: doc.New(pkg, "./", 0),
 	}, nil
 }
 
@@ -307,16 +298,32 @@ func ParseAnnotations(log metrics.Metrics, dir string) (RootPackage, error) {
 	return PackageWithBuildCtx(log, dir, build.Default)
 }
 
-func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName string, tokenFiles *token.FileSet, file *ast.File) (PackageDeclaration, error) {
+func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName string, tokenFiles *token.FileSet, file *ast.File, pkgAstObj *ast.Package) (PackageDeclaration, error) {
 	var packageDeclr PackageDeclaration
 
 	{
+
+		pkgSource, _ := readSource(path)
+
 		packageDeclr.Package = pkgName
 		packageDeclr.FilePath = path
+		packageDeclr.PackageObject = pkgAstObj
+		packageDeclr.Source = string(pkgSource)
 		packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
 		packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
 
+		for _, comment := range file.Comments {
+			packageDeclr.Comments = append(packageDeclr.Comments, comment.Text())
+		}
+
 		for _, imp := range file.Imports {
+			beginPosition, endPosition := tokenFiles.Position(imp.Pos()), tokenFiles.Position(imp.End())
+			positionLength := endPosition.Offset - beginPosition.Offset
+			source, err := readSourceIn(beginPosition.Filename, int64(beginPosition.Offset), positionLength)
+			if err != nil {
+				return packageDeclr, err
+			}
+
 			var pkgName string
 
 			if imp.Name != nil {
@@ -328,9 +335,17 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				impPkgPath = imp.Path.Value
 			}
 
+			var comment string
+
+			if imp.Comment != nil {
+				comment = imp.Comment.Text()
+			}
+
 			packageDeclr.Imports[pkgName] = ImportDeclaration{
-				Name: pkgName,
-				Path: impPkgPath,
+				Comments: comment,
+				Name:     pkgName,
+				Path:     impPkgPath,
+				Source:   string(source),
 			}
 		}
 
@@ -359,23 +374,35 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		// Collect and categorize annotations in types and their fields.
 	declrLoop:
 		for _, declr := range file.Decls {
+			beginPosition, endPosition := tokenFiles.Position(declr.Pos()), tokenFiles.Position(declr.End())
+			positionLength := endPosition.Offset - beginPosition.Offset
+			source, err := readSourceIn(beginPosition.Filename, int64(beginPosition.Offset), positionLength)
+			if err != nil {
+				return packageDeclr, err
+			}
+
 			switch rdeclr := declr.(type) {
 			case *ast.FuncDecl:
+				var comment string
 
-				tokenPosition := tokenFiles.Position(rdeclr.Pos())
+				if rdeclr.Doc != nil {
+					comment = rdeclr.Doc.Text()
+				}
 
 				var defFunc FuncDeclaration
 
-				defFunc.PackageDeclr = &packageDeclr
+				defFunc.Comments = comment
+				defFunc.Source = string(source)
 				defFunc.FuncDeclr = rdeclr
 				defFunc.Type = rdeclr.Type
 				defFunc.Position = rdeclr.Pos()
 				defFunc.Path = packageDeclr.Path
 				defFunc.File = packageDeclr.File
+				defFunc.PackageDeclr = &packageDeclr
 				defFunc.FuncName = rdeclr.Name.Name
-				defFunc.Column = tokenPosition.Column
+				defFunc.Length = positionLength
+				defFunc.From = beginPosition.Offset
 				defFunc.Package = packageDeclr.Package
-				defFunc.LineNumber = tokenPosition.Line
 				defFunc.FilePath = packageDeclr.FilePath
 
 				if rdeclr.Type != nil {
@@ -408,6 +435,11 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				continue declrLoop
 
 			case *ast.GenDecl:
+				var comment string
+
+				if rdeclr.Doc != nil {
+					comment = rdeclr.Doc.Text()
+				}
 
 				var annotations []AnnotationDeclaration
 
@@ -444,7 +476,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							annotations = append(annotations, item)
 						}
 					}
-
 				}
 
 				for _, spec := range rdeclr.Specs {
@@ -456,8 +487,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 						// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a40)}, Type:(*ast.Ident)(0xc4200e4a60), Values:[]ast.Expr(nil), Comment:(*ast.CommentGroup)(nil)}
 
 					case *ast.TypeSpec:
-
-						tokenPosition := tokenFiles.Position(spec.Pos())
 
 						switch robj := obj.Type.(type) {
 						case *ast.StructType:
@@ -472,12 +501,14 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Struct:       robj,
 								Annotations:  annotations,
 								Associations: associations,
+								Source:       string(source),
+								Comments:     comment,
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
 								Path:         packageDeclr.Path,
 								FilePath:     packageDeclr.FilePath,
-								LineNumber:   tokenPosition.Line,
-								Column:       tokenPosition.Column,
+								From:         beginPosition.Offset,
+								Length:       positionLength,
 								PackageDeclr: &packageDeclr,
 							})
 							break
@@ -491,15 +522,17 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
 								Object:       obj,
 								Interface:    robj,
+								Comments:     comment,
 								Annotations:  annotations,
 								Associations: associations,
+								Source:       string(source),
 								PackageDeclr: &packageDeclr,
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
 								Path:         packageDeclr.Path,
 								FilePath:     packageDeclr.FilePath,
-								LineNumber:   tokenPosition.Line,
-								Column:       tokenPosition.Column,
+								From:         beginPosition.Offset,
+								Length:       positionLength,
 							})
 							break
 
@@ -513,14 +546,16 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
 								Object:       obj,
 								Annotations:  annotations,
+								Comments:     comment,
 								Associations: associations,
+								Source:       string(source),
 								PackageDeclr: &packageDeclr,
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
 								Path:         packageDeclr.Path,
 								FilePath:     packageDeclr.FilePath,
-								LineNumber:   tokenPosition.Line,
-								Column:       tokenPosition.Column,
+								From:         beginPosition.Offset,
+								Length:       positionLength,
 							})
 						}
 
