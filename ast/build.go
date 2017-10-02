@@ -72,7 +72,6 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 
 	for _, pkg := range packages {
 		for path, file := range pkg.Files {
-
 			pathPkg := filepath.Dir(path)
 			buildPkg, ok := packageBuilds[pathPkg]
 			if !ok {
@@ -116,7 +115,7 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				Package:  res.Package,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
-				Doc:      doc.New(pkg, "./", 0),
+				Doc:      doc.New(pkg, buildPkg.ImportPath, doc.AllMethods),
 			}
 		}
 	}
@@ -160,7 +159,6 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 
 	for _, pkg := range packages {
 		for path, file := range pkg.Files {
-
 			pathPkg := filepath.Dir(path)
 			buildPkg, ok := packageBuilds[pathPkg]
 			if !ok {
@@ -204,7 +202,7 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 				Package:  res.Package,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
-				Doc:      doc.New(pkg, "./", 0),
+				Doc:      doc.New(pkg, buildPkg.ImportPath, doc.AllMethods),
 			}
 		}
 	}
@@ -282,7 +280,7 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 		BuildPkg: buildPkg,
 		Package:  buildPkg.ImportPath,
 		Packages: declrs,
-		Doc:      doc.New(pkg, "./", 0),
+		Doc:      doc.New(pkg, buildPkg.ImportPath, doc.AllMethods),
 	}, nil
 }
 
@@ -588,12 +586,21 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFi
 
 // ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
-	log.Emit(metrics.Info("Begin ParsePackage").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkgDeclrs.Package))
+	log.Emit(metrics.Info("Begin ParsePackage").With("toDir", toDir).
+		With("overwriter-file", doFileOverwrite).
+		With("package", pkgDeclrs.Package).
+		With("doc", pkgDeclrs.Doc).
+		With("doc.vars", len(pkgDeclrs.Doc.Vars)).
+		With("doc.consts", len(pkgDeclrs.Doc.Consts)).
+		With("doc.types", len(pkgDeclrs.Doc.Types)).
+		With("doc.functions", len(pkgDeclrs.Doc.Funcs)))
 
 	{
 	parseloop:
 		for _, pkg := range pkgDeclrs.Packages {
-			log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").With("toDir", toDir).With("overwriter-file", doFileOverwrite).With("package", pkg.Package).
+			log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").
+				With("toDir", toDir).With("overwriter-file", doFileOverwrite).
+				With("package", pkg.Package).
 				With("From", pkg.FilePath))
 
 			wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
