@@ -653,6 +653,76 @@ func WriteDirectives(log metrics.Metrics, toDir string, doFileOverwrite bool, wd
 	return nil
 }
 
+// SimpleWriteDirectives defines a function which houses the logic to write WriteDirective into file system.
+func SimpleWriteDirectives(toDir string, doFileOverwrite bool, wds ...gen.WriteDirective) error {
+	for _, wd := range wds {
+		if err := SimpleWriteDirective(toDir, doFileOverwrite, wd); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SimpleWriteDirective defines a function which houses the logic to write WriteDirective into file system.
+func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDirective) error {
+	if filepath.IsAbs(item.Dir) {
+		err := errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")
+		return err
+	}
+
+	namedFileDir := toDir
+	if item.Dir != "" {
+		namedFileDir = filepath.Join(toDir, item.Dir)
+	}
+
+	if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+		err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
+		return err
+	}
+
+	baseDir := toDir
+
+	if filepath.IsAbs(baseDir) {
+		baseDir = filepath.Base(baseDir)
+	}
+
+	fmt.Printf("Creating directory %s\n", filepath.Join(baseDir, item.Dir))
+
+	if item.Writer == nil {
+		return nil
+	}
+
+	if item.FileName == "" {
+		err := fmt.Errorf("WriteDirective has no filename value attached")
+		return err
+	}
+
+	namedFile := filepath.Join(namedFileDir, item.FileName)
+
+	fileStat, err := os.Stat(namedFile)
+	if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
+		return err
+	}
+
+	newFile, err := os.Create(namedFile)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Creating new file %s\n", filepath.Join(baseDir, item.Dir, item.FileName))
+
+	defer newFile.Close()
+
+	_, err = item.Writer.WriteTo(newFile)
+	if err != nil && err != io.EOF {
+		err = fmt.Errorf("IOError: Unable to write content to file: %+q", err)
+		return err
+	}
+
+	return nil
+}
+
 // WriteDirective defines a function which houses the logic to write WriteDirective into file system.
 func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, item gen.WriteDirective) error {
 	log.Emit(metrics.Info("Execute WriteDirective").
