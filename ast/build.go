@@ -17,6 +17,7 @@ import (
 
 	"github.com/influx6/faux/metrics"
 	"github.com/influx6/gobuild/build"
+	"github.com/influx6/moz/gen"
 )
 
 var (
@@ -639,6 +640,86 @@ func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFi
 	return nil
 }
 
+// WriteDirectives defines a function which houses the logic to write WriteDirective into file system.
+func WriteDirectives(log metrics.Metrics, toDir string, doFileOverwrite bool, wds ...gen.WriteDirective) error {
+	for _, wd := range wds {
+		if err := WriteDirective(log, toDir, doFileOverwrite, wd); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// WriteDirective defines a function which houses the logic to write WriteDirective into file system.
+func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, item gen.WriteDirective) error {
+	log.Emit(metrics.Info("Execute WriteDirective").With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+
+	if filepath.IsAbs(item.Dir) {
+		err := errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")
+		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+		return err
+	}
+
+	namedFileDir := toDir
+	if item.Dir != "" {
+		namedFileDir = filepath.Join(toDir, item.Dir)
+	}
+
+	if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+		err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
+		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+		return err
+	}
+
+	if item.Writer == nil {
+		log.Emit(metrics.Info("Resolved WriteDirective").With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+		return nil
+	}
+
+	if item.FileName == "" {
+		err := fmt.Errorf("WriteDirective has no filename value attached")
+		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+		return err
+	}
+
+	namedFile := filepath.Join(namedFileDir, item.FileName)
+
+	fileStat, err := os.Stat(namedFile)
+	if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
+		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir).
+			With("DestinationDir", namedFileDir).
+			With("DestinationFile", namedFile))
+		return err
+	}
+
+	newFile, err := os.Create(namedFile)
+	if err != nil {
+		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir).
+			With("DestinationDir", namedFileDir).
+			With("DestinationFile", namedFile))
+		return err
+	}
+
+	defer newFile.Close()
+
+	written, err := item.Writer.WriteTo(newFile)
+	if err != nil && err != io.EOF {
+		err = fmt.Errorf("IOError: Unable to write content to file: %+q", err)
+		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir).
+			With("DestinationDir", namedFileDir).
+			With("DestinationFile", namedFile))
+		return err
+	}
+
+	log.Emit(metrics.Info("Resolved WriteDirective").With("directive", item.DontOverride).
+		With("data_written", written).
+		With("DestinationDir", namedFileDir).
+		With("DestinationFile", namedFile))
+
+	return nil
+}
+
 // ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
 	log.Emit(metrics.Info("Begin ParsePackage").With("toDir", toDir).
@@ -650,112 +731,34 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 		With("doc.types", len(pkgDeclrs.Doc.Types)).
 		With("doc.functions", len(pkgDeclrs.Doc.Funcs)))
 
-	{
-	parseloop:
-		for _, pkg := range pkgDeclrs.Packages {
-			log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").
-				With("toDir", toDir).With("overwriter-file", doFileOverwrite).
-				With("package", pkg.Package).
-				With("From", pkg.FilePath))
+	for _, pkg := range pkgDeclrs.Packages {
+		log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").
+			With("toDir", toDir).With("overwriter-file", doFileOverwrite).
+			With("package", pkg.Package).
+			With("From", pkg.FilePath))
 
-			wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
-			if err != nil {
-				log.Emit(metrics.Error(fmt.Errorf("ParseFailure: Package %q", pkg.Package)).
-					With("error", err.Error()).With("package", pkg.Package))
+		wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
+		if err != nil {
+			log.Emit(metrics.Error(fmt.Errorf("ParseFailure: Package %q", pkg.Package)).
+				With("error", err.Error()).With("package", pkg.Package))
+			continue
+		}
+
+		log.Emit(metrics.Info("ParseSuccess").With("From", pkg.FilePath).With("package", pkg.Package).With("Directives", len(wdrs)))
+
+		for _, wd := range wdrs {
+			if err := WriteDirective(log, toDir, doFileOverwrite, wd.WriteDirective); err != nil {
+				log.Emit(metrics.Info("Annotation Resolved").With("annotation", wd.Annotation).
+					With("dir", toDir).
+					With("package", pkg.Package).
+					With("file", pkg.File))
 				continue
 			}
 
-			log.Emit(metrics.Info("ParseSuccess").With("From", pkg.FilePath).With("package", pkg.Package).With("Directives", len(wdrs)))
-
-			for _, item := range wdrs {
-				log.Emit(metrics.Info("WriteFile").With("File", item.FileName).With("FromAnnotation", item.Annotation).With("From", pkg.FilePath).With("package", pkg.Package))
-
-				if filepath.IsAbs(item.Dir) {
-					log.Emit(metrics.Error(errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")).
-						With("package", pkg.Package).With("directive-dir", item.Dir).With("pkg", pkg))
-
-					continue parseloop
-				}
-
-				log.Emit(metrics.Info("Executing WriteDirective").
-					With("annotation", item.Annotation).
-					With("fileName", item.FileName).
-					With("toDir", item.Dir))
-
-				var namedFileDir, namedFile string
-
-				annotation := strings.ToLower(item.Annotation)
-				newDir := filepath.Dir(pkg.FilePath)
-
-				if item.Dir != "" {
-					namedFileDir = filepath.Join(newDir, toDir, item.Dir)
-				} else {
-					namedFileDir = filepath.Join(newDir, toDir)
-				}
-
-				if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-					log.Emit(metrics.Error(errors.New("IOError: Unable to create writer directory")).
-						With("dir", namedFileDir).With("error", err.Error()))
-					return err
-				}
-
-				if item.Writer == nil {
-					log.Emit(metrics.Info("Annotation Resolved").
-						With("annotation", item.Annotation).
-						With("dir", namedFileDir))
-					continue
-				}
-
-				if item.FileName == "" {
-					fileName := strings.TrimSuffix(pkg.File, filepath.Ext(pkg.File))
-					annotationFile := fmt.Sprintf(annotationFileFormat, annotation, fileName, "go")
-
-					namedFile = filepath.Join(namedFileDir, annotationFile)
-				} else {
-					// annotationFile := fmt.Sprintf(altAnnotationFileFormat, annotation, item.FileName)
-					namedFile = filepath.Join(namedFileDir, item.FileName)
-				}
-
-				log.Emit(metrics.Info("OS:Operation for annotation").
-					With("annotation", item.Annotation).
-					With("file", namedFile).
-					With("dir", namedFileDir))
-
-				fileStat, err := os.Stat(namedFile)
-				if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
-					log.Emit(metrics.Info("Annotation Unresolved: File already exists and must not over-write").With("annotation", item.Annotation).
-						With("dir", namedFileDir).
-						With("package", pkg.Package).
-						With("file", pkg.File).
-						With("generated-file", namedFile))
-
-					continue
-				}
-
-				newFile, err := os.Create(namedFile)
-				if err != nil {
-					log.Emit(metrics.Error(errors.New("IOError: Unable to create file")).
-						With("dir", namedFileDir).
-						With("file", namedFile).With("error", err.Error()))
-					continue
-				}
-
-				if _, err := item.Writer.WriteTo(newFile); err != nil && err != io.EOF {
-					newFile.Close()
-					log.Emit(metrics.Error(errors.New("IOError: Unable to write content to file")).
-						With("dir", namedFileDir).
-						With("file", namedFile).With("error", err.Error()))
-					continue
-				}
-
-				log.Emit(metrics.Info("Annotation Resolved").With("annotation", item.Annotation).
-					With("dir", namedFileDir).
-					With("package", pkg.Package).
-					With("file", pkg.File).
-					With("generated-file", namedFile))
-
-				newFile.Close()
-			}
+			log.Emit(metrics.Info("Annotation Resolved").With("annotation", wd.Annotation).
+				With("dir", toDir).
+				With("package", pkg.Package).
+				With("file", pkg.File))
 		}
 
 	}
