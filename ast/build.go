@@ -16,6 +16,8 @@ import (
 	"strings"
 
 	"github.com/influx6/faux/metrics"
+	"github.com/influx6/faux/types/actions"
+	"github.com/influx6/faux/types/events"
 	"github.com/influx6/gobuild/build"
 	"github.com/influx6/moz/gen"
 )
@@ -653,7 +655,13 @@ func WriteDirectives(log metrics.Metrics, toDir string, doFileOverwrite bool, wd
 
 // WriteDirective defines a function which houses the logic to write WriteDirective into file system.
 func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, item gen.WriteDirective) error {
-	log.Emit(metrics.Info("Execute WriteDirective").With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+	log.Emit(metrics.Info("Execute WriteDirective").
+		With("overwrite", item.DontOverride).
+		With("action", actions.MkDirectory{
+			Dir:     item.Dir,
+			RootDir: toDir,
+			Mode:    0700,
+		}))
 
 	if filepath.IsAbs(item.Dir) {
 		err := errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")
@@ -668,9 +676,28 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 
 	if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
 		err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
-		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
+		log.Emit(metrics.Error(err).
+			With("overwrite", item.DontOverride).
+			With("action", events.DirCreated{
+				Error: err,
+				Action: actions.MkDirectory{
+					Dir:     item.Dir,
+					RootDir: toDir,
+					Mode:    0700,
+				},
+			}))
 		return err
 	}
+
+	log.Emit(metrics.Info("Resolved WriteDirective").
+		With("op", "mkdir").
+		With("action", events.DirCreated{
+			Action: actions.MkDirectory{
+				Dir:     item.Dir,
+				RootDir: toDir,
+				Mode:    0700,
+			},
+		}))
 
 	if item.Writer == nil {
 		log.Emit(metrics.Info("Resolved WriteDirective").With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
@@ -712,10 +739,18 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 		return err
 	}
 
-	log.Emit(metrics.Info("Resolved WriteDirective").With("directive", item.DontOverride).
-		With("data_written", written).
-		With("DestinationDir", namedFileDir).
-		With("DestinationFile", namedFile))
+	log.Emit(metrics.Info("Resolved WriteDirective").
+		With("op", "writefile").
+		With("action", events.FileCreated{
+			Error:   err,
+			Written: written,
+			Action: actions.CreateFile{
+				RootDir:  toDir,
+				Dir:      item.Dir,
+				FileName: item.FileName,
+				Mode:     0700,
+			},
+		}))
 
 	return nil
 }
