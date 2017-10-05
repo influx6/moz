@@ -317,8 +317,10 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
 		packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
 
-		for _, comment := range file.Doc.List {
-			packageDeclr.Comments = append(packageDeclr.Comments, comment.Text())
+		if file.Doc != nil {
+			for _, comment := range file.Doc.List {
+				packageDeclr.Comments = append(packageDeclr.Comments, comment.Text)
+			}
 		}
 
 		for _, imp := range file.Imports {
