@@ -120,6 +120,7 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 			}
 
 			packageDeclrs[res.Package] = Package{
+				Name:     buildPkg.Name,
 				Path:     res.Path,
 				Package:  res.Package,
 				BuildPkg: buildPkg,
@@ -214,6 +215,7 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) (Ro
 			}
 
 			packageDeclrs[res.Package] = Package{
+				Name:     buildPkg.Name,
 				Path:     res.Path,
 				Files:    pkgFiles,
 				Package:  res.Package,
@@ -297,6 +299,7 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 	}
 
 	return Package{
+		Name:     buildPkg.Name,
 		Path:     buildPkg.Dir,
 		Files:    pkgFiles,
 		BuildPkg: buildPkg,

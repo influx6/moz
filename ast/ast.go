@@ -83,6 +83,7 @@ type ImportDeclaration struct {
 
 // Package defines the central repository of all PackageDeclaration.
 type Package struct {
+	Name     string               `json:"name"`
 	Package  string               `json:"package"`
 	Path     string               `json:"path"`
 	Files    []string             `json:"files"`
