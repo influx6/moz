@@ -663,6 +663,12 @@ func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDire
 		return err
 	}
 
+	if item.Before != nil {
+		if err := item.Before(); err != nil {
+			return err
+		}
+	}
+
 	namedFileDir := toDir
 	baseDir := toDir
 
@@ -712,11 +718,21 @@ func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDire
 		return err
 	}
 
-	return nil
+	if item.After == nil {
+		return nil
+	}
+
+	return item.After()
 }
 
 // WriteDirective defines a function which houses the logic to write WriteDirective into file system.
 func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, item gen.WriteDirective) error {
+	if item.Before != nil {
+		if err := item.Before(); err != nil {
+			return err
+		}
+	}
+
 	log.Emit(metrics.Info("Execute WriteDirective").
 		With("overwrite", item.DontOverride).
 		With("action", actions.MkDirectory{
@@ -814,7 +830,11 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 			},
 		}))
 
-	return nil
+	if item.After == nil {
+		return nil
+	}
+
+	return item.After()
 }
 
 // ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.

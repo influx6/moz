@@ -39,6 +39,8 @@ type WriteDirective struct {
 	Dir          string      `ast:"dir,optional"`      // Relative dir path written into it if not existing.
 	FileName     string      `ast:"filename,optional"` // alternative fileName to use for new file.
 	DontOverride bool        `ast:"dont_override,optional"`
+	Before       func() error
+	After        func() error
 }
 
 //======================================================================================================================
