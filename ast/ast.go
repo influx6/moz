@@ -53,25 +53,8 @@ var (
 	}
 )
 
-// RootPackage defines a single root package which holds as a tree of other packages
-// declared within it.
-type RootPackage struct {
-	Package  string             `json:"package"`
-	Path     string             `json:"path"`
-	BuildPkg *build.Package     `json:"build_package"`
-	Packages map[string]Package `json:"packages"`
-}
-
-// PackageList returns all packages associated with the root pkg.
-func (r RootPackage) PackageList() []Package {
-	var pkgs []Package
-
-	for _, pkg := range r.Packages {
-		pkgs = append(pkgs, pkg)
-	}
-
-	return pkgs
-}
+// Packages defines a type to represent a slice of Packages.
+type Packages []Package
 
 // ImportDeclaration defines a type to contain import declaration within a package.
 type ImportDeclaration struct {

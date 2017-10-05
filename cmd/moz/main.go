@@ -252,14 +252,6 @@ func generateFileCLI(c *cli.Context) {
 		return
 	}
 
-	// if fromFile == "" {
-	// 	fromFile, err = os.Getwd()
-	// 	if err != nil {
-	// 		events.Emit(metrics.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
-	// 		return
-	// 	}
-	// }
-
 	// If its not an absolute path then get real absolute
 	if !filepath.IsAbs(fromFile) {
 		pwd, err := os.Getwd()
@@ -319,9 +311,9 @@ func generatePackageCLI(c *cli.Context) {
 		return
 	}
 
-	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg.Packages)))
+	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg)))
 
-	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg.PackageList()...); err != nil {
+	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg...); err != nil {
 		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
@@ -372,9 +364,9 @@ func generatePackageCLIWithTag(c *cli.Context) {
 		return
 	}
 
-	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg.Packages)))
+	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg)))
 
-	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg.PackageList()...); err != nil {
+	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg...); err != nil {
 		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
 	}
 
