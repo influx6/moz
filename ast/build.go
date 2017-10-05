@@ -672,22 +672,22 @@ func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDire
 	}
 
 	namedFileDir := toDir
+	baseDir := toDir
+
 	if item.Dir != "" {
 		namedFileDir = filepath.Join(toDir, item.Dir)
 	}
-
-	if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-		err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
-		return err
-	}
-
-	baseDir := toDir
 
 	if filepath.IsAbs(baseDir) {
 		baseDir = filepath.Base(baseDir)
 	}
 
-	fmt.Printf("Creating directory %s\n", filepath.Join(baseDir, item.Dir))
+	if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+		err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
+		return err
+	} else {
+		fmt.Printf("Creating directory %s\n", filepath.Join(baseDir, item.Dir))
+	}
 
 	if item.Writer == nil {
 		return nil
