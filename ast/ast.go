@@ -355,8 +355,12 @@ func (fun FuncDeclaration) HasAnnotation(typeName string) bool {
 }
 
 // Definition returns a FunctionDefinition for this function.
-func (fun FuncDeclaration) Definition() FunctionDefinition {
-	return GetFuncDefFromFunction(fun, fun.PackageDeclr)
+func (fun FuncDeclaration) Definition() (FunctionDefinition, error) {
+	if fun.PackageDeclr == nil {
+		return FunctionDefinition{}, errors.New("Function has no Package associated")
+	}
+
+	return GetFuncDefFromFunction(fun, fun.PackageDeclr), nil
 }
 
 // Functions defines a slice of FuncDeclaration.
@@ -745,15 +749,19 @@ func GetFunctionDefinition(method *ast.Field, pkg *PackageDeclaration) (Function
 func GetFuncDefFromFunction(funcObj FuncDeclaration, pkg *PackageDeclaration) FunctionDefinition {
 	var arguments, returns []ArgType
 
-	for _, result := range funcObj.Type.Results.List {
-		if arg, err := GetArgTypeFromField("ret", result, pkg); err == nil {
-			returns = append(returns, arg)
+	if funcObj.Type.Results != nil {
+		for _, result := range funcObj.Type.Results.List {
+			if arg, err := GetArgTypeFromField("ret", result, pkg); err == nil {
+				returns = append(returns, arg)
+			}
 		}
 	}
 
-	for _, param := range funcObj.Type.Params.List {
-		if arg, err := GetArgTypeFromField("var", param, pkg); err == nil {
-			arguments = append(arguments, arg)
+	if funcObj.Type.Params != nil {
+		for _, param := range funcObj.Type.Params.List {
+			if arg, err := GetArgTypeFromField("var", param, pkg); err == nil {
+				arguments = append(arguments, arg)
+			}
 		}
 	}
 
