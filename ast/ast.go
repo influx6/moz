@@ -354,6 +354,11 @@ func (fun FuncDeclaration) HasAnnotation(typeName string) bool {
 	return false
 }
 
+// Definition returns a FunctionDefinition for this function.
+func (fun FuncDeclaration) Definition() FunctionDefinition {
+	return GetFuncDefFromFunction(fun, fun.PackageDeclr)
+}
+
 // Functions defines a slice of FuncDeclaration.
 type Functions []FuncDeclaration
 
@@ -734,6 +739,31 @@ func GetFunctionDefinition(method *ast.Field, pkg *PackageDeclaration) (Function
 		Args:    arguments,
 		Name:    nameIdent.Name,
 	}, nil
+}
+
+// GetFuncDefFromFunction returns a FunctionDefinition withe the associated FuncDeclaration.
+func GetFuncDefFromFunction(funcObj FuncDeclaration, pkg *PackageDeclaration) FunctionDefinition {
+	var arguments, returns []ArgType
+
+	for _, result := range funcObj.Type.Results.List {
+		if arg, err := GetArgTypeFromField("ret", result, pkg); err == nil {
+			returns = append(returns, arg)
+		}
+	}
+
+	for _, param := range funcObj.Type.Params.List {
+		if arg, err := GetArgTypeFromField("var", param, pkg); err == nil {
+			arguments = append(arguments, arg)
+		}
+	}
+
+	var defs FunctionDefinition
+	defs.Func = funcObj.Type
+	defs.Returns = returns
+	defs.Args = arguments
+	defs.Name = funcObj.FuncName
+
+	return defs
 }
 
 // GetInterfaceFunctions returns a slice of FunctionDefinitions retrieved from the provided
