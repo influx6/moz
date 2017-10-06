@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
-	"go/doc"
 	"go/parser"
 	"go/token"
 	"io"
@@ -136,7 +135,6 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				BuildPkg: buildPkg,
 				Files:    pkgFiles,
 				Packages: []PackageDeclaration{res},
-				Doc:      doc.New(pkg, buildPkg.ImportPath, doc.AllMethods),
 			}
 		}
 	}
@@ -216,7 +214,6 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 				Package:  res.Path,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
-				Doc:      doc.New(pkg, res.Path, doc.AllMethods),
 			}
 		}
 	}
@@ -289,10 +286,7 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 			return Package{}, err
 		}
 
-		pkgDoc := doc.New(pkg, res.Path, doc.AllMethods)
-
 		return Package{
-			Doc:      pkgDoc,
 			BuildPkg: buildPkg,
 			Files:    pkgFiles,
 			Package:  res.Path,

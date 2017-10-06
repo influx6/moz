@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
-	"go/doc"
 	"go/token"
 	"io"
 	"math/rand"
@@ -71,7 +70,6 @@ type Package struct {
 	Path     string               `json:"path"`
 	Files    []string             `json:"files"`
 	BuildPkg *build.Package       `json:"build_package"`
-	Doc      *doc.Package         `json:"doc"`
 	Packages []PackageDeclaration `json:"packages"`
 }
 
