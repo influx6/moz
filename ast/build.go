@@ -843,12 +843,7 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
 	log.Emit(metrics.Info("Begin ParsePackage").With("toDir", toDir).
 		With("overwriter-file", doFileOverwrite).
-		With("package", pkgDeclrs.Package).
-		With("doc", pkgDeclrs.Doc).
-		With("doc.vars", len(pkgDeclrs.Doc.Vars)).
-		With("doc.consts", len(pkgDeclrs.Doc.Consts)).
-		With("doc.types", len(pkgDeclrs.Doc.Types)).
-		With("doc.functions", len(pkgDeclrs.Doc.Funcs)))
+		With("package", pkgDeclrs.Package))
 
 	for _, pkg := range pkgDeclrs.Packages {
 		log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").
