@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/influx6/faux/metrics"
 	"github.com/influx6/faux/types/actions"
@@ -446,6 +447,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				defFunc.FilePath = packageDeclr.FilePath
 				defFunc.Annotations = annotations
 				defFunc.Associations = associations
+				defFunc.Exported = unicode.IsUpper(rune(rdeclr.Name.Name[0]))
 
 				if rdeclr.Type != nil {
 					defFunc.Returns = rdeclr.Type.Results

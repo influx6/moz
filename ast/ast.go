@@ -307,6 +307,7 @@ type FuncDeclaration struct {
 	Package       string                                      `json:"package"`
 	Path          string                                      `json:"path"`
 	FilePath      string                                      `json:"filepath"`
+	Exported      bool                                        `json:"export"`
 	File          string                                      `json:"file"`
 	FuncName      string                                      `json:"funcName"`
 	RecieverName  string                                      `json:"receiverName"`
