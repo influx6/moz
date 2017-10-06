@@ -14,8 +14,10 @@ func readSourceIn(path string, offset int64, length int) ([]byte, error) {
 
 	defer inFile.Close()
 
+	inFile.Seek(offset, 0)
+
 	content := make([]byte, length)
-	_, err = inFile.ReadAt(content, offset)
+	_, err = inFile.Read(content)
 	return content, err
 }
 

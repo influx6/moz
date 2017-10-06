@@ -327,6 +327,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			beginPosition, endPosition := tokenFiles.Position(imp.Pos()), tokenFiles.Position(imp.End())
 			positionLength := endPosition.Offset - beginPosition.Offset
 			source, err := readSourceIn(beginPosition.Filename, int64(beginPosition.Offset), positionLength)
+
 			if err != nil {
 				return packageDeclr, err
 			}
@@ -381,9 +382,13 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		// Collect and categorize annotations in types and their fields.
 	declrLoop:
 		for _, declr := range file.Decls {
-			beginPosition, endPosition := tokenFiles.Position(declr.Pos()), tokenFiles.Position(declr.End())
-			positionLength := endPosition.Offset - beginPosition.Offset
-			source, err := readSourceIn(beginPosition.Filename, int64(beginPosition.Offset), positionLength)
+			tokenFile := tokenFiles.File(declr.Pos())
+			beginPosition, endPosition := tokenFile.Position(declr.Pos()), tokenFile.Position(declr.End())
+			beginOffset := beginPosition.Offset
+			endOffset := endPosition.Offset
+
+			positionLength := (endOffset - beginOffset)
+			source, err := readSourceIn(tokenFile.Name(), int64(beginOffset), positionLength)
 			if err != nil {
 				return packageDeclr, err
 			}
