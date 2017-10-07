@@ -330,7 +330,13 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			var pkgName string
 
 			if imp.Name != nil {
-				pkgName = imp.Name.Name
+				pkgName = strings.Replace(imp.Name.Name, "/", "", -1)
+			} else {
+				pkgName = strings.Replace(filepath.Base(imp.Path.Value), "\"", "", -1)
+			}
+
+			if pkgNm, err := strconv.Unquote(pkgName); err == nil {
+				pkgName = pkgNm
 			}
 
 			impPkgPath, err := strconv.Unquote(imp.Path.Value)
@@ -339,7 +345,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			}
 
 			var comment string
-
 			if imp.Comment != nil {
 				comment = imp.Comment.Text()
 			}

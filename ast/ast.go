@@ -542,7 +542,6 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		}, nil
 
 	case *ast.SelectorExpr:
-		// fmt.Printf("Result: %#v -> %#v -> %#q\n\n", iobj.X, iobj.Sel, iobj)
 		xobj, ok := iobj.X.(*ast.Ident)
 		if !ok {
 			return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
@@ -554,11 +553,12 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		retCounter++
 
 		return ArgType{
-			Name:    name,
-			Import:  importDclr,
-			Package: xobj.Name,
-			Type:    getName(iobj),
-			ExType:  getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
+			Name:           name,
+			Import:         importDclr,
+			Package:        xobj.Name,
+			ImportedObject: iobj,
+			Type:           getName(iobj),
+			ExType:         getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
 		}, nil
 
 	case *ast.StarExpr:
