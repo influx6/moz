@@ -415,22 +415,23 @@ func (i InterfaceDeclaration) Methods() []FunctionDefinition {
 // ArgType defines a type to represent the information for a giving functions argument or
 // return type declaration.
 type ArgType struct {
-	Name           string
-	Type           string
-	ExType         string
-	Package        string
-	BaseType       bool
-	Import         ImportDeclaration
-	Import2        ImportDeclaration
-	NameObject     *ast.Object
-	TypeObject     *ast.Object
-	StructObject   *ast.StructType
-	ImportedObject *ast.SelectorExpr
-	ArrayType      *ast.ArrayType
-	MapType        *ast.MapType
-	ChanType       *ast.ChanType
-	PointerType    *ast.StarExpr
-	IdentType      *ast.Ident
+	Name            string
+	Type            string
+	ExType          string
+	Package         string
+	BaseType        bool
+	Import          ImportDeclaration
+	Import2         ImportDeclaration
+	NameObject      *ast.Object
+	TypeObject      *ast.Object
+	StructObject    *ast.StructType
+	InterfaceObject *ast.InterfaceType
+	ImportedObject  *ast.SelectorExpr
+	ArrayType       *ast.ArrayType
+	MapType         *ast.MapType
+	ChanType        *ast.ChanType
+	PointerType     *ast.StarExpr
+	IdentType       *ast.Ident
 }
 
 // FunctionDefinition defines a type to represent the function/method declarations of an
@@ -512,8 +513,6 @@ func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
 	var retCounter int
 
-	retCounter++
-
 	resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
 
 	switch iobj := result.Type.(type) {
@@ -524,14 +523,14 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		resName, err := GetIdentName(result)
 		switch err != nil {
 		case true:
-			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
 			retCounter++
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
 		case false:
 			name = resName.Name
 			nameObj = resName.Obj
 		}
 
-		return ArgType{
+		arg := ArgType{
 			Name:       name,
 			NameObject: nameObj,
 			Type:       getName(iobj),
@@ -539,7 +538,16 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			TypeObject: iobj.Obj,
 			Package:    resPkg,
 			BaseType:   defaultresType,
-		}, nil
+		}
+
+		switch obx := iobj.Obj.Type.(type) {
+		case *ast.StructType:
+			arg.StructObject = obx
+		case *ast.InterfaceType:
+			arg.InterfaceObject = obx
+		}
+
+		return arg, nil
 
 	case *ast.SelectorExpr:
 		xobj, ok := iobj.X.(*ast.Ident)
@@ -549,8 +557,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 
 		importDclr, _ := pkg.ImportFor(xobj.Name)
 
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 		retCounter++
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 
 		return ArgType{
 			Name:           name,
@@ -562,8 +570,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		}, nil
 
 	case *ast.StarExpr:
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 		retCounter++
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 
 		var arg ArgType
 		arg.Name = name
@@ -584,10 +592,10 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 
 			arg.Package = vob.Name
 			arg.Import = importDclr
+		case *ast.InterfaceType:
+			arg.InterfaceObject = value
 		case *ast.StructType:
 			arg.StructObject = value
-			// arg.Package = resPkg
-			// arg.BaseType = defaultresType
 		case *ast.ArrayType:
 			arg.ArrayType = value
 		case *ast.Ident:
@@ -603,8 +611,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		return arg, nil
 
 	case *ast.MapType:
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 		retCounter++
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 
 		var arg ArgType
 		arg.Name = name
@@ -630,8 +638,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 
 		return arg, nil
 	case *ast.ArrayType:
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 		retCounter++
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 
 		var arg ArgType
 		arg.Name = name
@@ -654,6 +662,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			arg.Import = importDclr
 		case *ast.StarExpr:
 			arg.PointerType = value
+		case *ast.InterfaceType:
+			arg.InterfaceObject = value
 		case *ast.StructType:
 			arg.StructObject = value
 		case *ast.Ident:
@@ -668,8 +678,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		return arg, nil
 
 	case *ast.ChanType:
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 		retCounter++
+		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 
 		var arg ArgType
 		arg.Name = name
@@ -691,6 +701,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			arg.Import = importDclr
 		case *ast.StarExpr:
 			arg.PointerType = value
+		case *ast.InterfaceType:
+			arg.InterfaceObject = value
 		case *ast.StructType:
 			arg.StructObject = value
 		case *ast.ArrayType:

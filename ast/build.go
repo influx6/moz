@@ -335,7 +335,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				pkgName = strings.Replace(filepath.Base(imp.Path.Value), "\"", "", -1)
 			}
 
-			if pkgNm, err := strconv.Unquote(pkgName); err == nil {
+			if pkgNm, perr := strconv.Unquote(pkgName); perr == nil {
 				pkgName = pkgNm
 			}
 

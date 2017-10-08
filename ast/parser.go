@@ -36,7 +36,7 @@ func (ad AnnotationDeclaration) Param(name string) string {
 	return ad.Params[name]
 }
 
-// Attrs returns the associated  param value with giving key ("name").
+// Attr returns the associated  param value with giving key ("name").
 func (ad AnnotationDeclaration) Attr(name string) interface{} {
 	return ad.Attrs[name]
 }
@@ -103,7 +103,7 @@ func ReadAnnotationsFromCommentry(r io.Reader) []AnnotationDeclaration {
 			// Find out if we are to be deferred
 			defered, ok := params["defer"]
 			if !ok {
-				defered, ok = params["Defer"]
+				defered = params["Defer"]
 			}
 
 			deferred, _ = strconv.ParseBool(defered)
