@@ -540,11 +540,13 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			BaseType:   defaultresType,
 		}
 
-		switch obx := iobj.Obj.Type.(type) {
-		case *ast.StructType:
-			arg.StructObject = obx
-		case *ast.InterfaceType:
-			arg.InterfaceObject = obx
+		if iobj.Obj != nil {
+			switch obx := iobj.Obj.Type.(type) {
+			case *ast.StructType:
+				arg.StructObject = obx
+			case *ast.InterfaceType:
+				arg.InterfaceObject = obx
+			}
 		}
 
 		return arg, nil
