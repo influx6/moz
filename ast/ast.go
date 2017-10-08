@@ -56,10 +56,43 @@ var (
 // Packages defines a type to represent a slice of Packages.
 type Packages []Package
 
-// PackageFor returns package associated with name.
-func (pkgs Packages) PackageFor(name string) (Package, bool) {
+// TestPackageForFile returns package associated with path.
+func (pkgs Packages) TestPackageForFile(path string, targetFile string) (PackageDeclaration, Package, bool) {
+	pl, ok := pkgs.TestPackageFor(path)
+	if !ok {
+		return PackageDeclaration{}, Package{}, ok
+	}
+
+	plDeclr, ok := pl.DeclarationFor(path, targetFile)
+	return plDeclr, pl, ok
+}
+
+// PackageForFile returns package associated with path.
+func (pkgs Packages) PackageForFile(path string, targetFile string) (PackageDeclaration, Package, bool) {
+	pl, ok := pkgs.PackageFor(path)
+	if !ok {
+		return PackageDeclaration{}, Package{}, ok
+	}
+
+	plDeclr, ok := pl.DeclarationFor(path, targetFile)
+	return plDeclr, pl, ok
+}
+
+// TestPackageFor returns package associated with path for its tests.
+func (pkgs Packages) TestPackageFor(path string) (Package, bool) {
 	for _, pkg := range pkgs {
-		if pkg.Name == name {
+		if pkg.Path == path && strings.HasSuffix(pkg.Tag, "_test") {
+			return pkg, true
+		}
+	}
+
+	return Package{}, false
+}
+
+// PackageFor returns package associated with path.
+func (pkgs Packages) PackageFor(path string) (Package, bool) {
+	for _, pkg := range pkgs {
+		if pkg.Path == path && !strings.HasSuffix(pkg.Tag, "_test") {
 			return pkg, true
 		}
 	}
@@ -78,12 +111,14 @@ type ImportDeclaration struct {
 
 // Package defines the central repository of all PackageDeclaration.
 type Package struct {
-	Name     string               `json:"name"`
-	Package  string               `json:"package"`
-	Path     string               `json:"path"`
-	Files    []string             `json:"files"`
-	BuildPkg *build.Package       `json:"build_package"`
-	Packages []PackageDeclaration `json:"packages"`
+	Name         string               `json:"name"`
+	Tag          string               `json:"tag"`
+	Path         string               `json:"path"`
+	FilePath     string               `json:"file_path"`
+	Files        []string             `json:"files"`
+	BuildPkg     *build.Package       `json:"build_package"`
+	Packages     []PackageDeclaration `json:"packages"`
+	TestPackages []PackageDeclaration `json:"test_packages"`
 }
 
 // Load calls all internal packages to load their respective imports.
@@ -167,6 +202,148 @@ func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	}
 
 	return funcs
+}
+
+// TestDeclarations returns the associated test declaration for the giving import path.
+func (pkg Package) TestDeclarations(importPath string) []PackageDeclaration {
+	var declrs []PackageDeclaration
+
+	for _, declr := range pkg.TestPackages {
+		if declr.Path == importPath {
+			declrs = append(declrs, declr)
+		}
+	}
+
+	return declrs
+}
+
+// Declarations returns the associated declaration for the giving import path.
+func (pkg Package) Declarations(importPath string) []PackageDeclaration {
+	var declrs []PackageDeclaration
+
+	for _, declr := range pkg.Packages {
+		if declr.Path == importPath {
+			declrs = append(declrs, declr)
+		}
+	}
+
+	return declrs
+}
+
+// TestDeclarationFor returns the associated test declaration for the giving file path.
+func (pkg Package) TestDeclarationFor(importPath string, targetFile string) (PackageDeclaration, bool) {
+	declrs := pkg.TestDeclarations(importPath)
+	for _, declr := range declrs {
+		if declr.File == targetFile {
+			return declr, true
+		}
+	}
+
+	return PackageDeclaration{}, false
+}
+
+// DeclarationFor returns the associated declaration for the giving file path.
+func (pkg Package) DeclarationFor(importPath string, targetFile string) (PackageDeclaration, bool) {
+	declrs := pkg.Declarations(importPath)
+	for _, declr := range declrs {
+		if declr.File == targetFile {
+			return declr, true
+		}
+	}
+
+	return PackageDeclaration{}, false
+}
+
+// TypeFor returns associated TypeDeclaration for importPath in file with the typeName.
+func (pkg Package) TypeFor(importPath string, typeName string) (TypeDeclaration, bool) {
+	for _, declr := range pkg.Declarations(importPath) {
+		for _, elem := range declr.Types {
+			if elem.Object.Name.Name == typeName {
+				return elem, true
+			}
+		}
+	}
+
+	return TypeDeclaration{}, false
+}
+
+// FunctionFor returns associated FuncDeclaration for importPath in file with the typeName.
+func (pkg Package) FunctionFor(importPath string, typeName string) (FuncDeclaration, bool) {
+	for _, declr := range pkg.Declarations(importPath) {
+		for _, elem := range declr.Functions {
+			if elem.FuncDeclr.Name.Name == typeName {
+				return elem, true
+			}
+		}
+	}
+
+	return FuncDeclaration{}, false
+}
+
+// StructFor returns associated StructDeclaration for importPath in file with the typeName.
+func (pkg Package) StructFor(importPath string, typeName string) (StructDeclaration, bool) {
+	for _, declr := range pkg.Declarations(importPath) {
+		for _, elem := range declr.Structs {
+			if elem.Object.Name.Name == typeName {
+				return elem, true
+			}
+		}
+	}
+
+	return StructDeclaration{}, false
+}
+
+// InterfaceFor returns associated InterfaceDeclaration for importPath in file with the typeName.
+func (pkg Package) InterfaceFor(importPath string, typeName string) (InterfaceDeclaration, bool) {
+	for _, declr := range pkg.Declarations(importPath) {
+		for _, elem := range declr.Interfaces {
+			if elem.Object.Name.Name == typeName {
+				return elem, true
+			}
+		}
+	}
+
+	return InterfaceDeclaration{}, false
+}
+
+// TypeForFile returns associated TypeDeclaration for importPath in file with the typeName.
+func (pkg Package) TypeForFile(importPath string, targetFile string, typeName string) (TypeDeclaration, bool) {
+	declr, ok := pkg.DeclarationFor(importPath, targetFile)
+	if !ok {
+		return TypeDeclaration{}, false
+	}
+
+	return declr.TypeFor(typeName)
+}
+
+// FunctionForFile returns associated FuncDeclaration for importPath in file with the typeName.
+func (pkg Package) FunctionForFile(importPath string, targetFile string, typeName string) (FuncDeclaration, bool) {
+	declr, ok := pkg.DeclarationFor(importPath, targetFile)
+	if !ok {
+		return FuncDeclaration{}, false
+	}
+
+	return declr.FunctionFor(typeName)
+}
+
+// StructForFile returns associated StructDeclaration for importPath in file with the typeName.
+func (pkg Package) StructForFile(importPath string, targetFile string, typeName string) (StructDeclaration, bool) {
+	declr, ok := pkg.DeclarationFor(importPath, targetFile)
+	if !ok {
+		return StructDeclaration{}, false
+	}
+
+	return declr.StructFor(typeName)
+}
+
+// InterfaceForFile returns associated InterfaceDeclaration for importPath in file with the typeName.
+func (pkg Package) InterfaceForFile(importPath string, targetFile string, typeName string) (InterfaceDeclaration, bool) {
+	declr, ok := pkg.DeclarationFor(importPath, targetFile)
+	if !ok {
+		return InterfaceDeclaration{}, false
+	}
+
+	return declr.InterfaceFor(typeName)
 }
 
 //===========================================================================================================
@@ -306,6 +483,17 @@ func (pkg PackageDeclaration) ImportFor(imp string) (ImportDeclaration, error) {
 	return impDeclr, nil
 }
 
+// FunctionFor returns associated FuncDeclaration associated with name.
+func (pkg PackageDeclaration) FunctionFor(typeName string) (FuncDeclaration, bool) {
+	for _, typed := range pkg.Functions {
+		if typed.FuncDeclr.Name.Name == typeName {
+			return typed, true
+		}
+	}
+
+	return FuncDeclaration{}, false
+}
+
 // TypeFor returns associated TypeDeclaration associated with name.
 func (pkg PackageDeclaration) TypeFor(typeName string) (TypeDeclaration, bool) {
 	for _, typed := range pkg.Types {
@@ -365,7 +553,6 @@ type StructDeclaration struct {
 	Position     token.Pos                                   `json:"position"`
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
-	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
@@ -382,7 +569,6 @@ type TypeDeclaration struct {
 	Position     token.Pos                                   `json:"position"`
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
-	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 //===========================================================================================================
@@ -409,7 +595,6 @@ type FuncDeclaration struct {
 	FuncType      *ast.FieldList                              `json:"funcType"`
 	Returns       *ast.FieldList                              `json:"returns"`
 	Arguments     *ast.FieldList                              `json:"arguments"`
-	PackageDeclr  *PackageDeclaration                         `json:"-"`
 	Annotations   []AnnotationDeclaration                     `json:"annotations"`
 	Associations  map[string]AnnotationAssociationDeclaration `json:"associations"`
 }
@@ -443,12 +628,8 @@ func (fun FuncDeclaration) HasAnnotation(typeName string) bool {
 }
 
 // Definition returns a FunctionDefinition for this function.
-func (fun FuncDeclaration) Definition() (FunctionDefinition, error) {
-	if fun.PackageDeclr == nil {
-		return FunctionDefinition{}, errors.New("Function has no Package associated")
-	}
-
-	return GetFuncDefFromFunction(fun, fun.PackageDeclr), nil
+func (fun FuncDeclaration) Definition(pkg *PackageDeclaration) (FunctionDefinition, error) {
+	return GetFunctionDefinitionFromDeclaration(fun, pkg)
 }
 
 // Functions defines a slice of FuncDeclaration.
@@ -492,12 +673,11 @@ type InterfaceDeclaration struct {
 	Position     token.Pos                                   `json:"position"`
 	Annotations  []AnnotationDeclaration                     `json:"annotations"`
 	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
-	PackageDeclr *PackageDeclaration                         `json:"-"`
 }
 
 // Methods returns the associated methods for the giving interface.
-func (i InterfaceDeclaration) Methods() []FunctionDefinition {
-	return GetInterfaceFunctions(i.Interface, i.PackageDeclr)
+func (i InterfaceDeclaration) Methods(pkg *PackageDeclaration) []FunctionDefinition {
+	return GetInterfaceFunctions(i.Interface, pkg)
 }
 
 // ArgType defines a type to represent the information for a giving functions argument or
@@ -601,7 +781,7 @@ func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 
 // GetArgTypeFromField returns a ArgType that writes out the representation of the giving variable name or decleration ast.Field
 // associated with the giving package. It returns an error if it does not know the type.
-func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
+func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
 	var retCounter int
 
 	resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
@@ -651,7 +831,10 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
 		}
 
-		importDclr, _ := pkg.ImportFor(xobj.Name)
+		importDclr, err := pkg.ImportFor(xobj.Name)
+		if err != nil {
+			return ArgType{}, err
+		}
 
 		retCounter++
 		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
@@ -668,7 +851,31 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		arg.SelectPackage = xobj
 		arg.SelectObject = iobj.Sel
 
-		fmt.Printf("Imported: %#v\n", pkg.ImportedPackages)
+		if !importDclr.InternalPkg {
+			importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]
+			if !ok {
+				return ArgType{}, fmt.Errorf("Expected to have loaded imported package %q with tag %q", importDclr.Path, importDclr.Name)
+			}
+
+			mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path)
+			if !ok {
+				return ArgType{}, fmt.Errorf("Expected to have found moz.Package for %q with tag %q", importDclr.Path, importDclr.Name)
+			}
+
+			if mtype, ok := mdeclr.TypeFor(importDclr.Path, iobj.Sel.Name); ok {
+				arg.Spec = mtype.Object
+			}
+
+			if stype, ok := mdeclr.StructFor(importDclr.Path, iobj.Sel.Name); ok {
+				arg.Spec = stype.Object
+				arg.StructObject = stype.Struct
+			}
+
+			if itype, ok := mdeclr.InterfaceFor(importDclr.Path, iobj.Sel.Name); ok {
+				arg.Spec = itype.Object
+				arg.InterfaceObject = itype.Interface
+			}
+		}
 
 		return arg, nil
 
@@ -691,10 +898,42 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 				return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
 			}
 
-			importDclr, _ := pkg.ImportFor(vob.Name)
+			importDclr, err := pkg.ImportFor(vob.Name)
+			if err != nil {
+				return ArgType{}, err
+			}
 
 			arg.Package = vob.Name
 			arg.Import = importDclr
+
+			arg.SelectPackage = vob
+			arg.SelectObject = value.Sel
+
+			if !importDclr.InternalPkg {
+				importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]
+				if !ok {
+					return ArgType{}, fmt.Errorf("Expected to have loaded imported package %q with tag %q", importDclr.Path, importDclr.Name)
+				}
+
+				mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path)
+				if !ok {
+					return ArgType{}, fmt.Errorf("Expected to have found moz.Package for %q with tag %q", importDclr.Path, importDclr.Name)
+				}
+
+				if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
+					arg.Spec = mtype.Object
+				}
+
+				if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
+					arg.Spec = stype.Object
+					arg.StructObject = stype.Struct
+				}
+
+				if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
+					arg.Spec = itype.Object
+					arg.InterfaceObject = itype.Interface
+				}
+			}
 		case *ast.InterfaceType:
 			arg.InterfaceObject = value
 		case *ast.StructType:
@@ -759,9 +998,42 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 				return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
 			}
 
-			importDclr, _ := pkg.ImportFor(vob.Name)
+			importDclr, err := pkg.ImportFor(vob.Name)
+			if err != nil {
+				return ArgType{}, err
+			}
+
 			arg.Package = vob.Name
 			arg.Import = importDclr
+
+			arg.SelectPackage = vob
+			arg.SelectObject = value.Sel
+
+			if !importDclr.InternalPkg {
+				importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]
+				if !ok {
+					return ArgType{}, fmt.Errorf("Expected to have loaded imported package %q with tag %q", importDclr.Path, importDclr.Name)
+				}
+
+				mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path)
+				if !ok {
+					return ArgType{}, fmt.Errorf("Expected to have found moz.Package for %q with tag %q", importDclr.Path, importDclr.Name)
+				}
+
+				if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
+					arg.Spec = mtype.Object
+				}
+
+				if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
+					arg.Spec = stype.Object
+					arg.StructObject = stype.Struct
+				}
+
+				if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
+					arg.Spec = itype.Object
+					arg.InterfaceObject = itype.Interface
+				}
+			}
 		case *ast.StarExpr:
 			arg.PointerType = value
 		case *ast.InterfaceType:
@@ -797,7 +1069,10 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 				return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
 			}
 
-			importDclr, _ := pkg.ImportFor(vob.Name)
+			importDclr, err := pkg.ImportFor(vob.Name)
+			if err != nil {
+				return ArgType{}, err
+			}
 
 			arg.Package = vob.Name
 			arg.Import = importDclr
@@ -825,8 +1100,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 	return ArgType{}, errors.New("Unknown Field type, only variable type declaration wanted")
 }
 
-// GetFunctionDefinition returns a FunctionDefinition representing a giving function.
-func GetFunctionDefinition(method *ast.Field, pkg *PackageDeclaration) (FunctionDefinition, error) {
+// GetFunctionDefinitionFromField returns a FunctionDefinition representing a giving function.
+func GetFunctionDefinitionFromField(method *ast.Field, pkg *PackageDeclaration) (FunctionDefinition, error) {
 	if len(method.Names) == 0 {
 		return FunctionDefinition{}, errors.New("Method field must have names")
 	}
@@ -840,15 +1115,20 @@ func GetFunctionDefinition(method *ast.Field, pkg *PackageDeclaration) (Function
 	var arguments, returns []ArgType
 
 	for _, result := range ftype.Results.List {
-		if arg, err := GetArgTypeFromField("ret", result, pkg); err == nil {
-			returns = append(returns, arg)
+		arg, err := GetArgTypeFromField("ret", pkg.File, result, pkg)
+		if err != nil {
+			return FunctionDefinition{}, err
 		}
+
+		returns = append(returns, arg)
 	}
 
 	for _, param := range ftype.Params.List {
-		if arg, err := GetArgTypeFromField("var", param, pkg); err == nil {
-			arguments = append(arguments, arg)
+		arg, err := GetArgTypeFromField("var", pkg.File, param, pkg)
+		if err != nil {
+			return FunctionDefinition{}, err
 		}
+		arguments = append(arguments, arg)
 	}
 
 	return FunctionDefinition{
@@ -859,23 +1139,30 @@ func GetFunctionDefinition(method *ast.Field, pkg *PackageDeclaration) (Function
 	}, nil
 }
 
-// GetFuncDefFromFunction returns a FunctionDefinition withe the associated FuncDeclaration.
-func GetFuncDefFromFunction(funcObj FuncDeclaration, pkg *PackageDeclaration) FunctionDefinition {
+// GetFunctionDefinitionFromDeclaration returns a FunctionDefinition withe the associated FuncDeclaration.
+func GetFunctionDefinitionFromDeclaration(funcObj FuncDeclaration, pkg *PackageDeclaration) (FunctionDefinition, error) {
 	var arguments, returns []ArgType
 
 	if funcObj.Type.Results != nil {
 		for _, result := range funcObj.Type.Results.List {
-			if arg, err := GetArgTypeFromField("ret", result, pkg); err == nil {
-				returns = append(returns, arg)
+			arg, err := GetArgTypeFromField("ret", funcObj.File, result, pkg)
+			if err != nil {
+				return FunctionDefinition{}, err
 			}
+
+			returns = append(returns, arg)
+
 		}
 	}
 
 	if funcObj.Type.Params != nil {
 		for _, param := range funcObj.Type.Params.List {
-			if arg, err := GetArgTypeFromField("var", param, pkg); err == nil {
-				arguments = append(arguments, arg)
+			arg, err := GetArgTypeFromField("var", funcObj.File, param, pkg)
+			if err != nil {
+				return FunctionDefinition{}, err
 			}
+
+			arguments = append(arguments, arg)
 		}
 	}
 
@@ -885,7 +1172,7 @@ func GetFuncDefFromFunction(funcObj FuncDeclaration, pkg *PackageDeclaration) Fu
 	defs.Args = arguments
 	defs.Name = funcObj.FuncName
 
-	return defs
+	return defs, nil
 }
 
 // GetInterfaceFunctions returns a slice of FunctionDefinitions retrieved from the provided
@@ -895,7 +1182,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 
 	for _, method := range intr.Methods.List {
 		if len(method.Names) > 0 {
-			if def, err := GetFunctionDefinition(method, pkg); err == nil {
+			if def, err := GetFunctionDefinitionFromField(method, pkg); err == nil {
 				def.Interface = intr
 				defs = append(defs, def)
 			}

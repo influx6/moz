@@ -22,7 +22,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 	interfaceName := itr.Object.Name.Name
 	interfaceNameLower := strings.ToLower(interfaceName)
 
-	methods := itr.Methods()
+	methods := itr.Methods(&pkgDeclr)
 
 	imports := make(map[string]string, 0)
 
@@ -108,7 +108,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 						}{
 							Package:       pkg,
 							InterfaceName: interfaceName,
-							Methods:       itr.Methods(),
+							Methods:       itr.Methods(&pkgDeclr),
 						},
 					),
 				),
@@ -143,7 +143,7 @@ func IFaceAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, itr as
 						}{
 							Package:       pkg,
 							InterfaceName: interfaceName,
-							Methods:       itr.Methods(),
+							Methods:       itr.Methods(&pkgDeclr),
 						},
 					),
 				),

@@ -210,8 +210,8 @@ func handleGeneration(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.P
 
 	switch len(targetTemplater.Template) == 0 {
 	case true:
-		templateFilePath, ok := targetTemplater.Params["file"]
-		if !ok && targetTemplater.Template == "" {
+		templateFilePath, dok := targetTemplater.Params["file"]
+		if !dok && targetTemplater.Template == "" {
 			return nil, errors.New("Expected Template from annotation or provide `file => 'path_to_template`")
 		}
 

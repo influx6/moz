@@ -94,7 +94,7 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 	packageDeclrs := make(map[string]Package)
 	packageBuilds := make(map[string]*build.Package)
 
-	for _, pkg := range packages {
+	for tag, pkg := range packages {
 		var pkgFiles []string
 
 		for path, file := range pkg.Files {
@@ -135,19 +135,34 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 
 			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
 
-			if owner, ok := packageDeclrs[res.Package]; ok {
-				owner.Packages = append(owner.Packages, res)
+			if owner, ok := packageDeclrs[pkg.Name]; ok {
+				if strings.HasSuffix(tag, "_test") {
+					owner.TestPackages = append(owner.TestPackages, res)
+				} else {
+					owner.Packages = append(owner.Packages, res)
+				}
+
 				packageDeclrs[res.Package] = owner
 				continue
 			}
 
+			var testPkgs, codePkgs []PackageDeclaration
+
+			if strings.HasSuffix(tag, "_test") {
+				testPkgs = append(testPkgs, res)
+			} else {
+				codePkgs = append(codePkgs, res)
+			}
+
 			packageDeclrs[res.Package] = Package{
-				Name:     buildPkg.Name,
-				Path:     res.Path,
-				Package:  res.Package,
-				BuildPkg: buildPkg,
-				Files:    pkgFiles,
-				Packages: []PackageDeclaration{res},
+				Name:         buildPkg.Name,
+				Tag:          tag,
+				Path:         res.Package,
+				FilePath:     res.Path,
+				BuildPkg:     buildPkg,
+				Files:        pkgFiles,
+				Packages:     codePkgs,
+				TestPackages: testPkgs,
 			}
 		}
 
@@ -181,9 +196,11 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 	packageDeclrs := make(map[string]Package)
 	packageBuilds := make(map[string]*build.Package)
 
-	for _, pkg := range packages {
+	for pkgTag, pkg := range packages {
+		uniqueDir := fmt.Sprintf("%s#%s", dir, pkgTag)
+
 		processedPackages.pl.Lock()
-		if res, ok := processedPackages.pkgs[dir]; ok {
+		if res, ok := processedPackages.pkgs[uniqueDir]; ok {
 			log.Emit(metrics.Info("Skipping package processing").With("dir", dir))
 			processedPackages.pl.Unlock()
 			packageDeclrs[pkg.Name] = res
@@ -224,20 +241,33 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 				return nil, err
 			}
 
-			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
-
 			if owner, ok := packageDeclrs[pkg.Name]; ok {
-				owner.Packages = append(owner.Packages, res)
+				if strings.HasSuffix(pkgTag, "_test") {
+					owner.TestPackages = append(owner.TestPackages, res)
+				} else {
+					owner.Packages = append(owner.Packages, res)
+				}
+
 				packageDeclrs[res.Package] = owner
 				continue
 			}
 
+			var testPkgs, codePkgs []PackageDeclaration
+
+			if strings.HasSuffix(pkgTag, "_test") {
+				testPkgs = append(testPkgs, res)
+			} else {
+				codePkgs = append(codePkgs, res)
+			}
+
 			impPkg := Package{
-				Name:     res.Package,
-				Path:     res.FilePath,
-				Package:  res.Path,
-				BuildPkg: buildPkg,
-				Packages: []PackageDeclaration{res},
+				Name:         res.Package,
+				FilePath:     path,
+				Path:         res.Path,
+				Tag:          pkgTag,
+				BuildPkg:     buildPkg,
+				Packages:     codePkgs,
+				TestPackages: testPkgs,
 			}
 
 			packageDeclrs[pkg.Name] = impPkg
@@ -248,14 +278,13 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 			packageDeclrs[pkg.Name] = owner
 
 			processedPackages.pl.Lock()
-			processedPackages.pkgs[dir] = owner
+			processedPackages.pkgs[uniqueDir] = owner
 			processedPackages.pl.Unlock()
 		}
 	}
 
 	var pkgs []Package
 	for _, pkg := range packageDeclrs {
-
 		if err := pkg.loadImported(log); err != nil {
 			log.Emit(metrics.Error(err).With("message", "Failed to load imported pacakges").With("pkg", pkg.Path))
 			return nil, err
@@ -304,8 +333,10 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 	}
 
 	var pkg *ast.Package
+	var pkgTag string
+
 	pkgName := filepath.Base(filepath.Dir(path))
-	for _, pkg = range packages {
+	for pkgTag, pkg = range packages {
 		if pkg.Name != pkgName {
 			continue
 		}
@@ -332,13 +363,23 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 			return Package{}, err
 		}
 
+		var testPkgs, codePkgs []PackageDeclaration
+
+		if strings.HasSuffix(pkgTag, "_test") {
+			testPkgs = append(testPkgs, res)
+		} else {
+			codePkgs = append(codePkgs, res)
+		}
+
 		return Package{
-			BuildPkg: buildPkg,
-			Files:    pkgFiles,
-			Package:  res.Path,
-			Name:     res.Package,
-			Path:     res.FilePath,
-			Packages: []PackageDeclaration{res},
+			BuildPkg:     buildPkg,
+			Tag:          pkgTag,
+			Files:        pkgFiles,
+			Path:         res.Path,
+			Name:         res.Package,
+			FilePath:     res.FilePath,
+			Packages:     codePkgs,
+			TestPackages: testPkgs,
 		}, nil
 	}
 
@@ -493,7 +534,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				defFunc.Position = rdeclr.Pos()
 				defFunc.Path = packageDeclr.Path
 				defFunc.File = packageDeclr.File
-				defFunc.PackageDeclr = &packageDeclr
 				defFunc.FuncName = rdeclr.Name.Name
 				defFunc.Length = positionLength
 				defFunc.From = beginPosition.Offset
@@ -604,7 +644,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								FilePath:     packageDeclr.FilePath,
 								From:         beginPosition.Offset,
 								Length:       positionLength,
-								PackageDeclr: &packageDeclr,
 							})
 							break
 
@@ -621,7 +660,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Annotations:  annotations,
 								Associations: associations,
 								Source:       string(source),
-								PackageDeclr: &packageDeclr,
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
 								Path:         packageDeclr.Path,
@@ -644,7 +682,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Comments:     comment,
 								Associations: associations,
 								Source:       string(source),
-								PackageDeclr: &packageDeclr,
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
 								Path:         packageDeclr.Path,
@@ -900,7 +937,7 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
 	log.Emit(metrics.Info("Begin ParsePackage").With("toDir", toDir).
 		With("overwriter-file", doFileOverwrite).
-		With("package", pkgDeclrs.Package))
+		With("package", pkgDeclrs.Path))
 
 	for _, pkg := range pkgDeclrs.Packages {
 		log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration").
@@ -946,7 +983,7 @@ func WhichPackage(toDir string, pkg Package) string {
 		return strings.ToLower(filepath.Base(toDir))
 	}
 
-	return pkg.Package
+	return pkg.Name
 }
 
 //===========================================================================================================
