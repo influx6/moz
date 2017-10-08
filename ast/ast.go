@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/icrowley/fake"
+	"github.com/influx6/faux/metrics"
 	"github.com/influx6/gobuild/build"
 	"github.com/influx6/moz/gen"
 )
@@ -57,10 +58,11 @@ type Packages []Package
 
 // ImportDeclaration defines a type to contain import declaration within a package.
 type ImportDeclaration struct {
-	Name     string `json:"name"`
-	Path     string `json:"path"`
-	Source   string `json:"source"`
-	Comments string `json:"comments"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Source      string `json:"source"`
+	Comments    string `json:"comments"`
+	InternalPkg bool   `json:"internal_pkg"`
 }
 
 // Package defines the central repository of all PackageDeclaration.
@@ -71,6 +73,19 @@ type Package struct {
 	Files    []string             `json:"files"`
 	BuildPkg *build.Package       `json:"build_package"`
 	Packages []PackageDeclaration `json:"packages"`
+}
+
+// Load calls all internal packages to load their respective imports.
+func (pkg *Package) loadImported(m metrics.Metrics) error {
+	for index, item := range pkg.Packages {
+		if err := item.loadImported(m); err != nil {
+			return err
+		}
+
+		pkg.Packages[index] = item
+	}
+
+	return nil
 }
 
 // HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
@@ -148,19 +163,20 @@ func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
 // giving package.
 type PackageDeclaration struct {
-	Package     string                            `json:"package"`
-	Path        string                            `json:"path"`
-	FilePath    string                            `json:"filepath"`
-	File        string                            `json:"file"`
-	Source      string                            `json:"source"`
-	Comments    []string                          `json:"comments"`
-	Imports     map[string]ImportDeclaration      `json:"imports"`
-	Annotations []AnnotationDeclaration           `json:"annotations"`
-	Types       []TypeDeclaration                 `json:"types"`
-	Structs     []StructDeclaration               `json:"structs"`
-	Interfaces  []InterfaceDeclaration            `json:"interfaces"`
-	Functions   []FuncDeclaration                 `json:"functions"`
-	ObjectFunc  map[*ast.Object][]FuncDeclaration `json:"object_functions"`
+	Package          string                            `json:"package"`
+	Path             string                            `json:"path"`
+	FilePath         string                            `json:"filepath"`
+	File             string                            `json:"file"`
+	Source           string                            `json:"source"`
+	Comments         []string                          `json:"comments"`
+	Imports          map[string]ImportDeclaration      `json:"imports"`
+	Annotations      []AnnotationDeclaration           `json:"annotations"`
+	Types            []TypeDeclaration                 `json:"types"`
+	Structs          []StructDeclaration               `json:"structs"`
+	Interfaces       []InterfaceDeclaration            `json:"interfaces"`
+	Functions        []FuncDeclaration                 `json:"functions"`
+	ObjectFunc       map[*ast.Object][]FuncDeclaration `json:"object_functions"`
+	ImportedPackages map[string]Packages               `json:"imported_packages"`
 }
 
 // HasFunctionFor returns true/false if the giving function name exists for the package.
@@ -168,6 +184,34 @@ func HasFunctionFor(pkg PackageDeclaration) func(StructDeclaration, string) bool
 	return func(str StructDeclaration, funcName string) bool {
 		return pkg.HasFunctionFor(str, funcName)
 	}
+}
+
+// loadImported will attempt to load all available imported package that
+// are not internal to go.
+func (pkg *PackageDeclaration) loadImported(m metrics.Metrics) error {
+	if pkg.ImportedPackages == nil {
+		pkg.ImportedPackages = make(map[string]Packages)
+	}
+
+	for _, imported := range pkg.Imports {
+		if imported.InternalPkg {
+			continue
+		}
+
+		if _, ok := pkg.ImportedPackages[imported.Path]; ok {
+			continue
+		}
+
+		importDir := filepath.Join(GoSrcPath, imported.Path)
+		importedPkgs, err := PackageWithBuildCtx(m, importDir, build.Default)
+		if err != nil {
+			return err
+		}
+
+		pkg.ImportedPackages[imported.Path] = importedPkgs
+	}
+
+	return nil
 }
 
 // HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
@@ -249,6 +293,39 @@ func (pkg PackageDeclaration) ImportFor(imp string) (ImportDeclaration, error) {
 	}
 
 	return impDeclr, nil
+}
+
+// TypeFor returns associated TypeDeclaration associated with name.
+func (pkg PackageDeclaration) TypeFor(typeName string) (TypeDeclaration, bool) {
+	for _, typed := range pkg.Types {
+		if typed.Object.Name.Name == typeName {
+			return typed, true
+		}
+	}
+
+	return TypeDeclaration{}, false
+}
+
+// InterfaceFor returns associated InterfaceDeclaration associated with name.
+func (pkg PackageDeclaration) InterfaceFor(intrName string) (InterfaceDeclaration, bool) {
+	for _, inter := range pkg.Interfaces {
+		if inter.Object.Name.Name == intrName {
+			return inter, true
+		}
+	}
+
+	return InterfaceDeclaration{}, false
+}
+
+// StructFor returns associated StructDeclaration associated with name.
+func (pkg PackageDeclaration) StructFor(structName string) (StructDeclaration, bool) {
+	for _, structd := range pkg.Structs {
+		if structd.Object.Name.Name == structName {
+			return structd, true
+		}
+	}
+
+	return StructDeclaration{}, false
 }
 
 // FunctionsFor returns a slice of FuncDeclaration for the giving object.
@@ -425,8 +502,11 @@ type ArgType struct {
 	NameObject      *ast.Object
 	TypeObject      *ast.Object
 	StructObject    *ast.StructType
+	Spec            *ast.TypeSpec
 	InterfaceObject *ast.InterfaceType
 	ImportedObject  *ast.SelectorExpr
+	SelectPackage   *ast.Ident
+	SelectObject    *ast.Ident
 	ArrayType       *ast.ArrayType
 	MapType         *ast.MapType
 	ChanType        *ast.ChanType
@@ -540,12 +620,15 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			BaseType:   defaultresType,
 		}
 
-		if iobj.Obj != nil {
-			switch obx := iobj.Obj.Type.(type) {
-			case *ast.StructType:
-				arg.StructObject = obx
-			case *ast.InterfaceType:
-				arg.InterfaceObject = obx
+		if iobj.Obj != nil && iobj.Obj.Decl != nil {
+			if def, ok := iobj.Obj.Decl.(*ast.TypeSpec); ok {
+				arg.Spec = def
+				switch obx := def.Type.(type) {
+				case *ast.StructType:
+					arg.StructObject = obx
+				case *ast.InterfaceType:
+					arg.InterfaceObject = obx
+				}
 			}
 		}
 
@@ -562,14 +645,19 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 		retCounter++
 		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
 
-		return ArgType{
+		arg := ArgType{
 			Name:           name,
 			Import:         importDclr,
 			Package:        xobj.Name,
 			ImportedObject: iobj,
 			Type:           getName(iobj),
 			ExType:         getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
-		}, nil
+		}
+
+		arg.SelectPackage = xobj
+		arg.SelectObject = iobj.Sel
+
+		return arg, nil
 
 	case *ast.StarExpr:
 		retCounter++
@@ -659,7 +747,6 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 			}
 
 			importDclr, _ := pkg.ImportFor(vob.Name)
-
 			arg.Package = vob.Name
 			arg.Import = importDclr
 		case *ast.StarExpr:

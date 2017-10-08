@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/influx6/faux/metrics"
@@ -28,6 +29,15 @@ var (
 
 	// ErrPackageParseFailed defines a error returned when a package processing failed to work.
 	ErrPackageParseFailed = errors.New("Package or Package file failed to be parsed")
+
+	// we need to ensure we catch all processed packages to ensure we dont get stuck
+	// re-processing in a loop again.
+	processedPackages = struct {
+		pl   sync.Mutex
+		pkgs map[string]Package
+	}{
+		pkgs: make(map[string]Package),
+	}
 )
 
 // ParseFileAnnotations parses the package from the provided file.
@@ -87,11 +97,8 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 	for _, pkg := range packages {
 		var pkgFiles []string
 
-		for path := range pkg.Files {
-			pkgFiles = append(pkgFiles, path)
-		}
-
 		for path, file := range pkg.Files {
+			pkgFiles = append(pkgFiles, path)
 			pathPkg := filepath.Dir(path)
 			buildPkg, ok := packageBuilds[pathPkg]
 			if !ok {
@@ -121,6 +128,11 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				return nil, err
 			}
 
+			if err := res.loadImported(log); err != nil {
+				log.Emit(metrics.Error(err).With("message", "Failed to load imported pacakges").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
+				return nil, err
+			}
+
 			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
 
 			if owner, ok := packageDeclrs[res.Package]; ok {
@@ -137,6 +149,11 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				Files:    pkgFiles,
 				Packages: []PackageDeclaration{res},
 			}
+		}
+
+		if owner, ok := packageDeclrs[pkg.Name]; ok {
+			owner.Files = pkgFiles
+			packageDeclrs[pkg.Name] = owner
 		}
 	}
 
@@ -164,14 +181,21 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 	packageDeclrs := make(map[string]Package)
 	packageBuilds := make(map[string]*build.Package)
 
-	for _, pkg := range packages {
+	for pkgDir, pkg := range packages {
+		processedPackages.pl.Lock()
+		if res, ok := processedPackages.pkgs[pkgDir]; ok {
+			log.Emit(metrics.Info("Skipping package processing").With("dir", pkgDir))
+			processedPackages.pl.Unlock()
+			packageDeclrs[pkg.Name] = res
+			continue
+		}
+		processedPackages.pl.Unlock()
+
 		var pkgFiles []string
 
-		for path := range pkg.Files {
-			pkgFiles = append(pkgFiles, path)
-		}
-
 		for path, file := range pkg.Files {
+			pkgFiles = append(pkgFiles, path)
+
 			pathPkg := filepath.Dir(path)
 			buildPkg, ok := packageBuilds[pathPkg]
 			if !ok {
@@ -202,25 +226,40 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 
 			log.Emit(metrics.Info("Parsed Package File").With("dir", dir).With("file", file.Name.Name).With("path", path).With("Package", pkg.Name))
 
-			if owner, ok := packageDeclrs[res.Package]; ok {
+			if owner, ok := packageDeclrs[pkg.Name]; ok {
 				owner.Packages = append(owner.Packages, res)
 				packageDeclrs[res.Package] = owner
 				continue
 			}
 
-			packageDeclrs[res.Package] = Package{
+			impPkg := Package{
 				Name:     res.Package,
 				Path:     res.FilePath,
-				Files:    pkgFiles,
 				Package:  res.Path,
 				BuildPkg: buildPkg,
 				Packages: []PackageDeclaration{res},
 			}
+
+			packageDeclrs[pkg.Name] = impPkg
+		}
+
+		if owner, ok := packageDeclrs[pkg.Name]; ok {
+			owner.Files = pkgFiles
+			packageDeclrs[pkg.Name] = owner
+
+			processedPackages.pl.Lock()
+			processedPackages.pkgs[pkgDir] = owner
+			processedPackages.pl.Unlock()
 		}
 	}
 
 	var pkgs []Package
 	for _, pkg := range packageDeclrs {
+		if err := pkg.loadImported(log); err != nil {
+			log.Emit(metrics.Error(err).With("message", "Failed to load imported pacakges").With("pkg", pkg.Path))
+			return nil, err
+		}
+
 		pkgs = append(pkgs, pkg)
 	}
 
@@ -287,6 +326,11 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 			return Package{}, err
 		}
 
+		if err := res.loadImported(log); err != nil {
+			log.Emit(metrics.Error(err).With("message", "Failed to load imported pacakges").With("dir", dir).With("file", file.Name.Name).With("Package", pkg.Name))
+			return Package{}, err
+		}
+
 		return Package{
 			BuildPkg: buildPkg,
 			Files:    pkgFiles,
@@ -349,11 +393,17 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				comment = imp.Comment.Text()
 			}
 
+			var internal bool
+			if _, err := relativeToSrc(impPkgPath); err != nil {
+				internal = true
+			}
+
 			packageDeclr.Imports[pkgName] = ImportDeclaration{
-				Comments: comment,
-				Name:     pkgName,
-				Path:     impPkgPath,
-				Source:   string(source),
+				Comments:    comment,
+				Name:        pkgName,
+				Path:        impPkgPath,
+				InternalPkg: internal,
+				Source:      string(source),
 			}
 		}
 
@@ -410,15 +460,13 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					for _, item := range annotationRead {
 						log.Emit(metrics.Info("Annotation in Function Decleration comment").
 							With("dir", dir).
-							With("annotation", item.Name).
-							With("position", rdeclr.Pos()))
+							With("annotation", item.Name))
 
 						switch item.Name {
 						case "associates":
 							log.Emit(metrics.Error(errors.New("Association Annotation in Decleration is incomplete: Expects 3 elements")).
 								With("dir", dir).
-								With("association", item.Arguments).
-								With("position", rdeclr.Pos()))
+								With("association", item.Arguments))
 
 							if len(item.Arguments) >= 3 {
 								associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
@@ -500,16 +548,13 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					for _, item := range annotationRead {
 						log.Emit(metrics.Info("Annotation in Decleration comment").
 							With("dir", dir).
-							With("annotation", item.Name).
-							With("position", rdeclr.Pos()).
-							With("token", rdeclr.Tok.String()))
+							With("annotation", item.Name))
 
 						switch item.Name {
 						case "associates":
 							log.Emit(metrics.Error(errors.New("Association Annotation in Decleration is incomplete: Expects 3 elements")).
 								With("dir", dir).
 								With("association", item.Arguments).
-								With("position", rdeclr.Pos()).
 								With("token", rdeclr.Tok.String()))
 
 							if len(item.Arguments) >= 3 {
@@ -543,7 +588,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							log.Emit(metrics.Info("Annotation in Decleration").
 								With("Type", "Struct").
 								With("Annotations", len(annotations)).
-								With("StructName", obj.Name))
+								With("StructName", obj.Name.Name))
 
 							packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
 								Object:       obj,
@@ -566,7 +611,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							log.Emit(metrics.Info("Annotation in Decleration").
 								With("Type", "Interface").
 								With("Annotations", len(annotations)).
-								With("StructName", obj.Name))
+								With("StructName", obj.Name.Name))
 
 							packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
 								Object:       obj,
@@ -590,7 +635,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								With("Type", "OtherType").
 								With("Marker", "NonStruct/NonInterface:Type").
 								With("Annotations", len(annotations)).
-								With("StructName", obj.Name))
+								With("StructName", obj.Name.Name))
 
 							packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
 								Object:       obj,
