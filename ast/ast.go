@@ -28,8 +28,8 @@ const (
 
 // Contains giving sets of variables exposing sytem GOPATH and GOPATHSRC.
 var (
-	GoPath    = os.Getenv("GOPATH")
-	GoSrcPath = filepath.Join(GoPath, "src")
+	goPath    = os.Getenv("GOPATH")
+	goSrcPath = filepath.Join(goPath, "src")
 
 	spaces     = regexp.MustCompile(`/s+`)
 	itag       = regexp.MustCompile(`((\w+):"(\w+|[\w,?\s+\w]+)")`)
@@ -55,6 +55,17 @@ var (
 
 // Packages defines a type to represent a slice of Packages.
 type Packages []Package
+
+// PackageFor returns package associated with name.
+func (pkgs Packages) PackageFor(name string) (Package, bool) {
+	for _, pkg := range pkgs {
+		if pkg.Name == name {
+			return pkg, true
+		}
+	}
+
+	return Package{}, false
+}
 
 // ImportDeclaration defines a type to contain import declaration within a package.
 type ImportDeclaration struct {
@@ -202,7 +213,7 @@ func (pkg *PackageDeclaration) loadImported(m metrics.Metrics) error {
 			continue
 		}
 
-		importDir := filepath.Join(GoSrcPath, imported.Path)
+		importDir := filepath.Join(goSrcPath, imported.Path)
 		importedPkgs, err := PackageWithBuildCtx(m, importDir, build.Default)
 		if err != nil {
 			return err
@@ -656,6 +667,8 @@ func GetArgTypeFromField(varPrefix string, result *ast.Field, pkg *PackageDeclar
 
 		arg.SelectPackage = xobj
 		arg.SelectObject = iobj.Sel
+
+		fmt.Printf("Imported: %#v\n", pkg.ImportedPackages)
 
 		return arg, nil
 

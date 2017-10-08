@@ -181,10 +181,10 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 	packageDeclrs := make(map[string]Package)
 	packageBuilds := make(map[string]*build.Package)
 
-	for pkgDir, pkg := range packages {
+	for _, pkg := range packages {
 		processedPackages.pl.Lock()
-		if res, ok := processedPackages.pkgs[pkgDir]; ok {
-			log.Emit(metrics.Info("Skipping package processing").With("dir", pkgDir))
+		if res, ok := processedPackages.pkgs[dir]; ok {
+			log.Emit(metrics.Info("Skipping package processing").With("dir", dir))
 			processedPackages.pl.Unlock()
 			packageDeclrs[pkg.Name] = res
 			continue
@@ -248,13 +248,14 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 			packageDeclrs[pkg.Name] = owner
 
 			processedPackages.pl.Lock()
-			processedPackages.pkgs[pkgDir] = owner
+			processedPackages.pkgs[dir] = owner
 			processedPackages.pl.Unlock()
 		}
 	}
 
 	var pkgs []Package
 	for _, pkg := range packageDeclrs {
+
 		if err := pkg.loadImported(log); err != nil {
 			log.Emit(metrics.Error(err).With("message", "Failed to load imported pacakges").With("pkg", pkg.Path))
 			return nil, err
@@ -394,7 +395,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			}
 
 			var internal bool
-			if _, err := relativeToSrc(impPkgPath); err != nil {
+			if _, err := relativeToSrc(filepath.Join(goSrcPath, impPkgPath)); err != nil {
 				internal = true
 			}
 
@@ -669,7 +670,11 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 }
 
 func relativeToSrc(path string) (string, error) {
-	return filepath.Rel(GoSrcPath, path)
+	if _, err := os.Stat(path); err != nil {
+		return "", err
+	}
+
+	return filepath.Rel(goSrcPath, path)
 }
 
 //===========================================================================================================
