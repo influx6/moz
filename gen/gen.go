@@ -267,6 +267,7 @@ func (tx MapDeclr) WriteTo(w io.Writer) (int64, error) {
 // and providing binding and will execute the template to generate it's output
 type TextDeclr struct {
 	Template string
+	Name     string
 	Binding  interface{}
 	Funcs    tm.FuncMap
 }
@@ -274,7 +275,7 @@ type TextDeclr struct {
 // WriteTo writes to the provided writer the text declaration.
 func (tx TextDeclr) WriteTo(w io.Writer) (int64, error) {
 	w = NewNoBOM(w)
-	tml, err := tm.New("textDeclr").Funcs(defaultFuncs).Funcs(tx.Funcs).Parse(tx.Template)
+	tml, err := tm.New(tx.Name).Funcs(defaultFuncs).Funcs(tx.Funcs).Parse(tx.Template)
 	if err != nil {
 		return 0, err
 	}

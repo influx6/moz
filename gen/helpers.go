@@ -384,6 +384,17 @@ func Source(tml *template.Template, binding interface{}) SourceDeclr {
 // SourceTextWith returns a new instance of a TextDeclr.
 func SourceTextWith(tml string, funcs template.FuncMap, binding interface{}) TextDeclr {
 	return TextDeclr{
+		Name:     "source:template",
+		Funcs:    funcs,
+		Template: tml,
+		Binding:  binding,
+	}
+}
+
+// SourceTextWithName returns a new instance of a TextDeclr.
+func SourceTextWithName(name string, tml string, funcs template.FuncMap, binding interface{}) TextDeclr {
+	return TextDeclr{
+		Name:     name,
 		Funcs:    funcs,
 		Template: tml,
 		Binding:  binding,
