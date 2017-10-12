@@ -752,8 +752,7 @@ func SimpleWriteDirectives(toDir string, doFileOverwrite bool, wds ...gen.WriteD
 // SimpleWriteDirective defines a function which houses the logic to write WriteDirective into file system.
 func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDirective) error {
 	if filepath.IsAbs(item.Dir) {
-		err := errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")
-		return err
+		return fmt.Errorf("gen.WriteDirectiveError: Expected relative Dir path not absolute: %+q", item.Dir)
 	}
 
 	if item.Before != nil {
@@ -838,7 +837,7 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 		}))
 
 	if filepath.IsAbs(item.Dir) {
-		err := errors.New("gen.WriteDirectiveError: Expected relative Dir path not absolute")
+		err := fmt.Errorf("gen.WriteDirectiveError: Expected relative Dir path not absolute: %+q", item.Dir)
 		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir))
 		return err
 	}
