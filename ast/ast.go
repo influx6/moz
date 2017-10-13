@@ -170,6 +170,18 @@ func (pkg Package) AnnotationFirstFor(typeName string) (AnnotationDeclaration, P
 	return AnnotationDeclaration{}, PackageDeclaration{}, false
 }
 
+// HasAnnotation returns true/false if the giving package has any files having
+// a giving annotation on the package level.
+func (pkg Package) HasAnnotation(name string) bool {
+	for _, elem := range pkg.Packages {
+		if elem.HasAnnotation(name) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // AnnotationsFor returns all annotations with the giving name.
 func (pkg Package) AnnotationsFor(typeName string) []AnnotationDeclaration {
 	var found []AnnotationDeclaration
