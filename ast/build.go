@@ -159,10 +159,10 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 			}
 
 			packageDeclrs[res.Package] = Package{
-				Name:         buildPkg.Name,
 				Tag:          tag,
-				Path:         res.Package,
-				FilePath:     res.Path,
+				Name:         res.Package,
+				Path:         res.Path,
+				FilePath:     filepath.Base(res.FilePath),
 				BuildPkg:     buildPkg,
 				Files:        pkgFiles,
 				Packages:     codePkgs,
