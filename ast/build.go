@@ -68,6 +68,10 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 		return nil, err
 	}
 
+	if len(rootbuildPkg.GoFiles) == 0 {
+		return nil, &build.NoGoError{}
+	}
+
 	log.Emit(metrics.Info("Generated build.Package").
 		With("file", dir).
 		With("dir", dir).
