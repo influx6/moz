@@ -159,6 +159,17 @@ func (pkg Package) PackagesWithAnnotation(name string) []PackageDeclaration {
 	return pkgs
 }
 
+// AnnotationFirstFor returns all annotations with the giving name.
+func (pkg Package) AnnotationFirstFor(typeName string) (AnnotationDeclaration, PackageDeclaration, bool) {
+	for _, elem := range pkg.Packages {
+		if annon, ok := elem.GetAnnotation(typeName); ok {
+			return annon, elem, true
+		}
+	}
+
+	return AnnotationDeclaration{}, PackageDeclaration{}, false
+}
+
 // AnnotationsFor returns all annotations with the giving name.
 func (pkg Package) AnnotationsFor(typeName string) []AnnotationDeclaration {
 	var found []AnnotationDeclaration
