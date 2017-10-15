@@ -50,6 +50,12 @@ var (
 		"hasPrefix": func(b, pre string) bool {
 			return strings.HasPrefix(b, pre)
 		},
+		"replaceOnce": func(b, target, sub string) string {
+			return strings.Replace(b, target, sub, 1)
+		},
+		"replaceAll": func(b, target, sub string) string {
+			return strings.Replace(b, target, sub, -1)
+		},
 		"lower": func(b string) string {
 			return strings.ToLower(b)
 		},
