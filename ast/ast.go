@@ -969,6 +969,18 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 			arg.Package = resPkg
 			arg.BaseType = defaultresType
+
+			if value.Obj != nil && value.Obj.Decl != nil {
+				if def, ok := value.Obj.Decl.(*ast.TypeSpec); ok {
+					arg.Spec = def
+					switch obx := def.Type.(type) {
+					case *ast.StructType:
+						arg.StructObject = obx
+					case *ast.InterfaceType:
+						arg.InterfaceObject = obx
+					}
+				}
+			}
 		case *ast.ChanType:
 			arg.ChanType = value
 		}
@@ -1068,6 +1080,17 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 			arg.NameObject = value.Obj
 			arg.Package = resPkg
 			arg.BaseType = defaultresType
+			if value.Obj != nil && value.Obj.Decl != nil {
+				if def, ok := value.Obj.Decl.(*ast.TypeSpec); ok {
+					arg.Spec = def
+					switch obx := def.Type.(type) {
+					case *ast.StructType:
+						arg.StructObject = obx
+					case *ast.InterfaceType:
+						arg.InterfaceObject = obx
+					}
+				}
+			}
 		case *ast.ChanType:
 			arg.ChanType = value
 		}
@@ -1113,6 +1136,17 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 			arg.Package = resPkg
 			arg.BaseType = defaultresType
+			if value.Obj != nil && value.Obj.Decl != nil {
+				if def, ok := value.Obj.Decl.(*ast.TypeSpec); ok {
+					arg.Spec = def
+					switch obx := def.Type.(type) {
+					case *ast.StructType:
+						arg.StructObject = obx
+					case *ast.InterfaceType:
+						arg.InterfaceObject = obx
+					}
+				}
+			}
 		case *ast.ChanType:
 			arg.ChanType = value
 		}
