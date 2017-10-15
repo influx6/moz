@@ -38,9 +38,9 @@ func (fm *FromReader) WriteTo(w io.Writer) (int64, error) {
 		}
 
 		if read >= dataSize {
-			written, err := w.Write(data[:read])
-			if err != nil {
-				return totalWritten, err
+			written, err2 := w.Write(data[:read])
+			if err2 != nil {
+				return totalWritten, err2
 			}
 
 			totalWritten += int64(written)
@@ -54,8 +54,6 @@ func (fm *FromReader) WriteTo(w io.Writer) (int64, error) {
 
 		totalWritten += int64(written)
 	}
-
-	return totalWritten, nil
 }
 
 //======================================================================================================================
