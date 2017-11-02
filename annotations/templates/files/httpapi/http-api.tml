@@ -131,7 +131,7 @@ func (api *HTTPApi) Update(ctx *httputil.Context) error {
 			"url": ctx.Request().URL.String(),
 		}))
 
-		return errors.New("piblicId parameter not found")
+		return errors.New("publicId parameter not found")
 	}
 
 
