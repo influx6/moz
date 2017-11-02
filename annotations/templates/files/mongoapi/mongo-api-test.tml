@@ -74,7 +74,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 
 // TestGetAll{{.Struct.Object.Name}}OrderBy validates the retrieval of all {{.Struct.Object.Name}}
 // record from a mongodb.
-func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
+func TestGetAll{{.Struct.Object.Name}}ByOrder(t *testing.T){
     api := mongoapi.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
