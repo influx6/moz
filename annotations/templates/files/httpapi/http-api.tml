@@ -125,7 +125,7 @@ func (api *HTTPApi) Update(ctx *httputil.Context) error {
 		}))
 
 
-	publicID, ok := ctx.GetString("public_id")
+	publicID, ok := ctx.Bag().GetString("public_id")
 	if !ok {
 		api.metrics.Emit(metrics.Errorf("No public_id provided in params").WithFields(metrics.Field{
 			"url": ctx.Request().URL.String(),
@@ -185,7 +185,7 @@ func (api *HTTPApi) Delete(ctx *httputil.Context) error {
 				"url": ctx.Request().URL.String(),
 		}))
 
-	publicID, ok := ctx.GetString("public_id")
+	publicID, ok := ctx.Bag().GetString("public_id")
 	if !ok {
 		api.metrics.Emit(metrics.Errorf("No public_id provided in params").WithFields(metrics.Field{
 			"url": ctx.Request().URL.String(),
@@ -233,7 +233,7 @@ func (api *HTTPApi) Get(ctx *httputil.Context) error {
 				"url": ctx.Request().URL.String(),
 		}))
 
-	publicID, ok := ctx.GetString("public_id")
+	publicID, ok := ctx.Bag().GetString("public_id")
 	if !ok {
 		api.metrics.Emit(metrics.Errorf("No public_id provided in params").WithFields(metrics.Field{
 			"url": ctx.Request().URL.String(),
@@ -289,7 +289,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 
 	var order, orderBy string
 
-	if od, ok := ctx.Get("order"); ok {
+	if od, ok := ctx.Bag().Get("order"); ok {
 		if ordr, ok := od.(string); ok {
 			order = ordr
 		} else {
@@ -297,7 +297,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 		}
 	}
 
-	if od, ok := ctx.Get("orderBy"); ok {
+	if od, ok := ctx.Bag().Get("orderBy"); ok {
 		if ordr, ok := od.(string); ok {
 			orderBy = ordr
 		} else {
@@ -308,7 +308,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 	var err error
 	var pageNo, responsePerPage int
 
-	if rpp, ok := ctx.GetString("responsePerPage"); ok {
+	if rpp, ok := ctx.Bag().GetString("responsePerPage"); ok {
 		responsePerPage, err = strconv.Atoi(rpp)
 		if err != nil {
 			api.metrics.Emit(metrics.Errorf("Failed to retrieve responserPerPage number details").WithFields(metrics.Field{
@@ -320,7 +320,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 		responsePerPage = -1
 	}
 
-	if pg, ok := ctx.GetString("page"); ok {
+	if pg, ok := ctx.Bag().GetString("page"); ok {
 		pageNo, err = strconv.Atoi(pg)
 		if err != nil {
 			api.metrics.Emit(metrics.Errorf("Failed to retrieve page number details").WithFields(metrics.Field{
