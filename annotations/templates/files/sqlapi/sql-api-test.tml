@@ -18,7 +18,7 @@ var (
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
     api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
-    ctx := context.New().WithDeadline(10 * time.Second, false)
+    ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -45,7 +45,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
 func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
-    ctx := context.New().WithDeadline(10 * time.Second, false)
+    ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -80,7 +80,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
     api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
-    ctx := context.New().WithDeadline(10 * time.Second, false)
+    ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -101,7 +101,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
     api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
-    ctx := context.New().WithDeadline(10 * time.Second, false)
+    ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
@@ -135,7 +135,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     api := sqlapi.New(testCol, events, sql.NewDB(config, events))
 
-    ctx := context.New().WithDeadline(10 * time.Second, false)
+    ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
     elem, err := loadJSONFor({{lower .Struct.Object.Name.Name}}CreateJSON)
     if err != nil {
