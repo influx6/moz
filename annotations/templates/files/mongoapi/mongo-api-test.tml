@@ -38,11 +38,6 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
         tests.Failed("Successfully retrieved stored record for {{.Struct.Object.Name}} from db: %+q.", err)
     }
     tests.Passed("Successfully retrieved stored record for {{.Struct.Object.Name}} from db.")
-
-    if record.Name != elem.Name {
-        tests.Failed("Successfully matched retrieved record with inserted record for {{.Struct.Object.Name}}.")
-    }
-    tests.Passed("Successfully matched retrieved record with inserted record for {{.Struct.Object.Name}}.")
 }
 
 // TestGetAll{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}}
@@ -150,23 +145,12 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     }
     tests.Passed("Successfully added record for {{.Struct.Object.Name}} into db.")
 
-    elem.Name = "Bob Marley"
+    //TODO: Update something.
 
     if err := api.Update(ctx, elem.PublicID, elem); err != nil {
         tests.Failed("Successfully updated record for {{.Struct.Object.Name}} into db: %+q.", err)
     }
     tests.Passed("Successfully updated record for {{.Struct.Object.Name}} into db.")
-
-    record, err := api.Get(ctx, elem.PublicID)
-    if err != nil {
-        tests.Failed("Successfully retrieved stored record for {{.Struct.Object.Name}} from db: %+q.", err)
-    }
-    tests.Passed("Successfully retrieved stored record for {{.Struct.Object.Name}} from db.")
-
-    if elem.Name != record.Name {
-        tests.Failed("Successfully matched updated record with inserted record for {{.Struct.Object.Name}}.")
-    }
-    tests.Passed("Successfully matched updated record with inserted record for {{.Struct.Object.Name}}.")
 }
 
 // Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}}
