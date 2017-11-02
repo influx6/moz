@@ -1,9 +1,9 @@
 var (
-    events = metrics.New(stdout.Stdout{})
+    events = metrics.New(custom.StackDisplay(os.Stdout))
     version = "v1"
 )
 
-// TestGetAll{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}} 
+// TestGetAll{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}}
 // record from httpapi.
 func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 
@@ -22,7 +22,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     tests.Passed("Should have successfully loaded JSON: {{lower .Struct.Object.Name.Name}}CreateJSON.")
 
     ctx := context.New()
-    
+
     elem, err = db.Create(ctx, elem)
     if err != nil {
         tests.Failed("Should have successfully saved {{.Struct.Object.Name}} record : %+q.", err)
@@ -50,7 +50,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
     tests.Passed("Should have successfully received response body.")
 }
 
-// TestGet{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}} 
+// TestGet{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}}
 // record from a httpapi.
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
     db := NewMockAPIOperator()
@@ -68,7 +68,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
     tests.Passed("Should have successfully loaded JSON: {{lower .Struct.Object.Name.Name}}CreateJSON.")
 
     ctx := context.New()
-    
+
     elem, err = db.Create(ctx, elem)
     if err != nil {
         tests.Failed("Should have successfully saved {{.Struct.Object.Name}} record : %+q.", err)
@@ -96,7 +96,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
     tests.Passed("Should have successfully received response body.")
 }
 
-// Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}} 
+// Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}}
 // record with a httpapi.
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
 
@@ -110,7 +110,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
 
     var body bytes.Buffer
     body.WriteString({{lower .Struct.Object.Name.Name}}CreateJSON)
-    
+
     req, err := http.NewRequest("POST", fmt.Sprintf("/%s/ignitors", version), &body)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
@@ -132,7 +132,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
     tests.Passed("Should have successfully received response body.")
 }
 
-// Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}} 
+// Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}}
 // record with a httpapi.
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
     db := NewMockAPIOperator()
@@ -145,7 +145,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 
     var body bytes.Buffer
     body.WriteString({{lower .Struct.Object.Name.Name}}CreateJSON)
-    
+
     req, err := http.NewRequest("POST", fmt.Sprintf("/%s/ignitors", version), &body)
     if err != nil {
         tests.Failed("Should have successfully created request {{.Struct.Object.Name}} record : %+q.", err)
@@ -197,7 +197,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
     tests.Passed("Should have received status code %d from response.", http.StatusNoContent)
 }
 
-// Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}} 
+// Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}}
 // record from a httpapi.
 func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     db := NewMockAPIOperator()
@@ -216,7 +216,7 @@ func Test{{.Struct.Object.Name}}Delete(t *testing.T){
     tests.Passed("Should have successfully loaded JSON: {{lower .Struct.Object.Name.Name}}CreateJSON.")
 
     ctx := context.New()
-    
+
     elem, err = db.Create(ctx, elem)
     if err != nil {
         tests.Failed("Should have successfully saved {{.Struct.Object.Name}} record : %+q.", err)

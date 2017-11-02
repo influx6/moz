@@ -33,7 +33,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
     }
     tests.Passed("Successfully added record for {{.Struct.Object.Name}} into db.")
 
-    record, err := api.Get(ctx, elem.PublicID)
+    _, err = api.Get(ctx, elem.PublicID)
     if err != nil {
         tests.Failed("Successfully retrieved stored record for {{.Struct.Object.Name}} from db: %+q.", err)
     }
