@@ -380,7 +380,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 		}
 	}
 
-	mdb.metrics.Emit(metrics.Info("DB:Query:GetAllPerPage").WithFields(metric.Field{
+	mdb.metrics.Emit(metrics.Info("DB:Query:GetAllPerPage").WithFields(metrics.Field{
 		"starting_index":       indexToStart,
 		"total_records_wanted": totalWanted,
 		"order":                order,

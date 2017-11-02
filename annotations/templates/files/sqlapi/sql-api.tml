@@ -185,7 +185,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
                 var ritem {{.Struct.Package}}.{{.Struct.Object.Name}}
 
                 if err := rows.StructScan(&ritem); err != nil {
-                    mdb.metrics.Emit(metrics.Errorf(err).WithFields(metric.Field{
+                    mdb.metrics.Emit(metrics.Errorf(err).WithFields(metrics.Field{
                         "err":   err,
                         "table": mdb.table.Table(),
                     }))
@@ -259,7 +259,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 
         if err := mdb.dx.GetBy(mdb.table, func(row *sqlx.Row) error {
             if err := row.StructScan(&elem); err != nil {
-                mdb.metrics.Emit(metrics.Errorf(err).WithFields(metric.Field{
+                mdb.metrics.Emit(metrics.Errorf(err).WithFields(metrics.Field{
                     "err":   err,
                     "table": mdb.table.Table(),
                 }))
