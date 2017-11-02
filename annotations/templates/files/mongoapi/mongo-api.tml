@@ -109,7 +109,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Count(ctx context.Context) (int, error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Count")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Count").WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
 
         mdb.metrics.Emit(metrics.Errorf("Failed to get record count").
@@ -139,7 +139,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Count(ctx context.Context) (int, error) {
 
     query := bson.M{}
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to get record count").
         With("collection", mdb.col).
@@ -172,7 +172,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID strin
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Delete")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Delete").With("publicID", publicID).WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to delete record").With("publicID", publicID).
         With("collection", mdb.col).
@@ -202,7 +202,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID strin
         "publicID": publicID,
     }
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to delete record").With("publicID", publicID).
         With("collection", mdb.col).
@@ -234,7 +234,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Create")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Create").With("publicID", elem.PublicID).WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to create record").With("publicID", elem.PublicID).
         With("collection", mdb.col).
@@ -261,7 +261,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to create record").With("publicID", elem.PublicID).
         With("collection", mdb.col).
@@ -305,7 +305,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
     query := bson.M({{ map .CreateAction "elem" "bson" "json" }})
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to create record").With("publicID", elem.PublicID).
         With("collection", mdb.col).
@@ -340,7 +340,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         orderBy = "-" + orderBy
 	}
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
         With("collection", mdb.col).
@@ -399,7 +399,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
         With("collection", mdb.col).
@@ -496,7 +496,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
         orderBy = "-" + orderBy
 	}
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
 
         mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
@@ -522,7 +522,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
 
         mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
@@ -613,7 +613,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Get")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Get").With("publicID", publicID).WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With("publicID", publicID).
         With("collection", mdb.col).
@@ -639,7 +639,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With("publicID", publicID).
         With("collection", mdb.col).
@@ -712,7 +712,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Update")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Update").With("publicID", publicID).WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
         With("collection", mdb.col).
@@ -742,7 +742,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
         With("collection", mdb.col).
@@ -819,7 +819,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Exec(ctx context.Context, fx func(col *mgo
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Exec")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Exec").WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
         With("collection", mdb.col).
@@ -845,7 +845,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Exec(ctx context.Context, fx func(col *mgo
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
         With("collection", mdb.col).

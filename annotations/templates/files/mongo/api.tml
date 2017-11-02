@@ -68,7 +68,7 @@ func (mdb *DB) Exec(ctx context.Context, col string, fx func(col *mgo.Collection
     m := metrics.NewTrace("DB.Exec")
     defer mdb.metrics.Emit(metrics.Info("DB.Exec").WithTrace(m.End()))
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
         With("collection", col).
@@ -86,7 +86,7 @@ func (mdb *DB) Exec(ctx context.Context, col string, fx func(col *mgo.Collection
 
     defer session.Close()
 
-    if ctx.IsExpired() {
+    if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
         mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
         With("collection", col).
