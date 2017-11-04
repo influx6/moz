@@ -777,14 +777,16 @@ func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDire
 		baseDir = filepath.Base(baseDir)
 	}
 
-	if _, err := os.Stat(namedFileDir); err != nil {
-		err = os.MkdirAll(namedFileDir, 0700)
-		if err != nil && err != os.ErrExist {
-			err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
-			return err
-		}
+	if namedFileDir != "" {
+		if _, err := os.Stat(namedFileDir); err != nil {
+			err = os.MkdirAll(namedFileDir, 0700)
+			if err != nil && err != os.ErrExist {
+				err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
+				return err
+			}
 
-		fmt.Printf("Creating directory %q\n", filepath.Join(baseDir, item.Dir))
+			fmt.Printf("Creating directory %q\n", filepath.Join(baseDir, item.Dir))
+		}
 	}
 
 	if item.Writer == nil {
@@ -852,19 +854,21 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 		namedFileDir = filepath.Join(toDir, item.Dir)
 	}
 
-	if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
-		err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
-		log.Emit(metrics.Error(err).
-			With("overwrite", item.DontOverride).
-			With("action", events.DirCreated{
-				Error: err,
-				Action: actions.MkDirectory{
-					Dir:     item.Dir,
-					RootDir: toDir,
-					Mode:    0700,
-				},
-			}))
-		return err
+	if namedFileDir != "" {
+		if err := os.MkdirAll(namedFileDir, 0700); err != nil && err != os.ErrExist {
+			err = fmt.Errorf("IOError: Unable to create directory: %+q", err)
+			log.Emit(metrics.Error(err).
+				With("overwrite", item.DontOverride).
+				With("action", events.DirCreated{
+					Error: err,
+					Action: actions.MkDirectory{
+						Dir:     item.Dir,
+						RootDir: toDir,
+						Mode:    0700,
+					},
+				}))
+			return err
+		}
 	}
 
 	log.Emit(metrics.Info("Resolved WriteDirective").
