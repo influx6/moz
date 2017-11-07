@@ -167,7 +167,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 	return []gen.WriteDirective{
 		{
 			Writer:   mongoJSONGen,
-			FileName: "mongojson_test.go",
+			FileName: "json_test.go",
 			Dir:      "mdb",
 			// DontOverride: true,
 		},

@@ -172,7 +172,7 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 	return []gen.WriteDirective{
 		{
 			Writer:   sqlJSONGen,
-			FileName: "sqljson_test.go",
+			FileName: "json_test.go",
 			Dir:      "sqldb",
 			// DontOverride: true,
 		},
