@@ -44,7 +44,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 
 	mongoTestGen := gen.Block(
 		gen.Package(
-			gen.Name("mongoapi_test"),
+			gen.Name("mdb_test"),
 			gen.Imports(
 				gen.Import("os", ""),
 				gen.Import("testing", ""),
@@ -56,7 +56,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/db/mongo", ""),
 				gen.Import("github.com/influx6/faux/metrics/custom", ""),
-				gen.Import(filepath.Join(str.Path, toDir, "/mongoapi"), ""),
+				gen.Import(filepath.Join(str.Path, toDir, "/mdb"), ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
@@ -100,7 +100,7 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 
 	mongoJSONGen := gen.Block(
 		gen.Package(
-			gen.Name("mongoapi_test"),
+			gen.Name("mdb_test"),
 			gen.Imports(
 				gen.Import("encoding/json", ""),
 				gen.Import(str.Path, ""),
@@ -130,10 +130,10 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 
 	mongoGen := gen.Block(
 		gen.Commentary(
-			gen.SourceText(`Package mongoapi provides a auto-generated package which contains a mongo CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
+			gen.SourceText(`Package mdb provides a auto-generated package which contains a mongo CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
 		),
 		gen.Package(
-			gen.Name("mongoapi"),
+			gen.Name("mdb"),
 			gen.Imports(
 				gen.Import("encoding/json", ""),
 				gen.Import("gopkg.in/mgo.v2", "mgo"),
@@ -168,25 +168,25 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 		{
 			Writer:   mongoJSONGen,
 			FileName: "mongojson_test.go",
-			Dir:      "mongoapi",
+			Dir:      "mdb",
 			// DontOverride: true,
 		},
 		{
 			Writer:   mongoReadmeGen,
 			FileName: "README.md",
-			Dir:      "mongoapi",
+			Dir:      "mdb",
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(mongoTestGen, true, true),
-			FileName: "mongoapi_test.go",
-			Dir:      "mongoapi",
+			FileName: "mdb_test.go",
+			Dir:      "mdb",
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(mongoGen, true, true),
-			FileName: "mongoapi.go",
-			Dir:      "mongoapi",
+			FileName: "mdb.go",
+			Dir:      "mdb",
 			// DontOverride: true,
 		},
 	}, nil

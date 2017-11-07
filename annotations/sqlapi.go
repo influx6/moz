@@ -44,7 +44,7 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 
 	sqlTestGen := gen.Block(
 		gen.Package(
-			gen.Name("sqlapi_test"),
+			gen.Name("sqldb_test"),
 			gen.Imports(
 				gen.Import("os", ""),
 				gen.Import("testing", ""),
@@ -58,7 +58,7 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 				gen.Import("github.com/go-sql-driver/mysql", "_"),
 				gen.Import("github.com/lib/pq", "_"),
 				gen.Import("github.com/mattn/go-sqlite3", "_"),
-				gen.Import(filepath.Join(str.Path, toDir, "sqlapi"), ""),
+				gen.Import(filepath.Join(str.Path, toDir, "sqldb"), ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
@@ -103,7 +103,7 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 
 	sqlJSONGen := gen.Block(
 		gen.Package(
-			gen.Name("sqlapi_test"),
+			gen.Name("sqldb_test"),
 			gen.Imports(
 				gen.Import("encoding/json", ""),
 				gen.Import(str.Path, ""),
@@ -133,10 +133,10 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 
 	sqlGen := gen.Block(
 		gen.Commentary(
-			gen.SourceText(`Package sqlapi provides a auto-generated package which contains a sql CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
+			gen.SourceText(`Package sqldb provides a auto-generated package which contains a sql CRUD API for the specific {{.Object.Name}} struct in package {{.Package}}.`, str),
 		),
 		gen.Package(
-			gen.Name("sqlapi"),
+			gen.Name("sqldb"),
 			gen.Imports(
 				gen.Import("encoding/json", ""),
 				gen.Import("github.com/influx6/faux/db", ""),
@@ -173,25 +173,25 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 		{
 			Writer:   sqlJSONGen,
 			FileName: "sqljson_test.go",
-			Dir:      "sqlapi",
+			Dir:      "sqldb",
 			// DontOverride: true,
 		},
 		{
 			Writer:   sqlReadmeGen,
 			FileName: "README.md",
-			Dir:      "sqlapi",
+			Dir:      "sqldb",
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(sqlTestGen, true, true),
-			FileName: "sqlapi_test.go",
-			Dir:      "sqlapi",
+			FileName: "sqldb_test.go",
+			Dir:      "sqldb",
 			// DontOverride: true,
 		},
 		{
 			Writer:   fmtwriter.New(sqlGen, true, true),
-			FileName: "sqlapi.go",
-			Dir:      "sqlapi",
+			FileName: "sqldb.go",
+			Dir:      "sqldb",
 			// DontOverride: true,
 		},
 	}, nil

@@ -16,7 +16,7 @@ var (
 // TestGet{{.Struct.Object.Name}} validates the retrieval of a {{.Struct.Object.Name}}
 // record from a mongodb.
 func TestGet{{.Struct.Object.Name}}(t *testing.T){
-    api := mongoapi.New(testCol, events, mongo.New(config))
+    api := mdb.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
@@ -43,7 +43,7 @@ func TestGet{{.Struct.Object.Name}}(t *testing.T){
 // TestGetAll{{.Struct.Object.Name}} validates the retrieval of all {{.Struct.Object.Name}}
 // record from a mongodb.
 func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
-    api := mongoapi.New(testCol, events, mongo.New(config))
+    api := mdb.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
@@ -75,7 +75,7 @@ func TestGetAll{{.Struct.Object.Name}}(t *testing.T){
 // TestGetAll{{.Struct.Object.Name}}OrderBy validates the retrieval of all {{.Struct.Object.Name}}
 // record from a mongodb.
 func TestGetAll{{.Struct.Object.Name}}ByOrder(t *testing.T){
-    api := mongoapi.New(testCol, events, mongo.New(config))
+    api := mdb.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
@@ -107,7 +107,7 @@ func TestGetAll{{.Struct.Object.Name}}ByOrder(t *testing.T){
 // Test{{.Struct.Object.Name}}Create validates the creation of a {{.Struct.Object.Name}}
 // record with a mongodb.
 func Test{{.Struct.Object.Name}}Create(t *testing.T){
-    api := mongoapi.New(testCol, events, mongo.New(config))
+    api := mdb.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
@@ -128,7 +128,7 @@ func Test{{.Struct.Object.Name}}Create(t *testing.T){
 // Test{{.Struct.Object.Name}}Update validates the update of a {{.Struct.Object.Name}}
 // record with a mongodb.
 func Test{{.Struct.Object.Name}}Update(t *testing.T){
-    api := mongoapi.New(testCol, events, mongo.New(config))
+    api := mdb.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
@@ -156,7 +156,7 @@ func Test{{.Struct.Object.Name}}Update(t *testing.T){
 // Test{{.Struct.Object.Name}}Delete validates the removal of a {{.Struct.Object.Name}}
 // record from a mongodb.
 func Test{{.Struct.Object.Name}}Delete(t *testing.T){
-    api := mongoapi.New(testCol, events, mongo.New(config))
+    api := mdb.New(testCol, events, mongo.New(config))
 
     ctx := context.WithTimeout(context.NewValueBag(), 10 * time.Second)
 
