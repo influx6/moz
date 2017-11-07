@@ -211,6 +211,53 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAll(ctx context.Context, order string, 
     {{ end }}
 }
 
+
+
+// GetByField retrieves a record from the db using the field key and value,
+// returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
+// Records using this DB must have a public id value, expressed either by a bson or json tag
+// on the given {{.Struct.Object.Name}} struct.
+func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string, value string)  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Get")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Get").With(key, value).WithTrace(m.End()))
+
+    if context.IsExpired(ctx) {
+        err := fmt.Errorf("Context has expired")
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
+        With(key, value).
+        With("table", mdb.col).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    item, err := mdb.dx.Get(mdb.table, key, value);
+    if err != nil {
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
+        With("table", mdb.col).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    var elem {{.Struct.Package}}.{{.Struct.Object.Name}}
+
+		if _, ok := elem.({{.Struct.Object.Name}}Consumer); !ok {
+			return elem, errors.New("Only {{.Struct.Object.Name}}Consumer allowed")
+		}
+
+    if err := elem.Consume(item); err != nil {
+        mdb.metrics.Emit(metrics.Errorf("Failed to consume record data for {{.Struct.Object.Name}} from db").
+        With("table", mdb.col).
+        With("data", item).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    return elem, nil
+}
+
 // Get retrieves a record from the db using the publicID and returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Object.Name}} struct.

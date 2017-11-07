@@ -280,8 +280,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
         mdb.metrics.Emit(metrics.Info("Create record").
         With("collection", mdb.col).
-        With("elem", elem).
-        With("error", err.Error()))
+        With("elem", elem))
 
         return nil
     }
@@ -297,8 +296,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
         mdb.metrics.Emit(metrics.Info("Create record").
         With("collection", mdb.col).
-        With("elem", elem).
-        With("error", err.Error()))
+        With("elem", elem))
 
         return nil
     }
@@ -603,6 +601,110 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
         }
 
         return items, nil
+    {{ end }}
+}
+
+// GetByField retrieves a record from the db using the provided field key and value
+// returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
+// Records using this DB must have a public id value, expressed either by a bson or json tag
+// on the given {{.Struct.Object.Name}} struct.
+func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, value string, value interface{})  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
+    m := metrics.NewTrace("{{.Struct.Object.Name}}DB.GetByField")
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetByField").With(key, value).WithTrace(m.End()))
+
+    if context.IsExpired(ctx) {
+        err := fmt.Errorf("Context has expired")
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With(key, value).
+        With("collection", mdb.col).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    if err := mdb.ensureIndex(); err != nil {
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
+        With("collection", mdb.col).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    database, session, err := mdb.db.New()
+    if err != nil {
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
+        With(key, value).
+        With("collection", mdb.col).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    defer session.Close()
+
+    if context.IsExpired(ctx) {
+        err := fmt.Errorf("Context has expired")
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With(key, value).
+        With("collection", mdb.col).
+        With("error", err.Error()))
+
+        return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+    }
+
+    query := bson.M{key: value}
+
+    {{ if ( hasFunc .Struct "Consume"  ) }}
+        var item map[string]interface{}
+
+        if err := database.C(mdb.col).Find(query).One(&item); err != nil {
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
+            With("collection", mdb.col).
+            With("query", query).
+            With("error", err.Error()))
+
+            return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+        }
+
+        var elem {{.Struct.Package}}.{{.Struct.Object.Name}}
+
+        if err := elem.Consume(item); err != nil {
+            return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+        }
+
+        return elem, nil
+
+    {{ else if ( hasFunc .Struct "BSONConsume"  ) }}
+        var itemBSON bson.M
+
+        if err := database.C(mdb.col).Find(query).One(&itemBSON); err != nil {
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
+            With("collection", mdb.col).
+            With("query", query).
+            With("error", err.Error()))
+
+            return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+        }
+
+        var item {{.Struct.Package}}.{{.Struct.Object.Name}}
+
+        if err := elem.BSONConsume(itemBSON); err != nil {
+            return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+        }
+
+        return item, nil
+    {{ else }}
+
+        var item {{.Struct.Package}}.{{.Struct.Object.Name}}
+
+        if err := database.C(mdb.col).Find(query).One(&item); err != nil {
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
+            With("query", query).
+            With("collection", mdb.col).
+            With("error", err.Error()))
+
+            return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
+        }
+
+        return item, nil
     {{ end }}
 }
 
