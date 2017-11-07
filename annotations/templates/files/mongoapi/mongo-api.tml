@@ -608,7 +608,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
 // returns the {{.Struct.Package}}.{{.Struct.Object.Name}} type.
 // Records using this DB must have a public id value, expressed either by a bson or json tag
 // on the given {{.Struct.Object.Name}} struct.
-func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, value string, value interface{})  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
+func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string, value interface{})  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.GetByField")
     defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetByField").With(key, value).WithTrace(m.End()))
 
