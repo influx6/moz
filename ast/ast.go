@@ -51,6 +51,32 @@ var (
 		"defaultType":       DefaultTypeValueString,
 		"defaultFieldValue": DefaultFieldValue,
 	}
+
+	naturalIdents = map[string]bool{
+		"string":      true,
+		"bool":        true,
+		"rune":        true,
+		"byte":        true,
+		"int":         true,
+		"int8":        true,
+		"int16":       true,
+		"int32":       true,
+		"int64":       true,
+		"uint":        true,
+		"uint8":       true,
+		"uint32":      true,
+		"uint64":      true,
+		"uintptr":     true,
+		"float32":     true,
+		"float64":     true,
+		"complex128":  true,
+		"complex64":   true,
+		"error":       true,
+		"struct":      true,
+		"interface":   true,
+		"interface{}": true,
+		"struct{}":    true,
+	}
 )
 
 // Packages defines a type to represent a slice of Packages.
@@ -102,23 +128,23 @@ func (pkgs Packages) PackageFor(path string) (Package, bool) {
 
 // ImportDeclaration defines a type to contain import declaration within a package.
 type ImportDeclaration struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	Source      string `json:"source"`
-	Comments    string `json:"comments"`
-	InternalPkg bool   `json:"internal_pkg"`
+	Name        string
+	Path        string
+	Source      string
+	Comments    string
+	InternalPkg bool
 }
 
 // Package defines the central repository of all PackageDeclaration.
 type Package struct {
-	Name         string               `json:"name"`
-	Tag          string               `json:"tag"`
-	Path         string               `json:"path"`
-	FilePath     string               `json:"file_path"`
-	Files        []string             `json:"files"`
-	BuildPkg     *build.Package       `json:"build_package"`
-	Packages     []PackageDeclaration `json:"packages"`
-	TestPackages []PackageDeclaration `json:"test_packages"`
+	Name         string
+	Tag          string
+	Path         string
+	FilePath     string
+	Files        []string
+	BuildPkg     *build.Package
+	Packages     []PackageDeclaration
+	TestPackages []PackageDeclaration
 }
 
 // Load calls all internal packages to load their respective imports.
@@ -374,20 +400,20 @@ func (pkg Package) InterfaceForFile(importPath string, targetFile string, typeNa
 // PackageDeclaration defines a type which holds details relating to annotations declared on a
 // giving package.
 type PackageDeclaration struct {
-	Package          string                            `json:"package"`
-	Path             string                            `json:"path"`
-	FilePath         string                            `json:"filepath"`
-	File             string                            `json:"file"`
-	Source           string                            `json:"source"`
-	Comments         []string                          `json:"comments"`
-	Imports          map[string]ImportDeclaration      `json:"imports"`
-	Annotations      []AnnotationDeclaration           `json:"annotations"`
-	Types            []TypeDeclaration                 `json:"types"`
-	Structs          []StructDeclaration               `json:"structs"`
-	Interfaces       []InterfaceDeclaration            `json:"interfaces"`
-	Functions        []FuncDeclaration                 `json:"functions"`
-	ObjectFunc       map[*ast.Object][]FuncDeclaration `json:"object_functions"`
-	ImportedPackages map[string]Packages               `json:"imported_packages"`
+	Package          string
+	Path             string
+	FilePath         string
+	File             string
+	Source           string
+	Comments         []string
+	Imports          map[string]ImportDeclaration
+	Annotations      []AnnotationDeclaration
+	Types            []TypeDeclaration
+	Structs          []StructDeclaration
+	Interfaces       []InterfaceDeclaration
+	Functions        []FuncDeclaration
+	ObjectFunc       map[*ast.Object][]FuncDeclaration
+	ImportedPackages map[string]Packages
 	importedloaded   bool
 }
 
@@ -579,19 +605,20 @@ func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 
 // StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
 type StructDeclaration struct {
-	From         int                                         `json:"from"`
-	Length       int                                         `json:"length"`
-	Package      string                                      `json:"package"`
-	Path         string                                      `json:"path"`
-	FilePath     string                                      `json:"filepath"`
-	Source       string                                      `json:"source"`
-	Comments     string                                      `json:"comments"`
-	File         string                                      `json:"file"`
-	Struct       *ast.StructType                             `json:"struct"`
-	Object       *ast.TypeSpec                               `json:"object"`
-	Position     token.Pos                                   `json:"position"`
-	Annotations  []AnnotationDeclaration                     `json:"annotations"`
-	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	From         int
+	Length       int
+	Package      string
+	Path         string
+	FilePath     string
+	Source       string
+	Comments     string
+	File         string
+	Struct       *ast.StructType
+	Object       *ast.TypeSpec
+	Position     token.Pos
+	Declr        *PackageDeclaration
+	Annotations  []AnnotationDeclaration
+	Associations map[string]AnnotationAssociationDeclaration
 }
 
 // AnnotationsFor returns all annotations with the giving name.
@@ -613,18 +640,19 @@ func (str StructDeclaration) AnnotationsFor(typeName string) []AnnotationDeclara
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
 type TypeDeclaration struct {
-	From         int                                         `json:"from"`
-	Length       int                                         `json:"length"`
-	Package      string                                      `json:"package"`
-	Path         string                                      `json:"path"`
-	FilePath     string                                      `json:"filepath"`
-	Source       string                                      `json:"source"`
-	Comments     string                                      `json:"comments"`
-	File         string                                      `json:"file"`
-	Object       *ast.TypeSpec                               `json:"object"`
-	Position     token.Pos                                   `json:"position"`
-	Annotations  []AnnotationDeclaration                     `json:"annotations"`
-	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	From         int
+	Length       int
+	Package      string
+	Path         string
+	FilePath     string
+	Source       string
+	Comments     string
+	File         string
+	Object       *ast.TypeSpec
+	Position     token.Pos
+	Declr        *PackageDeclaration
+	Annotations  []AnnotationDeclaration
+	Associations map[string]AnnotationAssociationDeclaration
 }
 
 // AnnotationsFor returns all annotations with the giving name.
@@ -649,27 +677,28 @@ func (ty TypeDeclaration) AnnotationsFor(typeName string) []AnnotationDeclaratio
 // FuncDeclaration defines a type used to annotate a giving type declaration
 // associated with a ast for a function.
 type FuncDeclaration struct {
-	From          int                                         `json:"from"`
-	Length        int                                         `json:"length"`
-	Package       string                                      `json:"package"`
-	Path          string                                      `json:"path"`
-	FilePath      string                                      `json:"filepath"`
-	Exported      bool                                        `json:"export"`
-	File          string                                      `json:"file"`
-	FuncName      string                                      `json:"funcName"`
-	RecieverName  string                                      `json:"receiverName"`
-	Source        string                                      `json:"source"`
-	Comments      string                                      `json:"comments"`
-	Position      token.Pos                                   `json:"position"`
-	FuncDeclr     *ast.FuncDecl                               `json:"funcdeclr"`
-	Type          *ast.FuncType                               `json:"type"`
-	Reciever      *ast.Object                                 `json:"receiver"`
-	RecieverIdent *ast.Ident                                  `json:"receiverIdent"`
-	FuncType      *ast.FieldList                              `json:"funcType"`
-	Returns       *ast.FieldList                              `json:"returns"`
-	Arguments     *ast.FieldList                              `json:"arguments"`
-	Annotations   []AnnotationDeclaration                     `json:"annotations"`
-	Associations  map[string]AnnotationAssociationDeclaration `json:"associations"`
+	From          int
+	Length        int
+	Package       string
+	Path          string
+	FilePath      string
+	Exported      bool
+	File          string
+	FuncName      string
+	RecieverName  string
+	Source        string
+	Comments      string
+	Position      token.Pos
+	FuncDeclr     *ast.FuncDecl
+	Type          *ast.FuncType
+	Reciever      *ast.Object
+	RecieverIdent *ast.Ident
+	FuncType      *ast.FieldList
+	Returns       *ast.FieldList
+	Arguments     *ast.FieldList
+	Declr         *PackageDeclaration
+	Annotations   []AnnotationDeclaration
+	Associations  map[string]AnnotationAssociationDeclaration
 }
 
 // AnnotationsFor returns all annotations with the giving name.
@@ -741,28 +770,29 @@ func (fnList Functions) Find(name string) (FuncDeclaration, error) {
 // AnnotationAssociationDeclaration defines a type which defines an association between
 // a giving annotation and a series of values.
 type AnnotationAssociationDeclaration struct {
-	Annotation string                `json:"annotation"`
-	Action     string                `json:"action"`
-	Template   string                `json:"template"`
-	TypeName   string                `json:"typeName"`
-	Record     AnnotationDeclaration `json:"record"`
+	Annotation string
+	Action     string
+	Template   string
+	TypeName   string
+	Record     AnnotationDeclaration
 }
 
 // InterfaceDeclaration defines a type which holds annotation data for a giving interface type declaration.
 type InterfaceDeclaration struct {
-	From         int                                         `json:"from"`
-	Length       int                                         `json:"length"`
-	Package      string                                      `json:"package"`
-	Path         string                                      `json:"path"`
-	Source       string                                      `json:"source"`
-	Comments     string                                      `json:"comments"`
-	FilePath     string                                      `json:"filepath"`
-	File         string                                      `json:"file"`
-	Interface    *ast.InterfaceType                          `json:"interface"`
-	Object       *ast.TypeSpec                               `json:"object"`
-	Position     token.Pos                                   `json:"position"`
-	Annotations  []AnnotationDeclaration                     `json:"annotations"`
-	Associations map[string]AnnotationAssociationDeclaration `json:"associations"`
+	From         int
+	Length       int
+	Package      string
+	Path         string
+	Source       string
+	Comments     string
+	FilePath     string
+	File         string
+	Interface    *ast.InterfaceType
+	Object       *ast.TypeSpec
+	Position     token.Pos
+	Declr        *PackageDeclaration
+	Annotations  []AnnotationDeclaration
+	Associations map[string]AnnotationAssociationDeclaration
 }
 
 // Methods returns the associated methods for the giving interface.
@@ -793,14 +823,15 @@ type ArgType struct {
 	ChanType        *ast.ChanType
 	PointerType     *ast.StarExpr
 	IdentType       *ast.Ident
+	Tags            []TagDeclaration
 }
 
 // FunctionDefinition defines a type to represent the function/method declarations of an
 // interface type.
 type FunctionDefinition struct {
-	Name      string    `json:"name"`
-	Args      []ArgType `json:"args"`
-	Returns   []ArgType `json:"returns"`
+	Name      string
+	Args      []ArgType
+	Returns   []ArgType
 	Func      *ast.FuncType
 	Interface *ast.InterfaceType
 	Struct    *ast.StructType
@@ -874,13 +905,34 @@ func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
 	var retCounter int
 
+	var tags []TagDeclaration
+
+	if result.Tag != nil {
+		tagList := strings.Split(spaces.ReplaceAllString(result.Tag.Value, " "), " ")
+		for _, tag := range tagList {
+			if !itag.MatchString(tag) {
+				continue
+			}
+
+			res := itag.FindStringSubmatch(tag)
+			resValue := strings.Split(res[3], ",")
+
+			tags = append(tags, TagDeclaration{
+				Base:  res[0],
+				Name:  res[2],
+				Value: resValue[0],
+				Metas: resValue[1:],
+			})
+		}
+	}
+
 	resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
 
 	switch iobj := result.Type.(type) {
 	case *ast.Ident:
-		var name string
 		var nameObj *ast.Object
 
+		var name string
 		resName, err := GetIdentName(result)
 		switch err != nil {
 		case true:
@@ -893,6 +945,7 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 		arg := ArgType{
 			Name:       name,
+			Tags:       tags,
 			NameObject: nameObj,
 			Type:       getName(iobj),
 			ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
@@ -927,11 +980,20 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 		}
 
 		retCounter++
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+
+		var name string
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+		case false:
+			name = resName.Name
+		}
 
 		arg := ArgType{
 			Name:           name,
 			Import:         importDclr,
+			Tags:           tags,
 			Package:        xobj.Name,
 			ImportedObject: iobj,
 			Type:           getName(iobj),
@@ -971,9 +1033,18 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 	case *ast.StarExpr:
 		retCounter++
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+
+		var name string
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+		case false:
+			name = resName.Name
+		}
 
 		var arg ArgType
+		arg.Tags = tags
 		arg.Name = name
 		arg.PointerType = iobj
 		arg.Type = getName(iobj)
@@ -1056,10 +1127,19 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 	case *ast.MapType:
 		retCounter++
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+
+		var name string
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+		case false:
+			name = resName.Name
+		}
 
 		var arg ArgType
 		arg.Name = name
+		arg.Tags = tags
 		arg.MapType = iobj
 		arg.Type = getName(iobj)
 		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
@@ -1083,10 +1163,19 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 		return arg, nil
 	case *ast.ArrayType:
 		retCounter++
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+
+		var name string
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+		case false:
+			name = resName.Name
+		}
 
 		var arg ArgType
 		arg.Name = name
+		arg.Tags = tags
 		arg.ArrayType = iobj
 		arg.Type = getName(iobj)
 		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
@@ -1166,10 +1255,19 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 	case *ast.ChanType:
 		retCounter++
-		name := fmt.Sprintf("%s%d", varPrefix, retCounter)
+
+		var name string
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+		case false:
+			name = resName.Name
+		}
 
 		var arg ArgType
 		arg.Name = name
+		arg.Tags = tags
 		arg.Type = getName(iobj.Value)
 		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
 
@@ -1359,34 +1457,6 @@ func GetVariableNameAsExported(item interface{}, basePkg string) (string, error)
 
 	return nameDeclr, nil
 }
-
-var (
-	naturalIdents = map[string]bool{
-		"string":      true,
-		"bool":        true,
-		"rune":        true,
-		"byte":        true,
-		"int":         true,
-		"int8":        true,
-		"int16":       true,
-		"int32":       true,
-		"int64":       true,
-		"uint":        true,
-		"uint8":       true,
-		"uint32":      true,
-		"uint64":      true,
-		"uintptr":     true,
-		"float32":     true,
-		"float64":     true,
-		"complex128":  true,
-		"complex64":   true,
-		"error":       true,
-		"struct":      true,
-		"interface":   true,
-		"interface{}": true,
-		"struct{}":    true,
-	}
-)
 
 // getPackageFromItem returns the package name associated with the type
 // by attempting to retrieve it from a selector or final declaration name,
@@ -1602,7 +1672,7 @@ func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (s
 
 // FieldByFieldName defines a function to return actual name of field with the given tag name.
 func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaration, error) {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	for _, field := range fields {
 		if field.FieldName != fieldName {
@@ -1617,7 +1687,7 @@ func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaratio
 
 // FieldFor defines a function to return actual name of field with the given tag name.
 func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDeclaration, error) {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
 
@@ -1635,7 +1705,7 @@ func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDec
 
 // FieldNameFor defines a function to return actual name of field with the given tag name.
 func FieldNameFor(item StructDeclaration, tag string, tagFieldName string) string {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
 
@@ -1664,7 +1734,7 @@ func AssignDefaultValue(item StructDeclaration, tag string, tagVal string, varNa
 
 // DefaultFieldValueFor defines a function to return a field default value.
 func DefaultFieldValueFor(item StructDeclaration, tag string, tagVal string) (string, string, error) {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
 
@@ -1694,7 +1764,7 @@ func RandomFieldAssign(item StructDeclaration, varName string, tag string, excep
 // RandomFieldWithExcept defines a function to return a random field name which is not
 // included in the exceptions set.
 func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...string) (string, string, error) {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
 
@@ -1719,7 +1789,7 @@ func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...str
 // MapOutFieldsToMap defines a function to return a map of field name and value
 // pair for the giving struct.
 func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback string) (map[string]io.WriterTo, error) {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tagName)
 	if len(wTags) == 0 {
@@ -1805,7 +1875,7 @@ func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (strin
 // MapOutFieldsToJSONWriter returns the giving map values containing string for the giving
 // output.
 func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) (io.WriterTo, error) {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tagName)
 	if len(wTags) == 0 {
@@ -1864,7 +1934,7 @@ func MapOutValues(item StructDeclaration, onlyExported bool) (string, error) {
 // MapOutFieldsValues defines a function to return a map of field name and associated
 // placeholders as value.
 func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.NameDeclr) io.WriterTo {
-	fields := Fields(GetFields(item))
+	fields := Fields(GetFields(item, item.Declr))
 
 	var writers []io.WriterTo
 
@@ -2082,85 +2152,50 @@ func (flds Fields) TagFor(tagName string) []TagDeclaration {
 
 // FieldDeclaration defines a type to represent a giving struct fields and tags.
 type FieldDeclaration struct {
-	Exported      bool             `json:"exported"`
-	Embedded      bool             `json:"embedded"`
-	IsStruct      bool             `json:"is_struct"`
-	FieldName     string           `json:"field_name"`
-	FieldTypeName string           `json:"field_type_name"`
-	Field         *ast.Field       `json:"field"`
-	Type          *ast.Object      `json:"type"`
-	Spec          *ast.TypeSpec    `json:"spec"`
-	Struct        *ast.StructType  `json:"struct"`
-	Tags          []TagDeclaration `json:"tags"`
+	Exported      bool
+	Embedded      bool
+	IsStruct      bool
+	FieldName     string
+	FieldTypeName string
+	Field         *ast.Field
+	Type          *ast.Object
+	Spec          *ast.TypeSpec
+	Struct        *ast.StructType
+	Tags          []TagDeclaration
+	Arg           ArgType
 }
 
 // GetFields returns all fields associated with the giving struct but skips
-func GetFields(str StructDeclaration) []FieldDeclaration {
+func GetFields(str StructDeclaration, pkg *PackageDeclaration) []FieldDeclaration {
 	var fields []FieldDeclaration
 
 	for _, item := range str.Struct.Fields.List {
-		typeIdent, ok := item.Type.(*ast.Ident)
-		if !ok {
+		arg, err := GetArgTypeFromField("var", pkg.File, item, pkg)
+		if err != nil {
 			continue
 		}
 
 		var field FieldDeclaration
-
+		field.Arg = arg
+		field.Type = arg.TypeObject
+		field.Spec = arg.Spec
+		field.Struct = arg.StructObject
 		field.Field = item
-		field.Type = typeIdent.Obj
-		field.FieldName = typeIdent.Name
-		field.FieldTypeName = typeIdent.Name
-
-		if typeIdent.Obj != nil {
-			if spec, ok := typeIdent.Obj.Decl.(*ast.TypeSpec); ok {
-				field.Spec = spec
-
-				if strt, ok := spec.Type.(*ast.StructType); ok {
-					field.Struct = strt
-					field.IsStruct = true
-				}
-			}
-		}
+		field.FieldName = arg.Name
+		field.FieldTypeName = arg.Type
 
 		if len(item.Names) == 0 {
 			field.Exported = true
 			field.Embedded = true
-
-			fields = append(fields, field)
-			continue
 		}
 
-		fieldName := item.Names[0]
-		field.FieldName = fieldName.Name
-
-		// fmt.Printf("Exported: %t -> %q : %q\n", fieldName.Name == strings.ToLower(fieldName.Name), fieldName.Name, strings.ToLower(fieldName.Name))
-
-		if typeIdent.Name != strings.ToLower(fieldName.Name) {
+		if arg.Name != strings.ToLower(arg.Name) {
 			field.Exported = true
 		}
 
-		if item.Tag == nil {
-			fields = append(fields, field)
-			continue
-		}
-
-		tags := strings.Split(spaces.ReplaceAllString(item.Tag.Value, " "), " ")
-
-		for _, tag := range tags {
-			if !itag.MatchString(tag) {
-				continue
-			}
-
-			res := itag.FindStringSubmatch(tag)
-			resValue := strings.Split(res[3], ",")
-
-			field.Tags = append(field.Tags, TagDeclaration{
-				Field: field,
-				Base:  res[0],
-				Name:  res[2],
-				Value: resValue[0],
-				Metas: resValue[1:],
-			})
+		for _, tag := range arg.Tags {
+			tag.Field = field
+			field.Tags = append(field.Tags, tag)
 		}
 
 		fields = append(fields, field)
@@ -2182,11 +2217,11 @@ func (f FieldDeclaration) GetTag(tagName string) (TagDeclaration, error) {
 
 // TagDeclaration defines a type which represents a giving tag declaration for a provided type.
 type TagDeclaration struct {
-	Name  string           `json:"name"`
-	Value string           `json:"value"`
-	Metas []string         `json:"metas"`
-	Base  string           `json:"base"`
-	Field FieldDeclaration `json:"field"`
+	Name  string
+	Value string
+	Metas []string
+	Base  string
+	Field FieldDeclaration
 }
 
 // Has returns true/false if the tag.Metas has the given value in the list.

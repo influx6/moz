@@ -23,8 +23,10 @@ func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDec
 			gen.SourceText(
 				string(templates.Must("mongo/readme.tml")),
 				struct {
+					Pkg     *ast.PackageDeclaration
 					Package ast.Package
 				}{
+					Pkg:     &pkgDeclr,
 					Package: pkg,
 				},
 			),
@@ -53,8 +55,10 @@ func MongoAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, pkgDec
 						"hasFunc": ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg     *ast.PackageDeclaration
 						Package ast.Package
 					}{
+						Pkg:     &pkgDeclr,
 						Package: pkg,
 					},
 				),

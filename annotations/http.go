@@ -117,10 +117,12 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -141,10 +143,12 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 					"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 				},
 				struct {
+					Pkg          *ast.PackageDeclaration
 					Struct       ast.StructDeclaration
 					CreateAction ast.StructDeclaration
 					UpdateAction ast.StructDeclaration
 				}{
+					Pkg:          &pkgDeclr,
 					Struct:       str,
 					CreateAction: createAction,
 					UpdateAction: updateAction,
@@ -170,10 +174,12 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -211,10 +217,12 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"randField": ast.RandomFieldAssign,
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -247,12 +255,14 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg             *ast.PackageDeclaration
 						Struct          ast.StructDeclaration
 						CreateAction    ast.StructDeclaration
 						UpdateAction    ast.StructDeclaration
 						CreateIsSimilar bool
 						UpdateIsSimilar bool
 					}{
+						Pkg:             &pkgDeclr,
 						Struct:          str,
 						CreateAction:    createAction,
 						UpdateAction:    updateAction,
@@ -286,12 +296,14 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg             *ast.PackageDeclaration
 						Struct          ast.StructDeclaration
 						CreateAction    ast.StructDeclaration
 						UpdateAction    ast.StructDeclaration
 						CreateIsSimilar bool
 						UpdateIsSimilar bool
 					}{
+						Pkg:             &pkgDeclr,
 						Struct:          str,
 						CreateAction:    createAction,
 						UpdateAction:    updateAction,

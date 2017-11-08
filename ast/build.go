@@ -539,6 +539,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				defFunc.Position = rdeclr.Pos()
 				defFunc.Path = packageDeclr.Path
 				defFunc.File = packageDeclr.File
+				defFunc.Declr = &packageDeclr
 				defFunc.FuncName = rdeclr.Name.Name
 				defFunc.Length = positionLength
 				defFunc.From = beginPosition.Offset
@@ -643,6 +644,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Associations: associations,
 								Source:       string(source),
 								Comments:     comment,
+								Declr:        &packageDeclr,
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
 								Path:         packageDeclr.Path,
@@ -664,6 +666,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Comments:     comment,
 								Annotations:  annotations,
 								Associations: associations,
+								Declr:        &packageDeclr,
 								Source:       string(source),
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,
@@ -686,6 +689,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Annotations:  annotations,
 								Comments:     comment,
 								Associations: associations,
+								Declr:        &packageDeclr,
 								Source:       string(source),
 								File:         packageDeclr.File,
 								Package:      packageDeclr.Package,

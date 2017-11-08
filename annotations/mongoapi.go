@@ -68,10 +68,12 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -86,10 +88,12 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 			gen.SourceText(
 				string(templates.Must("mongoapi/mongo-api-readme.tml")),
 				struct {
+					Pkg          *ast.PackageDeclaration
 					Struct       ast.StructDeclaration
 					CreateAction ast.StructDeclaration
 					UpdateAction ast.StructDeclaration
 				}{
+					Pkg:          &pkgDeclr,
 					Struct:       str,
 					CreateAction: createAction,
 					UpdateAction: updateAction,
@@ -115,10 +119,12 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -151,10 +157,12 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 						"hasFunc": ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,

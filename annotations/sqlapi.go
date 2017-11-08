@@ -71,10 +71,12 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 						},
 					),
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -89,10 +91,12 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 			gen.SourceText(
 				string(templates.Must("sqlapi/sql-api-readme.tml")),
 				struct {
+					Pkg          *ast.PackageDeclaration
 					Struct       ast.StructDeclaration
 					CreateAction ast.StructDeclaration
 					UpdateAction ast.StructDeclaration
 				}{
+					Pkg:          &pkgDeclr,
 					Struct:       str,
 					CreateAction: createAction,
 					UpdateAction: updateAction,
@@ -118,10 +122,12 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
 					},
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
@@ -156,10 +162,12 @@ func SQLAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str ast.
 						},
 					),
 					struct {
+						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
 						CreateAction ast.StructDeclaration
 						UpdateAction ast.StructDeclaration
 					}{
+						Pkg:          &pkgDeclr,
 						Struct:       str,
 						CreateAction: createAction,
 						UpdateAction: updateAction,
