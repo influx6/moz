@@ -62,11 +62,14 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("mongoapi/mongo-api-test.tml")),
-					template.FuncMap{
-						"map":       ast.MapOutFields,
-						"mapValues": ast.MapOutValues,
-						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
-					},
+					gen.ToTemplateFuncs(
+						ast.ASTTemplatFuncs,
+						template.FuncMap{
+							"map":       ast.MapOutFields,
+							"mapValues": ast.MapOutValues,
+							"hasFunc":   ast.HasFunctionFor(pkgDeclr),
+						},
+					),
 					struct {
 						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
@@ -112,12 +115,15 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("mongoapi/mongo-api-json.tml")),
-					template.FuncMap{
-						"map":       ast.MapOutFields,
-						"mapValues": ast.MapOutValues,
-						"mapJSON":   ast.MapOutFieldsToJSON,
-						"hasFunc":   ast.HasFunctionFor(pkgDeclr),
-					},
+					gen.ToTemplateFuncs(
+						ast.ASTTemplatFuncs,
+						template.FuncMap{
+							"map":       ast.MapOutFields,
+							"mapValues": ast.MapOutValues,
+							"mapJSON":   ast.MapOutFieldsToJSON,
+							"hasFunc":   ast.HasFunctionFor(pkgDeclr),
+						},
+					),
 					struct {
 						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
@@ -152,10 +158,13 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 			gen.Block(
 				gen.SourceTextWith(
 					string(templates.Must("mongoapi/mongo-api.tml")),
-					template.FuncMap{
-						"map":     ast.MapOutFields,
-						"hasFunc": ast.HasFunctionFor(pkgDeclr),
-					},
+					gen.ToTemplateFuncs(
+						ast.ASTTemplatFuncs,
+						template.FuncMap{
+							"map":     ast.MapOutFields,
+							"hasFunc": ast.HasFunctionFor(pkgDeclr),
+						},
+					),
 					struct {
 						Pkg          *ast.PackageDeclaration
 						Struct       ast.StructDeclaration
