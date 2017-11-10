@@ -855,7 +855,6 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 
     {{ $pfield := fieldByName .Struct "PublicID" }}
     {{ $ptag := getTag $pfield "bson" }}
-
 		query := bson.M{"{{$ptag.Value}}": publicID}
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}BSON); ok {
@@ -899,7 +898,6 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         return nil
     }
 
-    query := bson.M{"publicID":publicID}
     queryData := bson.M({{ map .CreateAction "elem" "bson" "json" }})
 
     if err := database.C(mdb.col).Update(query, queryData); err != nil {
