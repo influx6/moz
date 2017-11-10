@@ -856,7 +856,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}BSON); ok {
         query := fields.BSON()
 
-        if err := database.C(mdb.col).Insert(query); err != nil {
+        if err := database.C(mdb.col).Update(query, fields); err != nil {
             mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record").
             With("collection", mdb.col).
             With("public_id", publicID).
@@ -878,7 +878,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}Fields); ok {
         query := bson.M(fields.Fields())
 
-        if err := database.C(mdb.col).Insert(query); err != nil {
+        if err := database.C(mdb.col).Update(query, fields); err != nil {
             mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record").
             With("query", query).
             With("public_id", publicID).
