@@ -856,7 +856,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     {{ $pfield := fieldByName .Struct "PublicID" }}
     {{ $ptag := getTag $pfield "bson" }}
 
-		query := bson.M{"{{$ptag}}": publicID}
+		query := bson.M{"{{$ptag.Value}}": publicID}
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}BSON); ok {
         if err := database.C(mdb.col).Update(query, fields.BSON()); err != nil {
