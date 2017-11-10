@@ -872,8 +872,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         With("query", query).
         With("collection", mdb.col).
         With("public_id", publicID).
-        With("data", fields.BSON()).
-        With("error", err.Error()))
+        With("data", fields.BSON()))
 
         return nil
     }
@@ -892,8 +891,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
         With("collection", mdb.col).
         With("query", query).
         With("data", fields.Fields()).
-        With("public_id", publicID).
-        With("error", err.Error()))
+        With("public_id", publicID))
 
         return nil
     }
