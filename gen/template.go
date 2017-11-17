@@ -166,12 +166,12 @@ var (
 		"sha1": func(data string) string {
 			mo := sha1.New()
 			mo.Write([]byte(data))
-			return fmt.Sprintf("%x", md5.Sum(nil))
+			return fmt.Sprintf("%x", mo.Sum(nil))
 		},
 		"md5": func(data string) string {
 			mo := md5.New()
 			mo.Write([]byte(data))
-			return fmt.Sprintf("%x", md5.Sum(nil))
+			return fmt.Sprintf("%x", mo.Sum(nil))
 		},
 		"lenOf":         lenOff,
 		"nthOf":         nthOf,
