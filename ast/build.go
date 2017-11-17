@@ -899,8 +899,8 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 	namedFile := filepath.Join(namedFileDir, item.FileName)
 
 	fileStat, err := os.Stat(namedFile)
-	if err != nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
-		log.Emit(metrics.Error(err).With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir).
+	if err == nil && !fileStat.IsDir() && item.DontOverride && !doFileOverwrite {
+		log.Emit(metrics.Info("File overwrite not aloud").With("File", item.FileName).With("Overwrite", item.DontOverride).With("Dir", item.Dir).
 			With("DestinationDir", namedFileDir).
 			With("DestinationFile", namedFile))
 		return err
