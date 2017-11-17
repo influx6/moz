@@ -195,6 +195,10 @@ func handleGeneration(toDir string, an ast.AnnotationDeclaration, pkgDeclr ast.P
 
 	// Get all templaters AnnotationDeclaration.
 	templaters := pkg.AnnotationsFor("templater")
+	if len(templaters) == 0 {
+		return nil, errors.New("No Templater found in package")
+	}
+
 	var targetTemplater ast.AnnotationDeclaration
 
 	// Search for templater with associated ID, if not found, return error, if multiple found, use the first.
