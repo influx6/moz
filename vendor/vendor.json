@@ -1,0 +1,226 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "rcoUTEGR7KVr963l6P1rlMaYCzA=",
+			"path": "github.com/BurntSushi/toml",
+			"revision": "a368813c5e648fee92e5f6c30e3944ff9d5e8895",
+			"revisionTime": "2017-06-26T11:06:00Z"
+		},
+		{
+			"checksumSHA1": "wP6b3CHYhF8ivc8qo314aDd9ZCk=",
+			"path": "github.com/corpix/uarand",
+			"revision": "031be390f409fb4bac8fb299e3bcd101479f89f8",
+			"revisionTime": "2017-07-23T15:09:23Z"
+		},
+		{
+			"checksumSHA1": "SLGl5JNQuLspJ+Pw19ySeTlcEM4=",
+			"path": "github.com/dimfeld/httptreemux",
+			"revision": "90654bdd3dfc3cac55538aa620f2f4d855bbdb83",
+			"revisionTime": "2017-08-02T18:26:40Z"
+		},
+		{
+			"checksumSHA1": "jt2qfJxo7XsMCo6RerjgcoaGZPM=",
+			"path": "github.com/fatih/color",
+			"revision": "67c513e5729f918f5e69786686770c27141a4490",
+			"revisionTime": "2017-08-04T15:04:06Z"
+		},
+		{
+			"checksumSHA1": "qt71KoGfs0dZ/GDaXFXmvFs54PQ=",
+			"path": "github.com/icrowley/fake",
+			"revision": "e64cc2cf92049a299f359734c6ea76073f2a8b2c",
+			"revisionTime": "2017-07-23T15:10:11Z"
+		},
+		{
+			"checksumSHA1": "woPk6NHCcnoXg2ZMCfX7rQpOVi8=",
+			"path": "github.com/influx6/faux/context",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "dpVo8LJykO0lVHIVk8uNwaXxaF8=",
+			"path": "github.com/influx6/faux/db",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "MTrRJihN+AK/Ed7+KoCvYtvq4h0=",
+			"path": "github.com/influx6/faux/db/mongo",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "yTKGlWowFFkSBy0ElCntz20JVUc=",
+			"path": "github.com/influx6/faux/db/sql",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "S3K3vDxSeDsWm/3oXGelJ91AqaI=",
+			"path": "github.com/influx6/faux/db/sql/tables",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "p7w9lltToArcyUKSs4Fo2sGz0C4=",
+			"path": "github.com/influx6/faux/exec",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "CVrLoKo7Hzm+gTFahsItXG5aWcM=",
+			"path": "github.com/influx6/faux/filesystem",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "8Vk/1gUyvjBtPa8T7ANY3sudO/o=",
+			"path": "github.com/influx6/faux/fmtwriter",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "5V+s2tLVqNqU9NaXF7ZGd1mRjk0=",
+			"path": "github.com/influx6/faux/httputil",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "t+pj8AJVXvcBw4uAQJZ1i6kdirE=",
+			"path": "github.com/influx6/faux/metrics",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "vYNLEi3e7lHFNqlvI4JGsqsDhFs=",
+			"path": "github.com/influx6/faux/metrics/custom",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "Ds4//jsmHUFLG8Wu1FrMCULUQR4=",
+			"path": "github.com/influx6/faux/netutils",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "QYVdqyvZOD5mNr3jK0XRw726vjA=",
+			"path": "github.com/influx6/faux/reflection",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "aQUviQ7R1zrE/P6T1rF8+ojpW1o=",
+			"path": "github.com/influx6/faux/tests",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "e1LyNSlLJNdmOVwHdKbPV+5Fvss=",
+			"path": "github.com/influx6/faux/types/actions",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "pB7s0rhgrt6LF28sWxq8w/7ZwRI=",
+			"path": "github.com/influx6/faux/types/events",
+			"revision": "d80babdc13782bc20887780b9f6ff72fd7271129",
+			"revisionTime": "2017-11-19T05:59:03Z"
+		},
+		{
+			"checksumSHA1": "50rYWDP2xhe3Oh1UFXrX9PkjAi4=",
+			"path": "github.com/influx6/gobuild/build",
+			"revision": "02ff49690c426e4cdd1a0987848fdd5beccfd369",
+			"revisionTime": "2017-10-05T18:33:27Z"
+		},
+		{
+			"checksumSHA1": "SEZulQ/Gm4f6P6/c3waZjXxvl0g=",
+			"path": "github.com/jmoiron/sqlx",
+			"revision": "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f",
+			"revisionTime": "2017-04-30T19:46:03Z"
+		},
+		{
+			"checksumSHA1": "xXjxKqs3ECyWO5zjIVb2qgj9rcU=",
+			"path": "github.com/jmoiron/sqlx/reflectx",
+			"revision": "d9bd385d68c068f1fabb5057e3dedcbcbb039d0f",
+			"revisionTime": "2017-04-30T19:46:03Z"
+		},
+		{
+			"checksumSHA1": "sGC8yzCmU7CO6/Uy6TTWRgHpgLI=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "67c513e5729f918f5e69786686770c27141a4490",
+			"revisionTime": "2017-08-04T15:04:06Z"
+		},
+		{
+			"checksumSHA1": "w8LTR7SnKYaJgDdhvC5qTjYJ5s8=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "67c513e5729f918f5e69786686770c27141a4490",
+			"revisionTime": "2017-08-04T15:04:06Z"
+		},
+		{
+			"checksumSHA1": "MfZX5IRcErEUs5hsqUypROxzfUQ=",
+			"path": "github.com/minio/cli",
+			"revision": "45db1f8a055198ad8c12754026cb2c51c584c756",
+			"revisionTime": "2017-02-27T07:32:28Z"
+		},
+		{
+			"checksumSHA1": "g//nyy0VRVeQkHtxyWMaJL25rPU=",
+			"path": "golang.org/x/crypto/acme",
+			"revision": "81e90905daefcd6fd217b62423c0908922eadb30",
+			"revisionTime": "2017-08-25T20:24:07Z"
+		},
+		{
+			"checksumSHA1": "TrKJW+flz7JulXU3sqnBJjGzgQc=",
+			"path": "golang.org/x/crypto/acme/autocert",
+			"revision": "81e90905daefcd6fd217b62423c0908922eadb30",
+			"revisionTime": "2017-08-25T20:24:07Z"
+		},
+		{
+			"checksumSHA1": "4TEYFKrAUuwBMqExjQBsnf/CgjQ=",
+			"path": "golang.org/x/sync/syncmap",
+			"revision": "fd80eb99c8f653c847d294a001bdf2a3a6f768f5",
+			"revisionTime": "2017-11-01T19:49:15Z"
+		},
+		{
+			"checksumSHA1": "jBzWOmKY4vGfgD+DVRzzFul+VP8=",
+			"origin": "github.com/fatih/color/vendor/golang.org/x/sys/unix",
+			"path": "golang.org/x/sys/unix",
+			"revision": "67c513e5729f918f5e69786686770c27141a4490",
+			"revisionTime": "2017-08-04T15:04:06Z"
+		},
+		{
+			"checksumSHA1": "1D8GzeoFGUs5FZOoyC2DpQg8c5Y=",
+			"path": "gopkg.in/mgo.v2",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "YsB2DChSV9HxdzHaKATllAUKWSI=",
+			"path": "gopkg.in/mgo.v2/bson",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "XQsrqoNT1U0KzLxOFcAZVvqhLfk=",
+			"path": "gopkg.in/mgo.v2/internal/json",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "LEvMCnprte47qdAxWvQ/zRxVF1U=",
+			"path": "gopkg.in/mgo.v2/internal/sasl",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "+1WDRPaOphSCmRMxVPIPBV4aubc=",
+			"path": "gopkg.in/mgo.v2/internal/scram",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		}
+	],
+	"rootPath": "github.com/influx6/moz"
+}
