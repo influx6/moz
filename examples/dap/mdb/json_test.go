@@ -29,6 +29,8 @@ var ignitorJSON = `{
 var ignitorCreateJSON = `{
 
 
+    "rack":	0,
+
     "public_id":	"",
 
     "name":	"",
@@ -38,9 +40,7 @@ var ignitorCreateJSON = `{
 	
 	    "url":	""
 	
-	},
-
-    "rack":	0
+	}
 
 }`
 
