@@ -186,7 +186,7 @@ func assetsCLI(c *cli.Context) {
 		ast.PackageDeclaration{FilePath: rootDir}, ast.Package{})
 
 	if err != nil {
-		events.Emit(metrics.Error(err).With("dir", rootDir).With("message", "Failed to generation assets"))
+		events.Emit(metrics.Error(err), metrics.With("dir", rootDir), metrics.With("message", "Failed to generation assets"))
 		return
 	}
 
@@ -197,7 +197,7 @@ func assetsCLI(c *cli.Context) {
 			if _, err := os.Stat(coDir); err != nil {
 				fmt.Printf("- Creating package directory: %q\n", coDir)
 				if err := os.MkdirAll(coDir, 0700); err != nil && err != os.ErrExist {
-					events.Emit(metrics.Error(err).With("dir", coDir).With("message", "Failed to create directory"))
+					events.Emit(metrics.Error(err), metrics.With("dir", coDir), metrics.With("message", "Failed to create directory"))
 					return
 				}
 			}
@@ -218,12 +218,12 @@ func assetsCLI(c *cli.Context) {
 
 		dFile, err := os.Create(coFile)
 		if err != nil {
-			events.Emit(metrics.Error(err).With("dir", rootDir).With("file", coFile).With("message", "Failed to create file"))
+			events.Emit(metrics.Error(err), metrics.With("dir", rootDir), metrics.With("file", coFile), metrics.With("message", "Failed to create file"))
 			return
 		}
 
 		if _, err := directive.Writer.WriteTo(dFile); err != nil {
-			events.Emit(metrics.Error(err).With("dir", rootDir).With("file", coFile).With("message", "Failed to write to file"))
+			events.Emit(metrics.Error(err), metrics.With("dir", rootDir), metrics.With("file", coFile), metrics.With("message", "Failed to write to file"))
 			return
 		}
 
@@ -241,44 +241,44 @@ func generateFileCLI(c *cli.Context) {
 	fromFile := c.String("fromFile")
 	if fromFile == "" {
 		err = fmt.Errorf("file target not provided, use the -fromfile flag")
-		events.Emit(metrics.Error(err).With("dir", fromFile).With("message", "Failed to retrieve current directory"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromFile), metrics.With("message", "Failed to retrieve current directory"))
 		return
 	}
 
 	toDir := c.String("toDir")
 	if filepath.IsAbs(toDir) {
 		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
-		events.Emit(metrics.Error(err).With("dir", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromFile), metrics.With("toDir", toDir), metrics.With("message", "Failed to retrieve current directory"))
 		return
 	}
 
 	// If its not an absolute path then get real absolute
 	if !filepath.IsAbs(fromFile) {
-		pwd, err := os.Getwd()
-		if err != nil {
-			events.Emit(metrics.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to retrieve current fileectory"))
+		pwd, perr := os.Getwd()
+		if perr != nil {
+			events.Emit(metrics.Error(perr), metrics.With("file", fromFile), metrics.With("toDir", toDir), metrics.With("message", "Failed to retrieve current fileectory"))
 			return
 		}
 
 		fromFile = filepath.Join(pwd, fromFile)
 	}
 
-	events.Emit(metrics.Info("Using FromFile: %s", fromFile).With("file", fromFile))
-	events.Emit(metrics.Info("Using ToDir: %s", toDir).With("Dir", toDir))
+	events.Emit(metrics.Info("Using FromFile: %s", fromFile), metrics.With("file", fromFile))
+	events.Emit(metrics.Info("Using ToDir: %s", toDir), metrics.With("Dir", toDir))
 
 	pkg, err := ast.ParseFileAnnotations(events, fromFile)
 	if err != nil {
-		events.Emit(metrics.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to parse package annotations"))
+		events.Emit(metrics.Error(err), metrics.With("file", fromFile), metrics.With("toDir", toDir), metrics.With("message", "Failed to parse package annotations"))
 		return
 	}
 
-	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromFile", fromFile))
+	events.Emit(metrics.Info("Begin Annotation Execution"), metrics.With("toDir", toDir), metrics.With("fromFile", fromFile))
 
 	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg); err != nil {
-		events.Emit(metrics.Error(err).With("file", fromFile).With("toDir", toDir).With("message", "Failed to parse package declarations"))
+		events.Emit(metrics.Error(err), metrics.With("file", fromFile), metrics.With("toDir", toDir), metrics.With("message", "Failed to parse package declarations"))
 	}
 
-	events.Emit(metrics.Info("Finished").With("toDir", toDir).With("fromFile", fromFile))
+	events.Emit(metrics.Info("Finished"), metrics.With("toDir", toDir), metrics.With("fromFile", fromFile))
 }
 
 func generatePackageCLI(c *cli.Context) {
@@ -290,34 +290,34 @@ func generatePackageCLI(c *cli.Context) {
 
 	if filepath.IsAbs(toDir) {
 		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
-		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to retrieve current directory"))
 		return
 	}
 
 	if fromDir == "" {
 		fromDir, err = os.Getwd()
 		if err != nil {
-			events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+			events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to retrieve current directory"))
 			return
 		}
 	}
 
-	events.Emit(metrics.Info("Using FromDir: %s", fromDir).With("dir", fromDir))
-	events.Emit(metrics.Info("Using ToDir: %s", toDir).With("dir", toDir))
+	events.Emit(metrics.Info("Using FromDir: %s", fromDir), metrics.With("dir", fromDir))
+	events.Emit(metrics.Info("Using ToDir: %s", toDir), metrics.With("dir", toDir))
 
 	pkg, err := ast.ParseAnnotations(events, fromDir)
 	if err != nil {
-		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package annotations"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to parse package annotations"))
 		return
 	}
 
-	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg)))
+	events.Emit(metrics.Info("Begin Annotation Execution"), metrics.With("toDir", toDir), metrics.With("fromDir", fromDir), metrics.With("Packages", len(pkg)))
 
 	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg...); err != nil {
-		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to parse package declarations"))
 	}
 
-	events.Emit(metrics.Info("Finished").With("toDir", toDir).With("fromDir", fromDir))
+	events.Emit(metrics.Info("Finished"), metrics.With("toDir", toDir), metrics.With("fromDir", fromDir))
 }
 
 func generatePackageCLIWithTag(c *cli.Context) {
@@ -338,21 +338,21 @@ func generatePackageCLIWithTag(c *cli.Context) {
 
 	if filepath.IsAbs(toDir) {
 		err = fmt.Errorf("-toDir flag can not be a absolute path but a relative path to the directory")
-		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to retrieve current directory"))
 		return
 	}
 
 	if fromDir == "" {
 		fromDir, err = os.Getwd()
 		if err != nil {
-			events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to retrieve current directory"))
+			events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to retrieve current directory"))
 			return
 		}
 	}
 
-	events.Emit(metrics.Info("Using FromDir: %s", fromDir).With("dir", fromDir))
-	events.Emit(metrics.Info("Using ToDir: %s", toDir).With("dir", toDir))
-	events.Emit(metrics.Info("Using Build Tag").With("tag", buildTag))
+	events.Emit(metrics.Info("Using FromDir: %s", fromDir), metrics.With("dir", fromDir))
+	events.Emit(metrics.Info("Using ToDir: %s", toDir), metrics.With("dir", toDir))
+	events.Emit(metrics.Info("Using Build Tag"), metrics.With("tag", buildTag))
 
 	ctx := build.Default
 	ctx.BuildTags = append(ctx.BuildTags, buildTag)
@@ -360,15 +360,15 @@ func generatePackageCLIWithTag(c *cli.Context) {
 
 	pkg, err := ast.FilteredPackageWithBuildCtx(events, fromDir, ctx)
 	if err != nil {
-		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package annotations"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to parse package annotations"))
 		return
 	}
 
-	events.Emit(metrics.Info("Begin Annotation Execution").With("toDir", toDir).With("fromDir", fromDir).With("Packages", len(pkg)))
+	events.Emit(metrics.Info("Begin Annotation Execution"), metrics.With("toDir", toDir), metrics.With("fromDir", fromDir), metrics.With("Packages", len(pkg)))
 
 	if err := moz.ParseWith(toDir, events, annotations, forceWrite, pkg...); err != nil {
-		events.Emit(metrics.Error(err).With("dir", fromDir).With("toDir", toDir).With("message", "Failed to parse package declarations"))
+		events.Emit(metrics.Error(err), metrics.With("dir", fromDir), metrics.With("toDir", toDir), metrics.With("message", "Failed to parse package declarations"))
 	}
 
-	events.Emit(metrics.Info("Finished").With("toDir", toDir).With("fromDir", fromDir))
+	events.Emit(metrics.Info("Finished"), metrics.With("toDir", toDir), metrics.With("fromDir", fromDir))
 }

@@ -58,18 +58,18 @@ func New(m metrics.Metrics, operator APIOperator) *HTTPApi {
 //
 func (api *HTTPApi) Create(ctx *httputil.Context) error {
 	m := metrics.NewTrace()
-	defer api.metrics.Emit(metrics.Info("HTTPApi.Create").WithTrace(m.End()))
+	defer api.metrics.Emit(metrics.Info("HTTPApi.Create"),metrics.WithTrace(m.End()))
 
 		ctx.Header().Set("Content-Type", "application/json")
 
-		api.metrics.Emit(metrics.Info("Create request received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("Create request received"),metrics.WithFields(metrics.Field{
 				"url": ctx.Request().URL.String(),
 		}))
 
 		var incoming {{.Struct.Package}}.{{.Struct.Object.Name}}
 
 		if err := json.NewDecoder(ctx.Body()).Decode(&incoming); err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to parse params and url.Values").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to parse params and url.Values"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"url": ctx.Request().URL.String(),
 				}))
@@ -77,14 +77,14 @@ func (api *HTTPApi) Create(ctx *httputil.Context) error {
 				return err
 		}
 
-		api.metrics.Emit(metrics.Info("JSON received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("JSON received"),metrics.WithFields(metrics.Field{
 				"data": incoming,
 				"url": ctx.Request().URL.String(),
 		}))
 
 		response, err := api.operator.Create(ctx, incoming);
 		if err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to create record").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to create record"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"url": ctx.Request().URL.String(),
 				}))
@@ -92,13 +92,13 @@ func (api *HTTPApi) Create(ctx *httputil.Context) error {
 				return err
 		}
 
-		api.metrics.Emit(metrics.Info("Response Delivered").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("Response Delivered"),metrics.WithFields(metrics.Field{
 			"url":       ctx.Request().URL.String(),
 			"status": http.StatusCreated,
 		}))
 
 		if err := ctx.JSON(http.StatusCreated, response); err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to deliver response").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to deliver response"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"url": ctx.Request().URL.String(),
 				}))
@@ -116,18 +116,18 @@ func (api *HTTPApi) Create(ctx *httputil.Context) error {
 //
 func (api *HTTPApi) Update(ctx *httputil.Context) error {
 	m := metrics.NewTrace()
-	defer api.metrics.Emit(metrics.Info("HTTPApi.Update").WithTrace(m.End()))
+	defer api.metrics.Emit(metrics.Info("HTTPApi.Update"),metrics.WithTrace(m.End()))
 
 		ctx.Header().Set("Content-Type", "application/json")
 
-		api.metrics.Emit(metrics.Info("Update request received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("Update request received"),metrics.WithFields(metrics.Field{
 				"url": ctx.Request().URL.String(),
 		}))
 
 
 	publicID, ok := ctx.Bag().GetString("public_id")
 	if !ok {
-		api.metrics.Emit(metrics.Errorf("No public_id provided in params").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Errorf("No public_id provided in params"),metrics.WithFields(metrics.Field{
 			"url": ctx.Request().URL.String(),
 		}))
 
@@ -138,7 +138,7 @@ func (api *HTTPApi) Update(ctx *httputil.Context) error {
 		var incoming {{.Struct.Package}}.{{.Struct.Object.Name}}
 
 		if err := json.NewDecoder(ctx.Body()).Decode(&incoming); err != nil {
-		api.metrics.Emit(metrics.Errorf("Failed to decode request body").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Errorf("Failed to decode request body"),metrics.WithFields(metrics.Field{
 			"error":     err.Error(),
 						"public_id": publicID,
 						"url": ctx.Request().URL.String(),
@@ -147,14 +147,14 @@ func (api *HTTPApi) Update(ctx *httputil.Context) error {
 				return err
 		}
 
-		api.metrics.Emit(metrics.Info("JSON received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("JSON received"),metrics.WithFields(metrics.Field{
 				"data": incoming,
 				"url": ctx.Request().URL.String(),
 				"public_id": publicID,
 		}))
 
 		if err := api.operator.Update(ctx, publicID, incoming); err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to parse params and url.Values").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to parse params and url.Values"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"public_id": publicID,
 						"url": ctx.Request().URL.String(),
@@ -163,7 +163,7 @@ func (api *HTTPApi) Update(ctx *httputil.Context) error {
 				return err
 		}
 
-	api.metrics.Emit(metrics.Info("Response Delivered").WithFields(metrics.Field{
+	api.metrics.Emit(metrics.Info("Response Delivered"),metrics.WithFields(metrics.Field{
 		"url":       ctx.Request().URL.String(),
 		"public_id": publicID,
 		"status": http.StatusNoContent,
@@ -179,28 +179,28 @@ func (api *HTTPApi) Update(ctx *httputil.Context) error {
 //
 func (api *HTTPApi) Delete(ctx *httputil.Context) error {
 	m := metrics.NewTrace()
-	defer api.metrics.Emit(metrics.Info("HTTPApi.Delete").WithTrace(m.End()))
+	defer api.metrics.Emit(metrics.Info("HTTPApi.Delete"),metrics.WithTrace(m.End()))
 
-		api.metrics.Emit(metrics.Info("Delete request received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("Delete request received"),metrics.WithFields(metrics.Field{
 				"url": ctx.Request().URL.String(),
 		}))
 
 	publicID, ok := ctx.Bag().GetString("public_id")
 	if !ok {
-		api.metrics.Emit(metrics.Errorf("No public_id provided in params").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Errorf("No public_id provided in params"),metrics.WithFields(metrics.Field{
 			"url": ctx.Request().URL.String(),
 		}))
 
 		return fmt.Errorf("No public_id provided in params")
 	}
 
-		api.metrics.Emit(metrics.Info("JSON received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("JSON received"),metrics.WithFields(metrics.Field{
 				"url": ctx.Request().URL.String(),
 				"public_id": publicID,
 		}))
 
 		if err := api.operator.Delete(ctx, publicID); err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to delete {{.Struct.Package}}.{{.Struct.Object.Name}} record").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to delete {{.Struct.Package}}.{{.Struct.Object.Name}} record"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"public_id": publicID,
 						"url": ctx.Request().URL.String(),
@@ -209,7 +209,7 @@ func (api *HTTPApi) Delete(ctx *httputil.Context) error {
 				return err
 		}
 
-	api.metrics.Emit(metrics.Info("Response Delivered").WithFields(metrics.Field{
+	api.metrics.Emit(metrics.Info("Response Delivered"),metrics.WithFields(metrics.Field{
 		"url":       ctx.Request().URL.String(),
 		"public_id": publicID,
 		"status": http.StatusNoContent,
@@ -225,17 +225,17 @@ func (api *HTTPApi) Delete(ctx *httputil.Context) error {
 // RESPONSE-BODY: JSON
 func (api *HTTPApi) Get(ctx *httputil.Context) error {
 	m := metrics.NewTrace()
-	defer api.metrics.Emit(metrics.Info("HTTPApi.Get").WithTrace(m.End()))
+	defer api.metrics.Emit(metrics.Info("HTTPApi.Get"),metrics.WithTrace(m.End()))
 
 		ctx.Header().Set("Content-Type", "application/json")
 
-		api.metrics.Emit(metrics.Info("Get request received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("Get request received"),metrics.WithFields(metrics.Field{
 				"url": ctx.Request().URL.String(),
 		}))
 
 	publicID, ok := ctx.Bag().GetString("public_id")
 	if !ok {
-		api.metrics.Emit(metrics.Errorf("No public_id provided in params").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Errorf("No public_id provided in params"),metrics.WithFields(metrics.Field{
 			"url": ctx.Request().URL.String(),
 		}))
 
@@ -244,7 +244,7 @@ func (api *HTTPApi) Get(ctx *httputil.Context) error {
 
 		requested, err := api.operator.Get(ctx, publicID)
 		if err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to get {{.Struct.Package}}.{{.Struct.Object.Name}} record").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to get {{.Struct.Package}}.{{.Struct.Object.Name}} record"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"public_id": publicID,
 						"url": ctx.Request().URL.String(),
@@ -254,7 +254,7 @@ func (api *HTTPApi) Get(ctx *httputil.Context) error {
 		}
 
 		if err := ctx.JSON(http.StatusOK, requested); err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to get serialized {{.Struct.Package}}.{{.Struct.Object.Name}} record to response writer").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to get serialized {{.Struct.Package}}.{{.Struct.Object.Name}} record to response writer"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"public_id": publicID,
 						"url": ctx.Request().URL.String(),
@@ -263,7 +263,7 @@ func (api *HTTPApi) Get(ctx *httputil.Context) error {
 				return err
 		}
 
-	api.metrics.Emit(metrics.Info("Response Delivered").WithFields(metrics.Field{
+	api.metrics.Emit(metrics.Info("Response Delivered"),metrics.WithFields(metrics.Field{
 		"url":       ctx.Request().URL.String(),
 		"public_id": publicID,
 		"status": http.StatusOK,
@@ -279,11 +279,11 @@ func (api *HTTPApi) Get(ctx *httputil.Context) error {
 // RESPONSE-BODY: JSON
 func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 	m := metrics.NewTrace()
-	defer api.metrics.Emit(metrics.Info("HTTPApi.GetAll").WithTrace(m.End()))
+	defer api.metrics.Emit(metrics.Info("HTTPApi.GetAll"),metrics.WithTrace(m.End()))
 
 		ctx.Header().Set("Content-Type", "application/json")
 
-		api.metrics.Emit(metrics.Info("GetAll request received").WithFields(metrics.Field{
+		api.metrics.Emit(metrics.Info("GetAll request received"),metrics.WithFields(metrics.Field{
 				"url": ctx.Request().URL.String(),
 		}))
 
@@ -311,7 +311,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 	if rpp, ok := ctx.Bag().GetString("responsePerPage"); ok {
 		responsePerPage, err = strconv.Atoi(rpp)
 		if err != nil {
-			api.metrics.Emit(metrics.Errorf("Failed to retrieve responserPerPage number details").WithFields(metrics.Field{
+			api.metrics.Emit(metrics.Errorf("Failed to retrieve responserPerPage number details"),metrics.WithFields(metrics.Field{
 				"error":     err,
 				"url":       ctx.Request().URL.String(),
 			}))
@@ -323,7 +323,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 	if pg, ok := ctx.Bag().GetString("page"); ok {
 		pageNo, err = strconv.Atoi(pg)
 		if err != nil {
-			api.metrics.Emit(metrics.Errorf("Failed to retrieve page number details").WithFields(metrics.Field{
+			api.metrics.Emit(metrics.Errorf("Failed to retrieve page number details"),metrics.WithFields(metrics.Field{
 				"error":     err,
 				"url":       ctx.Request().URL.String(),
 			}))
@@ -334,7 +334,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 
 		requested, total, err := api.operator.GetAll(ctx, order, orderBy, pageNo, responsePerPage)
 		if err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to get all {{.Struct.Package}}.{{.Struct.Object.Name}} record").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to get all {{.Struct.Package}}.{{.Struct.Object.Name}} record"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"url": ctx.Request().URL.String(),
 				}))
@@ -348,7 +348,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 				TotalRecords: total,
 				ResponsePerPage: responsePerPage,
 		}); err != nil {
-				api.metrics.Emit(metrics.Errorf("Failed to get serialized {{.Struct.Package}}.{{.Struct.Object.Name}} record to response writer").WithFields(metrics.Field{
+				api.metrics.Emit(metrics.Errorf("Failed to get serialized {{.Struct.Package}}.{{.Struct.Object.Name}} record to response writer"),metrics.WithFields(metrics.Field{
 						"error": err,
 						"url": ctx.Request().URL.String(),
 				}))
@@ -356,7 +356,7 @@ func (api *HTTPApi) GetAll(ctx *httputil.Context) error {
 				return err
 		}
 
-	api.metrics.Emit(metrics.Info("Response Delivered").WithFields(metrics.Field{
+	api.metrics.Emit(metrics.Info("Response Delivered"),metrics.WithFields(metrics.Field{
 		"url":       ctx.Request().URL.String(),
 		"status": http.StatusOK,
 	}))

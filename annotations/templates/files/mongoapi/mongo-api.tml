@@ -52,7 +52,7 @@ func New(col string, m metrics.Metrics,  mo Mongod, indexes ...mgo.Index) *{{.St
 // ensureIndex attempts to ensure all provided indexes into the specific collection.
 func (mdb *{{.Struct.Object.Name}}DB) ensureIndex() error {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.ensureIndex")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.ensureIndex").WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.ensureIndex"),metrics.WithTrace(m.End()))
 
     if mdb.ensuredIndex {
         return nil
@@ -70,9 +70,7 @@ func (mdb *{{.Struct.Object.Name}}DB) ensureIndex() error {
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session for index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session for index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
@@ -82,55 +80,42 @@ func (mdb *{{.Struct.Object.Name}}DB) ensureIndex() error {
 
     for _, index := range mdb.indexes {
         if err := collection.EnsureIndex(index); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to ensure session index").
-            With("collection", mdb.col).
-            With("index", index).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to ensure session index"),metrics.With("collection", mdb.col),metrics.With("index", index),metrics.With("error", err.Error()))
 
             mdb.incompleteIndex = true
             return err
         }
 
-        mdb.metrics.Emit(metrics.Info("Succeeded in ensuring collection index").
-        With("collection", mdb.col).
-        With("index", index))
+        mdb.metrics.Emit(metrics.Info("Succeeded in ensuring collection index"),metrics.With("collection", mdb.col),metrics.With("index", index))
     }
 
     mdb.ensuredIndex = true
 
-    mdb.metrics.Emit(metrics.Info("Finished adding index").
-    With("collection", mdb.col))
-
+    mdb.metrics.Emit(metrics.Info("Finished adding index"),metrics.With("collection", mdb.col))
     return nil
 }
 
 // Count attempts to return the total number of record from the db.
 func (mdb *{{.Struct.Object.Name}}DB) Count(ctx context.Context) (int, error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Count")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Count").WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Count"),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
 
-        mdb.metrics.Emit(metrics.Errorf("Failed to get record count").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to get record count"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return -1, err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return -1, err
     }
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to get record count").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to get record count"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return -1, err
     }
@@ -141,26 +126,19 @@ func (mdb *{{.Struct.Object.Name}}DB) Count(ctx context.Context) (int, error) {
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to get record count").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to get record count"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return -1, err
     }
 
     total, err := database.C(mdb.col).Find(query).Count();
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to get record count").
-        With("collection", mdb.col).
-        With("query", query).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to get record count"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
         return -1, err
     }
 
-    mdb.metrics.Emit(metrics.Info("Deleted record").
-    With("collection", mdb.col).
-    With("query", query))
+    mdb.metrics.Emit(metrics.Info("Deleted record"),metrics.With("collection", mdb.col),metrics.With("query", query))
 
     return total, err
 }
@@ -170,29 +148,23 @@ func (mdb *{{.Struct.Object.Name}}DB) Count(ctx context.Context) (int, error) {
 // on the given {{.Struct.Package}}.{{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID string) error {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Delete")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Delete").With("publicID", publicID).WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Delete"),metrics.With("publicID", publicID),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to delete record").With("publicID", publicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to delete record"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to delete record").With("publicID", publicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to delete record"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
@@ -204,24 +176,16 @@ func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID strin
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to delete record").With("publicID", publicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to delete record"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if err := database.C(mdb.col).Remove(query); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to delete record").
-        With("collection", mdb.col).
-        With("query", query).
-        With("publicID", publicID).With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to delete record"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("publicID", publicID),metrics.With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(metrics.Info("Deleted record").
-    With("collection", mdb.col).
-    With("query", query).
-    With("publicID", publicID))
+    mdb.metrics.Emit(metrics.Info("Deleted record"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("publicID", publicID))
 
     return nil
 }
@@ -232,30 +196,23 @@ func (mdb *{{.Struct.Object.Name}}DB) Delete(ctx context.Context, publicID strin
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Create")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Create").With("publicID", elem.PublicID).WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Create"),metrics.With("publicID", elem.PublicID),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to create record").With("publicID", elem.PublicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create record"),metrics.With("publicID", elem.PublicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With("publicID", elem.PublicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With("publicID", elem.PublicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
@@ -263,40 +220,28 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to create record").With("publicID", elem.PublicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create record"),metrics.With("publicID", elem.PublicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}BSON); ok {
         if err := database.C(mdb.col).Insert(fields.BSON()); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record").
-            With("collection", mdb.col).
-            With("elem", elem).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record"),metrics.With("collection", mdb.col),metrics.With("elem", elem),metrics.With("error", err.Error()))
             return err
         }
 
-        mdb.metrics.Emit(metrics.Info("Create record").
-        With("collection", mdb.col).
-        With("elem", elem))
+        mdb.metrics.Emit(metrics.Info("Create record"),metrics.With("collection", mdb.col),metrics.With("elem", elem))
 
         return nil
     }
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}Fields); ok {
         if err := database.C(mdb.col).Insert(bson.M(fields.Fields())); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record").
-            With("collection", mdb.col).
-            With("elem", elem).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record"),metrics.With("collection", mdb.col),metrics.With("elem", elem),metrics.With("error", err.Error()))
             return err
         }
 
-        mdb.metrics.Emit(metrics.Info("Create record").
-        With("collection", mdb.col).
-        With("elem", elem))
+        mdb.metrics.Emit(metrics.Info("Create record"),metrics.With("collection", mdb.col),metrics.With("elem", elem))
 
         return nil
     }
@@ -305,23 +250,16 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to create record").With("publicID", elem.PublicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create record"),metrics.With("publicID", elem.PublicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if err := database.C(mdb.col).Insert(query); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record").
-        With("collection", mdb.col).
-        With("query", query).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create {{.Struct.Object.Name}} record"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(metrics.Info("Create record").
-    With("collection", mdb.col).
-    With("query", query))
+    mdb.metrics.Emit(metrics.Info("Create record"),metrics.With("collection", mdb.col),metrics.With("query", query))
 
     return nil
 }
@@ -331,7 +269,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order string, orderBy string, page int, responsePerPage int)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}},  int, error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.GetAll")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetAll").WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetAll"),metrics.WithTrace(m.End()))
 
 	switch strings.ToLower(order) {
 	case "dsc", "desc":
@@ -340,16 +278,12 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, -1, err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, -1, err
     }
 
@@ -389,9 +323,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, -1, err
     }
 
@@ -399,9 +331,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, -1, err
     }
 
@@ -412,10 +342,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         var items []map[string]interface{}
 
         if err := database.C(mdb.col).Find(query).Skip(indexToStart).Limit(totalWanted).Sort(orderBy).All(&items); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return nil, -1, err
         }
@@ -437,10 +364,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         var items []bson.M
 
         if err := database.C(mdb.col).Find(query).Skip(indexToStart).Limit(totalWanted).Sort(orderBy).All(&items); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return nil, -1, err
         }
@@ -452,11 +376,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 
             if err := elem.BSONConsume(item); err != nil {
 
-                mdb.metrics.Emit(metrics.Errorf("Failed to consume records into struct").
-                With("collection", mdb.col).
-                With("data", item).
-                With("query", query).
-                With("error", err.Error()))
+                mdb.metrics.Emit(metrics.Errorf("Failed to consume records into struct"),metrics.With("collection", mdb.col),metrics.With("data", item),metrics.With("query", query),metrics.With("error", err.Error()))
 
                 return nil, -1, err
             }
@@ -470,10 +390,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
         var items []{{.Struct.Package}}.{{.Struct.Object.Name}}
 
         if err := database.C(mdb.col).Find(query).Skip(indexToStart).Limit(totalWanted).Sort(orderBy).All(&items); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return nil, -1, err
         }
@@ -487,7 +404,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllPerPage(ctx context.Context, order s
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, orderBy string)  ([]{{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.GetAllByOrder")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetAllByOrder").WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetAllByOrder"),metrics.WithTrace(m.End()))
 
 	switch strings.ToLower(order) {
 	case "dsc", "desc":
@@ -497,24 +414,18 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
 
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, err
     }
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, err
     }
 
@@ -523,9 +434,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
 
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return nil, err
     }
 
@@ -535,10 +444,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
         var items []map[string]interface{}
 
         if err := database.C(mdb.col).Find(query).Sort(orderBy).All(&items); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return nil, err
         }
@@ -560,10 +466,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
         var items []bson.M
 
         if err := database.C(mdb.col).Find(query).Sort(orderBy).All(&items); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return nil, err
         }
@@ -575,11 +478,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
 
             if err := elem.BSONConsume(item); err != nil {
 
-                mdb.metrics.Emit(metrics.Errorf("Failed to consume records into struct").
-                With("collection", mdb.col).
-                With("data", item).
-                With("query", query).
-                With("error", err.Error()))
+                mdb.metrics.Emit(metrics.Errorf("Failed to consume records into struct"),metrics.With("collection", mdb.col),metrics.With("data", item),metrics.With("query", query),metrics.With("error", err.Error()))
 
                 return nil, err
             }
@@ -592,10 +491,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
         var items []{{.Struct.Package}}.{{.Struct.Object.Name}}
 
         if err := database.C(mdb.col).Find(query).Sort(orderBy).All(&items); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return nil, err
         }
@@ -610,31 +506,24 @@ func (mdb *{{.Struct.Object.Name}}DB) GetAllByOrder(ctx context.Context, order, 
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string, value interface{})  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.GetByField")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetByField").With(key, value).WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.GetByField"),metrics.With(key, value),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With(key, value).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With(key, value),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With(key, value).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With(key, value),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
@@ -643,9 +532,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With(key, value).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With(key, value),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
@@ -656,10 +543,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string
         var item map[string]interface{}
 
         if err := database.C(mdb.col).Find(query).One(&item); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
         }
@@ -676,10 +560,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string
         var itemBSON bson.M
 
         if err := database.C(mdb.col).Find(query).One(&itemBSON); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
         }
@@ -696,10 +577,7 @@ func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string
         var item {{.Struct.Package}}.{{.Struct.Object.Name}}
 
         if err := database.C(mdb.col).Find(query).One(&item); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("query", query).
-            With("collection", mdb.col).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("query", query),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
             return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
         }
@@ -713,29 +591,22 @@ func (mdb *{{.Struct.Object.Name}}DB) GetByField(ctx context.Context, key string
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string)  ({{.Struct.Package}}.{{.Struct.Object.Name}},  error) {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Get")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Get").With("publicID", publicID).WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Get"),metrics.With("publicID", publicID),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With("publicID", publicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With("publicID", publicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
 
@@ -743,9 +614,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record").With("publicID", publicID).
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to retrieve record"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
     }
 
@@ -755,11 +624,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
         var item map[string]interface{}
 
         if err := database.C(mdb.col).Find(query).One(&item); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
-
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
             return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
         }
 
@@ -775,10 +640,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
         var itemBSON bson.M
 
         if err := database.C(mdb.col).Find(query).One(&itemBSON); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("collection", mdb.col).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
         }
@@ -795,10 +657,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
         var item {{.Struct.Package}}.{{.Struct.Object.Name}}
 
         if err := database.C(mdb.col).Find(query).One(&item); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db").
-            With("query", query).
-            With("collection", mdb.col).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to retrieve all records of {{.Struct.Object.Name}} type from db"),metrics.With("query", query),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
 
             return {{.Struct.Package}}.{{.Struct.Object.Name}}{}, err
         }
@@ -812,33 +671,23 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
 // on the given {{.Struct.Object.Name}} struct.
 func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID string, elem {{.Struct.Package}}.{{.Struct.Object.Name}}) error {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Update")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Update").With("publicID", publicID).WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Update"),metrics.With("publicID", publicID),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
-        With("collection", mdb.col).
-        With("public_id", publicID).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired"),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("error", err.Error()))
         return err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("public_id", publicID).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("error", err.Error()))
         return err
     }
 
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With("publicID", publicID).
-        With("collection", mdb.col).
-        With("public_id", publicID).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With("publicID", publicID),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("error", err.Error()))
         return err
     }
 
@@ -846,10 +695,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
-        With("collection", mdb.col).
-        With("public_id", publicID).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired"),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("error", err.Error()))
         return err
     }
 
@@ -859,39 +705,23 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}BSON); ok {
         if err := database.C(mdb.col).Update(query, fields.BSON()); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record").
-            With("collection", mdb.col).
-            With("public_id", publicID).
-            With("query", query).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record"),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("query", query),metrics.With("error", err.Error()))
 
             return err
         }
 
-        mdb.metrics.Emit(metrics.Info("Update record").
-        With("query", query).
-        With("collection", mdb.col).
-        With("public_id", publicID).
-        With("data", fields.BSON()))
+        mdb.metrics.Emit(metrics.Info("Update record"),metrics.With("query", query),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("data", fields.BSON()))
 
         return nil
     }
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}Fields); ok {
         if err := database.C(mdb.col).Update(query, fields.Fields()); err != nil {
-            mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record").
-            With("query", query).
-            With("public_id", publicID).
-            With("collection", mdb.col).
-            With("error", err.Error()))
+            mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record"),metrics.With("query", query),metrics.With("public_id", publicID),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
             return err
         }
 
-        mdb.metrics.Emit(metrics.Info("Create record").
-        With("collection", mdb.col).
-        With("query", query).
-        With("data", fields.Fields()).
-        With("public_id", publicID))
+        mdb.metrics.Emit(metrics.Info("Create record"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("data", fields.Fields()),metrics.With("public_id", publicID))
 
         return nil
     }
@@ -899,19 +729,11 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     queryData := bson.M({{ map .CreateAction "elem" "bson" "json" }})
 
     if err := database.C(mdb.col).Update(query, queryData); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record").
-        With("collection", mdb.col).
-        With("query", query).
-        With("data", queryData).
-        With("public_id", publicID).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record"),metrics.With("collection", mdb.col),metrics.With("query", query),metrics.With("data", queryData),metrics.With("public_id", publicID),metrics.With("error", err.Error()))
         return err
     }
 
-    mdb.metrics.Emit(metrics.Info("Update record").
-    With("collection", mdb.col).
-    With("public_id", publicID).
-    With("query", query))
+    mdb.metrics.Emit(metrics.Info("Update record"),metrics.With("collection", mdb.col),metrics.With("public_id", publicID),metrics.With("query", query))
 
     return nil
 }
@@ -919,29 +741,23 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
 // Exec provides a function which allows the execution of a custom function against the collection.
 func (mdb *{{.Struct.Object.Name}}DB) Exec(ctx context.Context, fx func(col *mgo.Collection) error) error {
     m := metrics.NewTrace("{{.Struct.Object.Name}}DB.Exec")
-    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Exec").WithTrace(m.End()))
+    defer mdb.metrics.Emit(metrics.Info("{{.Struct.Object.Name}}DB.Exec"),metrics.WithTrace(m.End()))
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if err := mdb.ensureIndex(); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to apply index").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to apply index"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
 
     database, session, err := mdb.db.New()
     if err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to create session").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to create session"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
@@ -949,16 +765,12 @@ func (mdb *{{.Struct.Object.Name}}DB) Exec(ctx context.Context, fx func(col *mgo
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to finish, context has expired"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
     if err := fx(database.C(mdb.col)); err != nil {
-        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation").
-        With("collection", mdb.col).
-        With("error", err.Error()))
+        mdb.metrics.Emit(metrics.Errorf("Failed to execute operation"),metrics.With("collection", mdb.col),metrics.With("error", err.Error()))
         return err
     }
 
