@@ -21,25 +21,18 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 	updateAction := str
 	createAction := str
 
-	switch len(str.Associations) {
-	case 0:
-		updateAction = str
-		createAction = str
-		break
-
-	default:
+	if len(str.Associations) != 0 {
 		if newAction, ok := str.Associations["New"]; ok {
-			if action, err := ast.FindStructType(pkgDeclr, newAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, newAction.TypeName); err == nil && action.Declr != nil {
 				createAction = action
 			}
 		}
 
 		if upAction, ok := str.Associations["Update"]; ok {
-			if action, err := ast.FindStructType(pkgDeclr, upAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, upAction.TypeName); err == nil && action.Declr != nil {
 				updateAction = action
 			}
 		}
-
 	}
 
 	mongoTestGen := gen.Block(
@@ -152,7 +145,6 @@ func MongoAPIAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 				gen.Import("gopkg.in/mgo.v2/bson", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(

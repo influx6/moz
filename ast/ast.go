@@ -1672,6 +1672,10 @@ func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (s
 
 // FieldByFieldName defines a function to return actual name of field with the given tag name.
 func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaration, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return FieldDeclaration{}, errors.New("StructDeclaration has no PackageDeclaration field")
+	}
 	fields := Fields(GetFields(item, item.Declr))
 
 	for _, field := range fields {
@@ -1687,6 +1691,11 @@ func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaratio
 
 // FieldFor defines a function to return actual name of field with the given tag name.
 func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDeclaration, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return FieldDeclaration{}, errors.New("StructDeclaration has no PackageDeclaration field")
+	}
+
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
@@ -1705,6 +1714,10 @@ func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDec
 
 // FieldNameFor defines a function to return actual name of field with the given tag name.
 func FieldNameFor(item StructDeclaration, tag string, tagFieldName string) string {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return ""
+	}
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
@@ -1734,6 +1747,10 @@ func AssignDefaultValue(item StructDeclaration, tag string, tagVal string, varNa
 
 // DefaultFieldValueFor defines a function to return a field default value.
 func DefaultFieldValueFor(item StructDeclaration, tag string, tagVal string) (string, string, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return "", "", errors.New("StructDeclaration has no PackageDeclaration field")
+	}
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
@@ -1764,6 +1781,11 @@ func RandomFieldAssign(item StructDeclaration, varName string, tag string, excep
 // RandomFieldWithExcept defines a function to return a random field name which is not
 // included in the exceptions set.
 func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...string) (string, string, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return "", "", errors.New("StructDeclaration has no PackageDeclaration field")
+	}
+
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
@@ -1789,6 +1811,11 @@ func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...str
 // MapOutFieldsToMap defines a function to return a map of field name and value
 // pair for the giving struct.
 func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback string) (map[string]io.WriterTo, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return nil, errors.New("StructDeclaration has no PackageDeclaration field")
+	}
+
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tagName)
@@ -1813,6 +1840,7 @@ func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback strin
 		vals, err := MapOutFieldsToMap(StructDeclaration{
 			Object: emt,
 			Struct: ems,
+			Declr:  item.Declr,
 		}, fmt.Sprintf("%s.%s", rootName, embed.FieldName), tagName, fallback)
 
 		if err != nil {
@@ -1839,6 +1867,7 @@ func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback strin
 			flds, err := MapOutFieldsToMap(StructDeclaration{
 				Object: embededType,
 				Struct: embedStruct,
+				Declr:  item.Declr,
 			}, fmt.Sprintf("%s.%s", rootName, tag.Field.FieldName), tagName, fallback)
 
 			if err != nil {
@@ -1875,6 +1904,11 @@ func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (strin
 // MapOutFieldsToJSONWriter returns the giving map values containing string for the giving
 // output.
 func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) (io.WriterTo, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return bytes.NewBuffer(nil), errors.New("StructDeclaration has no PackageDeclaration field")
+	}
+
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tagName)
@@ -1903,6 +1937,7 @@ func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) 
 			document, err := MapOutFieldsToJSONWriter(StructDeclaration{
 				Object: embededType,
 				Struct: embedStruct,
+				Declr:  item.Declr,
 			}, tagName, fallback)
 
 			if err != nil {
@@ -1934,6 +1969,11 @@ func MapOutValues(item StructDeclaration, onlyExported bool) (string, error) {
 // MapOutFieldsValues defines a function to return a map of field name and associated
 // placeholders as value.
 func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.NameDeclr) io.WriterTo {
+	if item.Declr == nil {
+		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
+		return bytes.NewBuffer(nil)
+	}
+
 	fields := Fields(GetFields(item, item.Declr))
 
 	var writers []io.WriterTo
@@ -1977,6 +2017,7 @@ func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.Nam
 			body := MapOutFieldsValues(StructDeclaration{
 				Object: embed.Spec,
 				Struct: embed.Struct,
+				Declr:  item.Declr,
 			}, onlyExported, &embedName)
 
 			writers = append(writers, body)
@@ -2098,8 +2139,13 @@ func DefaultTypeValueString(typeName string) string {
 }
 
 // GetTag returns the giving tag associated with the name if it exists.
-func GetTag(f FieldDeclaration, tagName string) (TagDeclaration, error) {
-	return f.GetTag(tagName)
+func GetTag(f FieldDeclaration, tagName string, fallback string) (TagDeclaration, error) {
+	tg, err := f.GetTag(tagName)
+	if err != nil {
+		return f.GetTag(fallback)
+	}
+
+	return tg, nil
 }
 
 //===========================================================================================================

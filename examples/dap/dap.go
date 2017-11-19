@@ -27,7 +27,7 @@ type Ignitable interface {
 
 // MofInitable defines a interface for a Mof.
 // @iface
-type MofInitable interface{
+type MofInitable interface {
 	Crunch() string
 }
 

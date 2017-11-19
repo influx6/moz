@@ -14,4 +14,3 @@ func loadJSONFor(content string) ({{.Struct.Package}}.{{.Struct.Object.Name}}, e
 
 	return elem, nil
 }
-

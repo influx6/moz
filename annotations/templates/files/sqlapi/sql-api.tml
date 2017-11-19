@@ -74,7 +74,8 @@ func (mdb *{{.Struct.Object.Name}}DB) Create(ctx context.Context, elem {{.Struct
 
     if context.IsExpired(ctx) {
         err := fmt.Errorf("Context has expired")
-        mdb.metrics.Emit(metrics.Errorf("Failed to create record"),metrics.WithFields("publicID", elem.PublicID),metrics.WithFields("table", mdb.col),metrics.WithFields("error", err.Error())) return err
+        mdb.metrics.Emit(metrics.Errorf("Failed to create record"),metrics.WithFields("publicID", elem.PublicID),metrics.WithFields("table", mdb.col),metrics.WithFields("error", err.Error()))
+				return err
     }
 
     if fields, ok := interface{}(elem).({{.Struct.Object.Name}}Fields); ok {
@@ -251,7 +252,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Get(ctx context.Context, publicID string) 
         var elem {{.Struct.Package}}.{{.Struct.Object.Name}}
 
         {{ $pfield := fieldByName .Struct "PublicID" }}
-        {{ $ptag := getTag $pfield "sql" }}
+        {{ $ptag := getTag $pfield "sql" "json"}}
 
         if err := mdb.dx.GetBy(mdb.table, func(row *sqlx.Row) error {
             if err := row.StructScan(&elem); err != nil {
@@ -297,7 +298,7 @@ func (mdb *{{.Struct.Object.Name}}DB) Update(ctx context.Context, publicID strin
     }
 
     {{ $pfield := fieldByName .Struct "PublicID" }}
-    {{ $ptag := getTag $pfield "sql" }}
+    {{ $ptag := getTag $pfield "sql" "json"}}
 
     if err := mdb.dx.Update(mdb.table, data, "{{$ptag.Value}}", publicID); err != nil {
         mdb.metrics.Emit(metrics.Errorf("Failed to update {{.Struct.Object.Name}} record"),metrics.WithFields("query", data),metrics.WithFields("table", mdb.col),metrics.WithFields("{{$ptag.Value}}", publicID),metrics.WithFields("error", err.Error()))

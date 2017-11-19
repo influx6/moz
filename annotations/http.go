@@ -27,16 +27,9 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 		isSameUpdate = true
 	)
 
-	switch len(str.Associations) {
-	case 0:
-
-		updateAction = str
-		createAction = str
-		break
-
-	default:
+	if len(str.Associations) != 0 {
 		if newAction, ok := str.Associations["New"]; ok {
-			if action, err := ast.FindStructType(pkgDeclr, newAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, newAction.TypeName); err == nil && action.Declr != nil {
 				if action.Object != str.Object {
 					isSameCreate = false
 				}
@@ -46,7 +39,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 		}
 
 		if upAction, ok := str.Associations["Update"]; ok {
-			if action, err := ast.FindStructType(pkgDeclr, upAction.TypeName); err == nil {
+			if action, err := ast.FindStructType(pkgDeclr, upAction.TypeName); err == nil && action.Declr != nil {
 				if action.Object != str.Object {
 					isSameUpdate = false
 				}
@@ -54,7 +47,6 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 				updateAction = action
 			}
 		}
-
 	}
 
 	var hasPublicID bool
@@ -203,7 +195,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import("github.com/influx6/faux/metrics/custom", ""),
 				gen.Import(filepath.Join(str.Path, toDir, "/httpapi"), ""),
 				gen.Import(str.Path, ""),
 			),
@@ -243,7 +235,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import("github.com/influx6/faux/metrics/custom", ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
@@ -284,7 +276,7 @@ func HTTPRestAnnotationGenerator(toDir string, an ast.AnnotationDeclaration, str
 				gen.Import("github.com/influx6/faux/tests", ""),
 				gen.Import("github.com/influx6/faux/metrics", ""),
 				gen.Import("github.com/influx6/faux/context", ""),
-				gen.Import("github.com/influx6/faux/metrics/sentries/stdout", ""),
+				gen.Import("github.com/influx6/faux/metrics/custom", ""),
 				gen.Import(str.Path, ""),
 			),
 			gen.Block(
