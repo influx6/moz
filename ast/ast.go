@@ -2109,7 +2109,7 @@ func DefaultTypeValueString(typeName string) string {
 	case "bool":
 		return `false`
 	case "time.Time", "*time.Time", "Time", "time.time":
-		return time.Now().UTC().String()
+		return strconv.Quote(time.Now().UTC().String())
 	case "string":
 		return `""`
 	case "rune":
