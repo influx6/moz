@@ -721,7 +721,20 @@ func relativeToSrc(path string) (string, error) {
 
 //===========================================================================================================
 
+// SimplyParse takes the provided packages parsing all internals declarations with the appropriate generators suited to the type and annotations.
+// Relies on SimpleParsePackage.
+func SimplyParse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs ...Package) error {
+	for _, pkg := range pkgDeclrs {
+		if err := SimplyParsePackage(toDir, log, provider, doFileOverwrite, pkg); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Parse takes the provided packages parsing all internals declarations with the appropriate generators suited to the type and annotations.
+// Relies on ParsePackage.
 func Parse(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs ...Package) error {
 	for _, pkg := range pkgDeclrs {
 		if err := ParsePackage(toDir, log, provider, doFileOverwrite, pkg); err != nil {
@@ -1006,7 +1019,7 @@ func SimplyParsePackage(toDir string, log metrics.Metrics, provider *AnnotationR
 		log.Emit(metrics.Info("ParseSuccess"), metrics.With("From", pkg.FilePath), metrics.With("package", pkg.Package), metrics.With("Directives", len(wdrs)))
 
 		for _, wd := range wdrs {
-			if err := SimpleWriteDirective(log, toDir, doFileOverwrite, wd.WriteDirective); err != nil {
+			if err := SimpleWriteDirective(toDir, doFileOverwrite, wd.WriteDirective); err != nil {
 				log.Emit(metrics.Info("Annotation Resolved"), metrics.With("annotation", wd.Annotation),
 					metrics.With("dir", toDir),
 					metrics.With("package", pkg.Package),
