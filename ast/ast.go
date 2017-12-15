@@ -2079,6 +2079,8 @@ func DefaultFieldValue(fld FieldDeclaration) string {
 // typeName.
 func RandomDataTypeValue(typeName string) string {
 	switch typeName {
+	case "time.Time":
+		return time.Now().UTC().String()
 	case "uint", "uint32", "uint64":
 		return fmt.Sprintf("%d", rand.Uint64())
 	case "bool":
@@ -2106,9 +2108,7 @@ func DefaultTypeValueString(typeName string) string {
 		return "0"
 	case "bool":
 		return `false`
-	case "*time.Time":
-		return time.Now().UTC().String()
-	case "time.Time":
+	case "time.Time", "*time.Time", "Time", "time.time":
 		return time.Now().UTC().String()
 	case "string":
 		return `""`
