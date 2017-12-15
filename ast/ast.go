@@ -1336,21 +1336,25 @@ func GetFunctionDefinitionFromField(method *ast.Field, pkg *PackageDeclaration) 
 
 	var arguments, returns []ArgType
 
-	for _, result := range ftype.Results.List {
-		arg, err := GetArgTypeFromField("ret", pkg.File, result, pkg)
-		if err != nil {
-			return FunctionDefinition{}, err
-		}
+	if ftype.Results != nil {
+		for _, result := range ftype.Results.List {
+			arg, err := GetArgTypeFromField("ret", pkg.File, result, pkg)
+			if err != nil {
+				return FunctionDefinition{}, err
+			}
 
-		returns = append(returns, arg)
+			returns = append(returns, arg)
+		}
 	}
 
-	for _, param := range ftype.Params.List {
-		arg, err := GetArgTypeFromField("var", pkg.File, param, pkg)
-		if err != nil {
-			return FunctionDefinition{}, err
+	if ftype.Params != nil {
+		for _, param := range ftype.Params.List {
+			arg, err := GetArgTypeFromField("var", pkg.File, param, pkg)
+			if err != nil {
+				return FunctionDefinition{}, err
+			}
+			arguments = append(arguments, arg)
 		}
-		arguments = append(arguments, arg)
 	}
 
 	return FunctionDefinition{
