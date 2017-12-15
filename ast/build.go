@@ -984,6 +984,47 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 	return nil
 }
 
+// SimplyParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
+func SimplyParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
+	log.Emit(metrics.Info("Begin ParsePackage"), metrics.With("toDir", toDir),
+		metrics.With("overwriter-file", doFileOverwrite),
+		metrics.With("package", pkgDeclrs.Path))
+
+	for _, pkg := range pkgDeclrs.Packages {
+		log.Emit(metrics.Info("ParsePackage: Parse PackageDeclaration"),
+			metrics.With("toDir", toDir), metrics.With("overwriter-file", doFileOverwrite),
+			metrics.With("package", pkg.Package),
+			metrics.With("From", pkg.FilePath))
+
+		wdrs, err := provider.ParseDeclr(pkgDeclrs, pkg, toDir)
+		if err != nil {
+			log.Emit(metrics.Error(fmt.Errorf("ParseFailure: Package %q", pkg.Package)),
+				metrics.With("error", err.Error()), metrics.With("package", pkg.Package))
+			continue
+		}
+
+		log.Emit(metrics.Info("ParseSuccess"), metrics.With("From", pkg.FilePath), metrics.With("package", pkg.Package), metrics.With("Directives", len(wdrs)))
+
+		for _, wd := range wdrs {
+			if err := SimpleWriteDirective(log, toDir, doFileOverwrite, wd.WriteDirective); err != nil {
+				log.Emit(metrics.Info("Annotation Resolved"), metrics.With("annotation", wd.Annotation),
+					metrics.With("dir", toDir),
+					metrics.With("package", pkg.Package),
+					metrics.With("file", pkg.File))
+				continue
+			}
+
+			log.Emit(metrics.Info("Annotation Resolved"), metrics.With("annotation", wd.Annotation),
+				metrics.With("dir", toDir),
+				metrics.With("package", pkg.Package),
+				metrics.With("file", pkg.File))
+		}
+
+	}
+
+	return nil
+}
+
 //===========================================================================================================
 
 // WhichPackage is an utility function which returns the appropriate package name to use

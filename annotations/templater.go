@@ -9,17 +9,16 @@ import (
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/moz"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
 
-var (
-	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterTypesForAnnotationGenerator)
-	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterStructTypesForAnnotationGenerator)
-	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterPackageTypesForAnnotationGenerator)
-	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterInterfaceTypesForAnnotationGenerator)
-)
+// var (
+// 	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterTypesForAnnotationGenerator)
+// 	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterStructTypesForAnnotationGenerator)
+// 	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterPackageTypesForAnnotationGenerator)
+// 	_ = moz.RegisterAnnotation("templaterTypesFor", TemplaterInterfaceTypesForAnnotationGenerator)
+// )
 
 // TemplaterStructTypesForAnnotationGenerator defines a struct level annotation generator which builds a go package in
 // root of the package by using the content it receives from the annotation has a template for its output.

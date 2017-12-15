@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
 
 var (
-	_ = moz.RegisterAnnotation("iface", IFaceAnnotationGenerator)
+// _ = moz.RegisterAnnotation("iface", IFaceAnnotationGenerator)
 )
 
 // IFaceAnnotationGenerator defines a code generator for creating a struct implementations for giving interface declaration.

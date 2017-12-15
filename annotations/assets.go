@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
 
 var (
-	_ = moz.RegisterAnnotation("assets", AssetsAnnotationGenerator)
+// _ = moz.RegisterAnnotation("assets", AssetsAnnotationGenerator)
 )
 
 // AssetsAnnotationGenerator defines a package level annotation generator which builds a go package in

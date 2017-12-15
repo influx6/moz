@@ -5,14 +5,13 @@ import (
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
 
 var (
-	_ = moz.RegisterAnnotation("sqlapi", SQLAnnotationGenerator)
+// _ = moz.RegisterAnnotation("sqlapi", SQLAnnotationGenerator)
 )
 
 // SQLAnnotationGenerator defines a code generator for struct declarations that generate a

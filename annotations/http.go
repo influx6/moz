@@ -7,14 +7,13 @@ import (
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
 
 var (
-	_ = moz.RegisterAnnotation("httpapi", HTTPRestAnnotationGenerator)
+// _ = moz.RegisterAnnotation("httpapi", HTTPRestAnnotationGenerator)
 )
 
 // HTTPRestAnnotationGenerator defines a code generator for creating a restful HTTP for a giving struct.

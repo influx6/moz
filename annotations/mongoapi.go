@@ -5,14 +5,13 @@ import (
 	"text/template"
 
 	"github.com/influx6/faux/fmtwriter"
-	"github.com/influx6/moz"
 	"github.com/influx6/moz/annotations/templates"
 	"github.com/influx6/moz/ast"
 	"github.com/influx6/moz/gen"
 )
 
 var (
-	_ = moz.RegisterAnnotation("mongoapi", MongoAPIAnnotationGenerator)
+// _ = moz.RegisterAnnotation("mongoapi", MongoAPIAnnotationGenerator)
 )
 
 // MongoAPIAnnotationGenerator defines a code generator for struct declarations that generate a
