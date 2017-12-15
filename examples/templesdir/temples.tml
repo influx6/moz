@@ -1,4 +1,0 @@
-// Add brings the new level into the system.
-func Add(m {{ sel "Type1"}}, n {{ sel "Type2"}}) {{ sel "Type3" }} {
-    return {{sel "Type3"}}(m * n)
-}
