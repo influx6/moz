@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/icrowley/fake"
 	"github.com/influx6/faux/metrics"
@@ -2105,6 +2106,10 @@ func DefaultTypeValueString(typeName string) string {
 		return "0"
 	case "bool":
 		return `false`
+	case "*time.Time":
+		return time.Now().UTC().String()
+	case "time.Time":
+		return time.Now().UTC().String()
 	case "string":
 		return `""`
 	case "rune":
@@ -2288,6 +2293,10 @@ func (t TagDeclaration) Has(item string) bool {
 // ToValueString returns the string representation of a basic go core datatype.
 func ToValueString(val interface{}) string {
 	switch bo := val.(type) {
+	case *time.Time:
+		return bo.UTC().String()
+	case time.Time:
+		return bo.UTC().String()
 	case string:
 		return strconv.Quote(bo)
 	case int:
