@@ -833,7 +833,6 @@ func SimpleWriteDirective(toDir string, doFileOverwrite bool, item gen.WriteDire
 		return err
 	}
 
-	fmt.Printf("Created new file %q\n", filepath.Join(baseDir, item.Dir, item.FileName))
 	if item.After == nil {
 		return nil
 	}
