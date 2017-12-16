@@ -509,7 +509,11 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 						switch item.Name {
 						case "associates":
-							log.Emit(metrics.Error(errors.New("Association Annotation in Decleration is incomplete: Expects 3 elements")), metrics.With("dir", dir), metrics.With("association", item.Arguments))
+							log.Emit(
+								metrics.Info("Association found"),
+								metrics.With("dir", dir),
+								metrics.With("association", item.Arguments),
+							)
 
 							if len(item.Arguments) >= 3 {
 								associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
@@ -519,6 +523,8 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 									TypeName:   item.Arguments[2],
 									Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
 								}
+							} else {
+								log.Emit(metrics.Error(errors.New("Association Annotation in Declaration is incomplete: Expects 3 elements")), metrics.With("dir", dir), metrics.With("association", item.Arguments))
 							}
 						default:
 							annotations = append(annotations, item)
@@ -595,10 +601,11 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 						switch item.Name {
 						case "associates":
-							log.Emit(metrics.Error(errors.New("Association Annotation in Decleration is incomplete: Expects 3 elements")),
+							log.Emit(
+								metrics.Info("Association found"),
 								metrics.With("dir", dir),
 								metrics.With("association", item.Arguments),
-								metrics.With("token", rdeclr.Tok.String()))
+							)
 
 							if len(item.Arguments) >= 3 {
 								associations[item.Arguments[0]] = AnnotationAssociationDeclaration{
@@ -608,6 +615,8 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 									TypeName:   item.Arguments[2],
 									Annotation: strings.TrimPrefix(item.Arguments[0], "@"),
 								}
+							} else {
+								log.Emit(metrics.Error(errors.New("Association Annotation in Declaration is incomplete: Expects 3 elements")), metrics.With("dir", dir), metrics.With("association", item.Arguments))
 							}
 						default:
 							annotations = append(annotations, item)
