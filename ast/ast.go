@@ -600,6 +600,8 @@ func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 
 // VariableDeclaration defines a type which holds annotation data for a giving variable declaration.
 type VariableDeclaration struct {
+	From         int
+	Length       int
 	Package      string
 	Path         string
 	FilePath     string

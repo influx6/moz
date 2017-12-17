@@ -643,6 +643,21 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 						// i.e Spec:
 						// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a00)}, Type:ast.Expr(nil), Values:[]ast.Expr{(*ast.BasicLit)(0xc4200e4a20)}, Comment:(*ast.CommentGroup)(nil)}
 						// &ast.ValueSpec{Doc:(*ast.CommentGroup)(nil), Names:[]*ast.Ident{(*ast.Ident)(0xc4200e4a40)}, Type:(*ast.Ident)(0xc4200e4a60), Values:[]ast.Expr(nil), Comment:(*ast.CommentGroup)(nil)}
+						packageDeclr.Variables = append(packageDeclr.Variables, VariableDeclaration{
+							Object:       obj,
+							Annotations:  annotations,
+							Associations: associations,
+							GenObj:       rdeclr,
+							Source:       string(source),
+							Comments:     comment,
+							Declr:        &packageDeclr,
+							File:         packageDeclr.File,
+							Package:      packageDeclr.Package,
+							Path:         packageDeclr.Path,
+							FilePath:     packageDeclr.FilePath,
+							From:         beginPosition.Offset,
+							Length:       positionLength,
+						})
 
 					case *ast.TypeSpec:
 
@@ -670,7 +685,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								From:         beginPosition.Offset,
 								Length:       positionLength,
 							})
-							break
 
 						case *ast.InterfaceType:
 							log.Emit(metrics.Info("Annotation in Decleration"),
@@ -694,7 +708,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								From:         beginPosition.Offset,
 								Length:       positionLength,
 							})
-							break
 
 						default:
 							log.Emit(metrics.Info("Annotation in Decleration"),
