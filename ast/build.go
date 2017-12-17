@@ -561,10 +561,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					defFunc.FuncType = rdeclr.Recv
 
 					nameIdent := rdeclr.Recv.List[0]
-					fmt.Printf("Functions: %+q -> %#v -> %+q \n", defFunc.FuncName, rdeclr.Recv, rdeclr.Recv.List)
-					fmt.Printf("FunctionsName: %+q -> %#v -> %+q \n", defFunc.FuncName, nameIdent, nameIdent)
-					fmt.Printf("FunctionsNameType: %+q -> %#v -> %+q \n", defFunc.FuncName, nameIdent.Type, nameIdent.Type)
-
 					var receiverNameType *ast.Ident
 
 					switch nmi := nameIdent.Type.(type) {
