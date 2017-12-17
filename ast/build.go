@@ -536,6 +536,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 				defFunc.Comments = comment
 				defFunc.Source = string(source)
+				defFunc.TypeDeclr = declr
 				defFunc.FuncDeclr = rdeclr
 				defFunc.Type = rdeclr.Type
 				defFunc.Position = rdeclr.Pos()
@@ -560,21 +561,32 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					defFunc.FuncType = rdeclr.Recv
 
 					nameIdent := rdeclr.Recv.List[0]
+					fmt.Printf("Functions: %+q -> %#v -> %+q \n", defFunc.FuncName, rdeclr.Recv, rdeclr.Recv.List)
+					fmt.Printf("FunctionsName: %+q -> %#v -> %+q \n", defFunc.FuncName, nameIdent, nameIdent)
+					fmt.Printf("FunctionsNameType: %+q -> %#v -> %+q \n", defFunc.FuncName, nameIdent.Type, nameIdent.Type)
 
-					if receiverNameType, ok := nameIdent.Type.(*ast.Ident); ok {
-						defFunc.RecieverName = receiverNameType.Name
-						defFunc.Reciever = receiverNameType.Obj
-						defFunc.RecieverIdent = receiverNameType
+					var receiverNameType *ast.Ident
 
-						if rems, ok := packageDeclr.ObjectFunc[receiverNameType.Obj]; ok {
-							rems = append(rems, defFunc)
-							packageDeclr.ObjectFunc[receiverNameType.Obj] = rems
-						} else {
-							packageDeclr.ObjectFunc[receiverNameType.Obj] = []FuncDeclaration{defFunc}
-						}
-
-						continue declrLoop
+					switch nmi := nameIdent.Type.(type) {
+					case *ast.Ident:
+						receiverNameType = nmi
+					case *ast.StarExpr:
+						receiverNameType = nmi.X.(*ast.Ident)
+						defFunc.RecieverPointer = nmi
 					}
+
+					defFunc.Reciever = receiverNameType.Obj
+					defFunc.RecieverIdent = receiverNameType
+					defFunc.RecieverName = receiverNameType.Name
+
+					if rems, ok := packageDeclr.ObjectFunc[receiverNameType.Obj]; ok {
+						rems = append(rems, defFunc)
+						packageDeclr.ObjectFunc[receiverNameType.Obj] = rems
+					} else {
+						packageDeclr.ObjectFunc[receiverNameType.Obj] = []FuncDeclaration{defFunc}
+					}
+
+					continue declrLoop
 				}
 
 				packageDeclr.Functions = append(packageDeclr.Functions, defFunc)
@@ -647,6 +659,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								Struct:       robj,
 								Annotations:  annotations,
 								Associations: associations,
+								GenObj:       rdeclr,
 								Source:       string(source),
 								Comments:     comment,
 								Declr:        &packageDeclr,
@@ -668,6 +681,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							packageDeclr.Interfaces = append(packageDeclr.Interfaces, InterfaceDeclaration{
 								Object:       obj,
 								Interface:    robj,
+								GenObj:       rdeclr,
 								Comments:     comment,
 								Annotations:  annotations,
 								Associations: associations,
@@ -691,6 +705,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 							packageDeclr.Types = append(packageDeclr.Types, TypeDeclaration{
 								Object:       obj,
+								GenObj:       rdeclr,
 								Annotations:  annotations,
 								Comments:     comment,
 								Associations: associations,
