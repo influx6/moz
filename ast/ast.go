@@ -2252,12 +2252,66 @@ func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.Nam
 
 // RandomFieldValue returns the default value for a giving field.
 func RandomFieldValue(fld FieldDeclaration) string {
-	return RandomDataTypeValue(fld.FieldTypeName)
+	return RandomDataTypeValueWithName(fld.FieldTypeName, fld.FieldName)
 }
 
 // DefaultFieldValue returns the default value for a giving field.
 func DefaultFieldValue(fld FieldDeclaration) string {
 	return DefaultTypeValueString(fld.FieldTypeName)
+}
+
+// RandomDataTypeValueWithName returns the default value string of a giving
+// typeName.
+func RandomDataTypeValueWithName(typeName string, varName string) string {
+	switch typeName {
+	case "time.Time":
+		return time.Now().UTC().String()
+	case "uint", "uint32", "uint64":
+		return fmt.Sprintf("%d", rand.Uint64())
+	case "bool":
+		return fmt.Sprintf("%t", rand.Int63n(1) == 0)
+	case "string":
+		switch strings.ToLower(varName) {
+		case "location", "location_address", "location_addr":
+			return fmt.Sprintf("%q", fake.Street())
+		case "company", "company_name", "companyname":
+			return fmt.Sprintf("%q", fake.Company())
+		case "subject", "subject_name", "subjectname":
+			return fmt.Sprintf("%q", fake.EmailSubject())
+		case "email", "email_address", "emailaddress":
+			return fmt.Sprintf("%q", fake.EmailAddress())
+		case "addr","address","street_address", "main_address", "mainaddress","streetaddress":
+			return fmt.Sprintf("%q", fake.StreetAddress())
+		case "companyaddress","company_address":
+			return fmt.Sprintf("%q", fake.StreetAddress())
+		case "first_name", "firstname":
+			return fmt.Sprintf("%q", fake.FirstName())
+		case "last_name", "lastname":
+			return fmt.Sprintf("%q", fake.LastName())
+		case "name","fullname", "full_name":
+			return fmt.Sprintf("%q", fake.FullName())
+		case "private_id", "privateid":
+			return fmt.Sprintf("%q", fake.CharactersN(15))
+		case "public_id", "publicid":
+			return fmt.Sprintf("%q", fake.CharactersN(15))
+		case "creditcardnum", "credit_card_number", "credit_card_num":
+			return fmt.Sprintf("%q", fake.CreditCardNum(fake.CreditCardType()))
+		case "creditcard", "credit_card":
+			return fmt.Sprintf("%q", fake.CreditCardNum(fake.CreditCardType()))
+		default:
+			return fmt.Sprintf("%q", fake.Character())
+		}
+	case "rune":
+		return fmt.Sprintf("'%x'", fake.CharactersN(1))
+	case "byte":
+		return fmt.Sprintf("'%x'", fake.CharactersN(1))
+	case "float32", "float64":
+		return fmt.Sprintf("%.4f", rand.Float64())
+	case "int", "int32", "int64":
+		return fmt.Sprintf("%d", rand.Int63())
+	default:
+		return DefaultTypeValueString(typeName)
+	}
 }
 
 // RandomDataTypeValue returns the default value string of a giving
@@ -2271,7 +2325,7 @@ func RandomDataTypeValue(typeName string) string {
 	case "bool":
 		return fmt.Sprintf("%t", rand.Int63n(1) == 0)
 	case "string":
-		return fmt.Sprintf("%q", fake.FullName())
+		return fmt.Sprintf("%q", fake.Character())
 	case "rune":
 		return fmt.Sprintf("'%x'", fake.CharactersN(1))
 	case "byte":
