@@ -1116,13 +1116,13 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 
 	switch iobj := result.Type.(type) {
 	case *ast.Ident:
+		retCounter++
 		var nameObj *ast.Object
 
 		var name string
 		resName, err := GetIdentName(result)
 		switch err != nil {
 		case true:
-			retCounter++
 			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
 		case false:
 			name = resName.Name
@@ -1155,6 +1155,7 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 		return arg, nil
 
 	case *ast.SelectorExpr:
+		retCounter++
 		xobj, ok := iobj.X.(*ast.Ident)
 		if !ok {
 			return ArgType{}, errors.New("Saw ast.SelectorExpr but X is not an *ast.Ident type")
@@ -1164,8 +1165,6 @@ func GetArgTypeFromField(varPrefix string, targetFile string, result *ast.Field,
 		if err != nil {
 			return ArgType{}, err
 		}
-
-		retCounter++
 
 		var name string
 		resName, err := GetIdentName(result)
