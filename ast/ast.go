@@ -1130,14 +1130,14 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		}
 
 		arg := ArgType{
-			Name:       name,
-			Tags:       tags,
-			NameObject: nameObj,
-			Type:       getName(iobj),
+			Name:            name,
+			Tags:            tags,
+			NameObject:      nameObj,
+			Type:            getName(iobj),
 			InterfaceObject: iobj,
-			Package:    resPkg,
-			BaseType:   defaultresType,
-			ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
+			Package:         resPkg,
+			BaseType:        defaultresType,
+			ExType:          getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
 		}
 		return arg, nil
 
@@ -2181,7 +2181,8 @@ func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) 
 			continue
 		}
 
-		documents[tag.Value] = gen.Text(DefaultTypeValueString(strings.ToLower(tag.Field.FieldTypeName)))
+		valueJSON := DefaultTypeValueString(strings.ToLower(tag.Field.FieldTypeName))
+		documents[tag.Value] = gen.Text(valueJSON)
 	}
 
 	return gen.JSONDocument(documents), nil
@@ -2234,7 +2235,11 @@ func MapOutFieldsToJSONWriterWithRandomValues(item StructDeclaration, tagName, f
 			continue
 		}
 
-		documents[tag.Value] = gen.Text(RandomFieldValue(tag.Field))
+		valueJSON := RandomDataTypeValueJSON(tag.Field.FieldTypeName, tag.Field.FieldName)
+		if valueJSON == "nil" {
+			valueJSON = "null"
+		}
+		documents[tag.Value] = gen.Text(valueJSON)
 	}
 
 	return gen.JSONDocument(documents), nil
@@ -2356,9 +2361,9 @@ func DefaultFieldValue(fld FieldDeclaration) string {
 	return DefaultTypeValueString(fld.FieldTypeName)
 }
 
-// RandomDataTypeValueWithName returns the default value string of a giving
+// RandomDataTypeValueJSON returns the default value string of a giving
 // typeName.
-func RandomDataTypeValueWithName(typeName string, varName string) string {
+func RandomDataTypeValueJSON(typeName string, varName string) string {
 	switch typeName {
 	case "time.Time", "*time.Time", "Time", "time.time":
 		return strconv.Quote(time.Now().UTC().String())
@@ -2374,7 +2379,7 @@ func RandomDataTypeValueWithName(typeName string, varName string) string {
 			return fmt.Sprintf("%q", fake.UserAgent())
 		case "domain", "url":
 			return fmt.Sprintf("%q", fake.DomainName())
-		case "zip", "zip_code","zip-code":
+		case "zip", "zip_code", "zip-code":
 			return fmt.Sprintf("%q", fake.Zip())
 		case "title", "user_title":
 			return fmt.Sprintf("%q", fake.Title())
@@ -2394,17 +2399,17 @@ func RandomDataTypeValueWithName(typeName string, varName string) string {
 			return fmt.Sprintf("%q", fake.EmailSubject())
 		case "email", "email_address", "emailaddress":
 			return fmt.Sprintf("%q", fake.EmailAddress())
-		case "addr","address", "streetAddress","street_address", "main_address", "mainaddress","streetaddress":
+		case "addr", "address", "streetAddress", "street_address", "main_address", "mainaddress", "streetaddress":
 			return fmt.Sprintf("%q", fake.StreetAddress())
-		case "companyaddress","company_address":
+		case "companyaddress", "company_address":
 			return fmt.Sprintf("%q", fake.StreetAddress())
 		case "first_name", "firstname":
 			return fmt.Sprintf("%q", fake.FirstName())
 		case "last_name", "lastname":
 			return fmt.Sprintf("%q", fake.LastName())
-		case "name","fullname", "full_name":
+		case "name", "fullname", "full_name":
 			return fmt.Sprintf("%q", fake.FullName())
-		case "public_id", "publicid", "private_id", "privateid","user_id","tenant_user_id", "tenant_id", "user_tenant_id":
+		case "public_id", "publicid", "private_id", "privateid", "user_id", "tenant_user_id", "tenant_id", "user_tenant_id":
 			return fmt.Sprintf("%q", fake.CharactersN(30))
 		case "creditcardnum", "credit_card_number", "credit_card_num":
 			return fmt.Sprintf("%q", fake.CreditCardNum(fake.CreditCardType()))
@@ -2420,7 +2425,86 @@ func RandomDataTypeValueWithName(typeName string, varName string) string {
 	case "float32", "float64":
 		return fmt.Sprintf("%.4f", rand.Float64())
 	case "int", "int32", "int64":
-		switch varName{
+		switch varName {
+		case "week":
+			return fmt.Sprintf("%d", fake.WeekdayNum())
+		case "day":
+			return fmt.Sprintf("%d", fake.Day())
+		case "year":
+			return fmt.Sprintf("%d", fake.Year(1998, 10000))
+		default:
+			return fmt.Sprintf("%d", rand.Int63n(20))
+		}
+	default:
+		return "null"
+	}
+}
+
+// RandomDataTypeValueWithName returns the default value string of a giving
+// typeName.
+func RandomDataTypeValueWithName(typeName string, varName string) string {
+	switch typeName {
+	case "time.Time", "*time.Time", "Time", "time.time":
+		return strconv.Quote(time.Now().UTC().String())
+	case "uint", "uint32", "uint64":
+		return fmt.Sprintf("%d", rand.Uint64())
+	case "bool":
+		return fmt.Sprintf("%t", rand.Int63n(1) == 0)
+	case "string":
+		switch strings.ToLower(varName) {
+		case "username", "user_name", "login_name":
+			return fmt.Sprintf("%q", fake.UserName())
+		case "user-agent", "useragent":
+			return fmt.Sprintf("%q", fake.UserAgent())
+		case "domain", "url":
+			return fmt.Sprintf("%q", fake.DomainName())
+		case "zip", "zip_code", "zip-code":
+			return fmt.Sprintf("%q", fake.Zip())
+		case "title", "user_title":
+			return fmt.Sprintf("%q", fake.Title())
+		case "day":
+			return fmt.Sprintf("%q", fake.WeekDay())
+		case "week":
+			return fmt.Sprintf("%d Week", fake.WeekdayNum())
+		case "year":
+			return fmt.Sprintf("%d", fake.Year(1998, 10000))
+		case "date", "date_time", "time":
+			return strconv.Quote(time.Now().UTC().String())
+		case "location", "location_address", "location_addr":
+			return fmt.Sprintf("%q", fake.Street())
+		case "company", "company_name", "companyname":
+			return fmt.Sprintf("%q", fake.Company())
+		case "subject", "subject_name", "subjectname":
+			return fmt.Sprintf("%q", fake.EmailSubject())
+		case "email", "email_address", "emailaddress":
+			return fmt.Sprintf("%q", fake.EmailAddress())
+		case "addr", "address", "streetAddress", "street_address", "main_address", "mainaddress", "streetaddress":
+			return fmt.Sprintf("%q", fake.StreetAddress())
+		case "companyaddress", "company_address":
+			return fmt.Sprintf("%q", fake.StreetAddress())
+		case "first_name", "firstname":
+			return fmt.Sprintf("%q", fake.FirstName())
+		case "last_name", "lastname":
+			return fmt.Sprintf("%q", fake.LastName())
+		case "name", "fullname", "full_name":
+			return fmt.Sprintf("%q", fake.FullName())
+		case "public_id", "publicid", "private_id", "privateid", "user_id", "tenant_user_id", "tenant_id", "user_tenant_id":
+			return fmt.Sprintf("%q", fake.CharactersN(30))
+		case "creditcardnum", "credit_card_number", "credit_card_num":
+			return fmt.Sprintf("%q", fake.CreditCardNum(fake.CreditCardType()))
+		case "creditcard", "credit_card":
+			return fmt.Sprintf("%q", fake.CreditCardNum(fake.CreditCardType()))
+		default:
+			return fmt.Sprintf("%q", fake.CharactersN(20))
+		}
+	case "rune":
+		return fmt.Sprintf("'%x'", fake.CharactersN(1))
+	case "byte":
+		return fmt.Sprintf("'%x'", fake.CharactersN(1))
+	case "float32", "float64":
+		return fmt.Sprintf("%.4f", rand.Float64())
+	case "int", "int32", "int64":
+		switch varName {
 		case "week":
 			return fmt.Sprintf("%d", fake.WeekdayNum())
 		case "day":
