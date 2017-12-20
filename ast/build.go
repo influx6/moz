@@ -990,6 +990,7 @@ func WriteDirective(log metrics.Metrics, toDir string, doFileOverwrite bool, ite
 }
 
 // ParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
+// Provided toDir must be a absolute path.
 func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
 	log.Emit(metrics.Info("Begin ParsePackage"), metrics.With("toDir", toDir),
 		metrics.With("overwriter-file", doFileOverwrite),
@@ -1040,6 +1041,7 @@ func ParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistr
 }
 
 // SimplyParsePackage takes the provided package declrations parsing all internals with the appropriate generators suited to the type and annotations.
+// Provided toDir must be a absolute path.
 func SimplyParsePackage(toDir string, log metrics.Metrics, provider *AnnotationRegistry, doFileOverwrite bool, pkgDeclrs Package) error {
 	log.Emit(metrics.Info("Begin ParsePackage"), metrics.With("toDir", toDir),
 		metrics.With("overwriter-file", doFileOverwrite),
