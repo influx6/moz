@@ -1116,6 +1116,31 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 	resPkg, defaultresType := getPackageFromItem(result.Type, filepath.Base(pkg.Package))
 
 	switch iobj := result.Type.(type) {
+	case *ast.InterfaceType:
+		var nameObj *ast.Object
+
+		var name string
+		resName, err := GetIdentName(result)
+		switch err != nil {
+		case true:
+			name = fmt.Sprintf("%s%d", varPrefix, retCounter)
+		case false:
+			name = resName.Name
+			nameObj = resName.Obj
+		}
+
+		arg := ArgType{
+			Name:       name,
+			Tags:       tags,
+			NameObject: nameObj,
+			Type:       getName(iobj),
+			InterfaceObject: iobj,
+			Package:    resPkg,
+			BaseType:   defaultresType,
+			ExType:     getNameAsFromOuter(iobj, filepath.Base(pkg.Package)),
+		}
+		return arg, nil
+
 	case *ast.Ident:
 
 		var nameObj *ast.Object
@@ -1597,7 +1622,7 @@ func GetInterfaceFunctions(intr *ast.InterfaceType, pkg *PackageDeclaration) []F
 	var defs []FunctionDefinition
 
 	for _, method := range intr.Methods.List {
-		if len(method.Names) > 0 {
+		if len(method.Names) != 0 {
 			if def, err := GetFunctionDefinitionFromField(method, pkg); err == nil {
 				def.Interface = intr
 				defs = append(defs, def)
