@@ -655,20 +655,25 @@ func (str StructDeclaration) AnnotationsFor(typeName string) []AnnotationDeclara
 
 // TypeDeclaration defines a type which holds annotation data for a giving type declaration.
 type TypeDeclaration struct {
-	From         int
-	Length       int
-	Package      string
-	Path         string
-	FilePath     string
-	Source       string
-	Comments     string
-	File         string
-	Object       *ast.TypeSpec
-	GenObj       *ast.GenDecl
-	Position     token.Pos
-	Declr        *PackageDeclaration
-	Annotations  []AnnotationDeclaration
-	Associations map[string]AnnotationAssociationDeclaration
+	From            int
+	Length          int
+	Package         string
+	Path            string
+	FilePath        string
+	Source          string
+	Comments        string
+	File            string
+	Aliased         bool
+	Type            *ast.Ident
+	TypeInfo        *ArgType
+	AliasedType     *ast.Object
+	AliasedTypeSpec *ast.TypeSpec
+	Object          *ast.TypeSpec
+	GenObj          *ast.GenDecl
+	Position        token.Pos
+	Declr           *PackageDeclaration
+	Annotations     []AnnotationDeclaration
+	Associations    map[string]AnnotationAssociationDeclaration
 }
 
 // AnnotationsFor returns all annotations with the giving name.
@@ -2187,6 +2192,21 @@ func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) 
 
 	return gen.JSONDocument(documents), nil
 }
+
+//// MapOutTypeToJSONWriterWithRandomValues returns the giving map values containing string for the giving
+//// output.
+//func MapOutTypeToJSONWriterWithRandomValues(item TypeDeclaration, tagName, fallback string) (io.WriterTo, error) {
+//	if item.Declr == nil {
+//		fmt.Printf("Receiving TypeDeclaration without PackageDeclaration: %#v\n", item)
+//		return bytes.NewBuffer(nil), errors.New("TypeDeclaration has no PackageDeclaration field")
+//	}
+//
+//	valueJSON := RandomDataTypeValueJSON(item.Object.Name.Name, item.Object.Name.Name)
+//	if valueJSON == "nil" {
+//		valueJSON = "null"
+//	}
+//
+//}
 
 // MapOutFieldsToJSONWriterWithRandomValues returns the giving map values containing string for the giving
 // output.
