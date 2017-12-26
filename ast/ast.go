@@ -41,13 +41,15 @@ var (
 		"fieldFor":          FieldFor,
 		"getFields":         GetFields,
 		"fieldNameFor":      FieldNameFor,
-		"mapoutFields":      MapOutFields,
-		"mapoutValues":      MapOutValues,
+		"mapFields":         MapOutFields,
+		"mapValues":         MapOutValues,
 		"fieldByName":       FieldByFieldName,
-		"randomValue":       RandomFieldAssign,
-		"fieldsJSON":        MapOutFieldsToJSON,
-		"randomValuesJSON":  MapOutFieldsWithRandomValuesToJSON,
+		"mapJSON":           MapOutFieldsToJSON,
+		"mapRandomJSON":     MapOutFieldsWithRandomValuesToJSON,
+		"mapTypeJSON":       MapOutTypeToJSON,
+		"mapRandomTypeJSON": MapOutTypeToJSONWriterWithRandomValues,
 		"stringValueFor":    ToValueString,
+		"randomValue":       RandomFieldAssign,
 		"defaultValue":      AssignDefaultValue,
 		"randomFieldValue":  RandomFieldValue,
 		"defaultType":       DefaultTypeValueString,
@@ -1220,28 +1222,22 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		arg.SelectObject = iobj.Sel
 
 		if !importDclr.InternalPkg {
-			importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]
-			if !ok {
-				return ArgType{}, fmt.Errorf("Expected to have loaded imported package %q with tag %q", importDclr.Path, importDclr.Name)
-			}
+			if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+				if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
+					if mtype, ok := mdeclr.TypeFor(importDclr.Path, iobj.Sel.Name); ok {
+						arg.Spec = mtype.Object
+					}
 
-			mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path)
-			if !ok {
-				return ArgType{}, fmt.Errorf("Expected to have found moz.Package for %q with tag %q", importDclr.Path, importDclr.Name)
-			}
+					if stype, ok := mdeclr.StructFor(importDclr.Path, iobj.Sel.Name); ok {
+						arg.Spec = stype.Object
+						arg.StructObject = stype.Struct
+					}
 
-			if mtype, ok := mdeclr.TypeFor(importDclr.Path, iobj.Sel.Name); ok {
-				arg.Spec = mtype.Object
-			}
-
-			if stype, ok := mdeclr.StructFor(importDclr.Path, iobj.Sel.Name); ok {
-				arg.Spec = stype.Object
-				arg.StructObject = stype.Struct
-			}
-
-			if itype, ok := mdeclr.InterfaceFor(importDclr.Path, iobj.Sel.Name); ok {
-				arg.Spec = itype.Object
-				arg.InterfaceObject = itype.Interface
+					if itype, ok := mdeclr.InterfaceFor(importDclr.Path, iobj.Sel.Name); ok {
+						arg.Spec = itype.Object
+						arg.InterfaceObject = itype.Interface
+					}
+				}
 			}
 		}
 
@@ -1286,29 +1282,24 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 			arg.SelectObject = value.Sel
 
 			if !importDclr.InternalPkg {
-				importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]
-				if !ok {
-					return ArgType{}, fmt.Errorf("Expected to have loaded imported package %q with tag %q", importDclr.Path, importDclr.Name)
+				if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+					if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
+						if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
+							arg.Spec = mtype.Object
+						}
+
+						if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
+							arg.Spec = stype.Object
+							arg.StructObject = stype.Struct
+						}
+
+						if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
+							arg.Spec = itype.Object
+							arg.InterfaceObject = itype.Interface
+						}
+					}
 				}
 
-				mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path)
-				if !ok {
-					return ArgType{}, fmt.Errorf("Expected to have found moz.Package for %q with tag %q", importDclr.Path, importDclr.Name)
-				}
-
-				if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
-					arg.Spec = mtype.Object
-				}
-
-				if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
-					arg.Spec = stype.Object
-					arg.StructObject = stype.Struct
-				}
-
-				if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
-					arg.Spec = itype.Object
-					arg.InterfaceObject = itype.Interface
-				}
 			}
 		case *ast.InterfaceType:
 			arg.InterfaceObject = value
@@ -1414,28 +1405,22 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 			arg.SelectObject = value.Sel
 
 			if !importDclr.InternalPkg {
-				importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]
-				if !ok {
-					return ArgType{}, fmt.Errorf("Expected to have loaded imported package %q with tag %q", importDclr.Path, importDclr.Name)
-				}
+				if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+					if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
+						if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
+							arg.Spec = mtype.Object
+						}
 
-				mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path)
-				if !ok {
-					return ArgType{}, fmt.Errorf("Expected to have found moz.Package for %q with tag %q", importDclr.Path, importDclr.Name)
-				}
+						if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
+							arg.Spec = stype.Object
+							arg.StructObject = stype.Struct
+						}
 
-				if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
-					arg.Spec = mtype.Object
-				}
-
-				if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
-					arg.Spec = stype.Object
-					arg.StructObject = stype.Struct
-				}
-
-				if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
-					arg.Spec = itype.Object
-					arg.InterfaceObject = itype.Interface
+						if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
+							arg.Spec = itype.Object
+							arg.InterfaceObject = itype.Interface
+						}
+					}
 				}
 			}
 		case *ast.StarExpr:
@@ -2122,6 +2107,31 @@ func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (strin
 	return doc.String(), nil
 }
 
+// MapOutTypeToJSON returns the giving map values containing string for the giving
+// output.
+func MapOutTypeToJSON(item TypeDeclaration) (io.WriterTo, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving TypeDeclaration without PackageDeclaration: %#v\n", item)
+		return bytes.NewBuffer(nil), errors.New("TypeDeclaration has no PackageDeclaration field")
+	}
+
+	if item.TypeInfo == nil {
+		valueJSON := DefaultTypeValueString(strings.ToLower(item.Type.Name))
+		if valueJSON == "nil" {
+			valueJSON = "null"
+		}
+
+		return bytes.NewBufferString(valueJSON), nil
+	}
+
+	valueJSON := DefaultTypeValueString(strings.ToLower(item.TypeInfo.ExType))
+	if valueJSON == "nil" {
+		valueJSON = "null"
+	}
+
+	return bytes.NewBufferString(valueJSON), nil
+}
+
 // MapOutFieldsWithRandomValuesToJSON returns the giving map values containing string for the giving
 // output.
 func MapOutFieldsWithRandomValuesToJSON(item StructDeclaration, tagName, fallback string) (string, error) {
@@ -2193,20 +2203,30 @@ func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) 
 	return gen.JSONDocument(documents), nil
 }
 
-//// MapOutTypeToJSONWriterWithRandomValues returns the giving map values containing string for the giving
-//// output.
-//func MapOutTypeToJSONWriterWithRandomValues(item TypeDeclaration, tagName, fallback string) (io.WriterTo, error) {
-//	if item.Declr == nil {
-//		fmt.Printf("Receiving TypeDeclaration without PackageDeclaration: %#v\n", item)
-//		return bytes.NewBuffer(nil), errors.New("TypeDeclaration has no PackageDeclaration field")
-//	}
-//
-//	valueJSON := RandomDataTypeValueJSON(item.Object.Name.Name, item.Object.Name.Name)
-//	if valueJSON == "nil" {
-//		valueJSON = "null"
-//	}
-//
-//}
+// MapOutTypeToJSONWriterWithRandomValues returns the giving map values containing string for the giving
+// output.
+func MapOutTypeToJSONWriterWithRandomValues(item TypeDeclaration) (io.WriterTo, error) {
+	if item.Declr == nil {
+		fmt.Printf("Receiving TypeDeclaration without PackageDeclaration: %#v\n", item)
+		return bytes.NewBuffer(nil), errors.New("TypeDeclaration has no PackageDeclaration field")
+	}
+
+	if item.TypeInfo == nil {
+		valueJSON := RandomDataTypeValueJSON(item.Type.Name, item.Object.Name.Name)
+		if valueJSON == "nil" {
+			valueJSON = "null"
+		}
+
+		return bytes.NewBufferString(valueJSON), nil
+	}
+
+	valueJSON := RandomDataTypeValueJSON(item.TypeInfo.ExType, item.Object.Name.Name)
+	if valueJSON == "nil" {
+		valueJSON = "null"
+	}
+
+	return bytes.NewBufferString(valueJSON), nil
+}
 
 // MapOutFieldsToJSONWriterWithRandomValues returns the giving map values containing string for the giving
 // output.
