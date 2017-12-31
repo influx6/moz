@@ -466,27 +466,29 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					importDir = srcpath.FromSrcPath(imported.Path)
 				}
 
-				uniqueImportDir := importDir + "#" + imported.Name
-
-				processedPackages.pl.Lock()
-				res, ok := processedPackages.pkgs[uniqueImportDir]
-				processedPackages.pl.Unlock()
-				if ok {
-					packageDeclr.ImportedPackages[imported.Path] = Packages{res}
-				} else {
-					imps, err := PackageWithBuildCtx(log, importDir, build.Default)
-					if err != nil {
-						return packageDeclr, err
-					}
-
+				// Check if import path exists else skip.
+				if stat, err := os.Stat(importDir); err == nil && stat.IsDir() {
+					uniqueImportDir := importDir + "#" + imported.Name
 					processedPackages.pl.Lock()
-					for _, imppkg := range imps {
-						imppath := imppkg.Dir + "#" + imported.Name
-						processedPackages.pkgs[imppath] = imppkg
-					}
+					res, ok := processedPackages.pkgs[uniqueImportDir]
 					processedPackages.pl.Unlock()
+					if ok {
+						packageDeclr.ImportedPackages[imported.Path] = Packages{res}
+					} else {
+						imps, err := PackageWithBuildCtx(log, importDir, build.Default)
+						if err != nil {
+							return packageDeclr, err
+						}
 
-					packageDeclr.ImportedPackages[imported.Path] = imps
+						processedPackages.pl.Lock()
+						for _, imppkg := range imps {
+							imppath := imppkg.Dir + "#" + imported.Name
+							processedPackages.pkgs[imppath] = imppkg
+						}
+						processedPackages.pl.Unlock()
+
+						packageDeclr.ImportedPackages[imported.Path] = imps
+					}
 				}
 			}
 		}
