@@ -152,19 +152,6 @@ type Package struct {
 	TestPackages []PackageDeclaration
 }
 
-//// Load calls all internal packages to load their respective imports.
-//func (pkg *Package) loadImported(m metrics.Metrics) error {
-//	for index, item := range pkg.Packages {
-//		if err := item.loadImported(m); err != nil {
-//			return err
-//		}
-//
-//		pkg.Packages[index] = item
-//	}
-//
-//	return nil
-//}
-
 // HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
 func (pkg Package) HasFunctionFor(str StructDeclaration, funcName string) bool {
 	for _, elem := range pkg.Packages {
@@ -423,49 +410,6 @@ type PackageDeclaration struct {
 	ImportedPackages map[string]Packages
 	importedloaded   bool
 }
-
-//// loadImported will attempt to load all available imported package that
-//// are not internal to go.
-//func (pkg *PackageDeclaration) loadImported(m metrics.Metrics) error {
-//	if pkg.importedloaded {
-//		return nil
-//	}
-//
-//	pkg.importedloaded = true
-//
-//	if pkg.ImportedPackages == nil {
-//		pkg.ImportedPackages = make(map[string]Packages)
-//	}
-//
-//	for _, imported := range pkg.Imports {
-//		if imported.InternalPkg {
-//			continue
-//		}
-//
-//		if _, ok := pkg.ImportedPackages[imported.Path]; ok {
-//			continue
-//		}
-//
-//		importDir := filepath.Join(goSrcPath, imported.Path)
-//		uniqueImportDir := importDir + "#" + imported.Name
-//		processedPackages.pl.Lock()
-//		if res, ok := processedPackages.pkgs[uniqueImportDir]; ok {
-//			processedPackages.pl.Unlock()
-//			pkg.ImportedPackages[imported.Path] = Packages{res}
-//			continue
-//		}
-//		processedPackages.pl.Unlock()
-//
-//		importedPkgs, err := PackageWithBuildCtx(m, importDir, build.Default)
-//		if err != nil {
-//			return err
-//		}
-//
-//		pkg.ImportedPackages[imported.Path] = importedPkgs
-//	}
-//
-//	return nil
-//}
 
 // HasFunctionFor returns true/false if the giving Struct Declaration has the giving function name.
 func (pkg PackageDeclaration) HasFunctionFor(str StructDeclaration, funcName string) bool {

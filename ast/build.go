@@ -292,10 +292,6 @@ func PackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Context) ([]
 
 	var pkgs []Package
 	for _, pkg := range packageDeclrs {
-		//if err := pkg.loadImported(log); err != nil {
-		//	log.Emit(metrics.Error(err), metrics.With("message", "Failed to load imported pacakges"), metrics.With("pkg", pkg.Path))
-		//	return nil, err
-		//}
 		pkgs = append(pkgs, pkg)
 	}
 
@@ -364,13 +360,7 @@ func PackageFileWithBuildCtx(log metrics.Metrics, path string, ctx build.Context
 			return Package{}, err
 		}
 
-		//if err := res.loadImported(log); err != nil {
-		//	log.Emit(metrics.Error(err), metrics.With("message", "Failed to load imported pacakges"), metrics.With("dir", dir), metrics.With("file", file.Name.Name), metrics.With("Package", pkg.Name))
-		//	return Package{}, err
-		//}
-
 		var testPkgs, codePkgs []PackageDeclaration
-
 		if strings.HasSuffix(pkgTag, "_test") {
 			testPkgs = append(testPkgs, res)
 		} else {
@@ -460,10 +450,10 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			if _, ok := packageDeclr.ImportedPackages[imported.Path]; !ok {
 				var importDir string
 
-				if imported.InternalPkg {
-					importDir = srcpath.FromRootPath(imported.Path)
-				} else {
+				if !imported.InternalPkg {
 					importDir = srcpath.FromSrcPath(imported.Path)
+				} else {
+					//importDir = srcpath.FromRootPath(imported.Path)
 				}
 
 				// Check if import path exists else skip.
