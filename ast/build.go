@@ -458,7 +458,14 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			packageDeclr.Imports[pkgName] = imported
 
 			if _, ok := packageDeclr.ImportedPackages[imported.Path]; !ok {
-				importDir := filepath.Join(goSrcPath, imported.Path)
+				var importDir string
+
+				if imported.InternalPkg {
+					importDir = srcpath.FromRootPath(imported.Path)
+				} else {
+					importDir = srcpath.FromSrcPath(imported.Path)
+				}
+
 				uniqueImportDir := importDir + "#" + imported.Name
 
 				processedPackages.pl.Lock()
