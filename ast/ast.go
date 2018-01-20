@@ -872,7 +872,7 @@ func (fd FunctionDefinition) HasArgs() bool {
 func (fd FunctionDefinition) ReturnTypePos(wanted string) int {
 	for index, arg := range fd.Returns {
 		if arg.ExType == wanted {
-			return index
+			return index + 1
 		}
 	}
 	return -1
@@ -883,7 +883,7 @@ func (fd FunctionDefinition) ReturnTypePos(wanted string) int {
 func (fd FunctionDefinition) ArgTypePos(wanted string) int {
 	for index, arg := range fd.Args {
 		if arg.ExType == wanted {
-			return index
+			return index + 1
 		}
 	}
 	return -1
