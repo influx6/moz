@@ -847,6 +847,16 @@ type FunctionDefinition struct {
 	Struct    *ast.StructType
 }
 
+// TotalReturns returns length of  function return set.
+func (fd FunctionDefinition) TotalReturns() int {
+	return len(fd.Returns)
+}
+
+// TotalArgs returns length of  function arg set.
+func (fd FunctionDefinition) TotalArgs() int {
+	return len(fd.Args)
+}
+
 // HasReturns returns true/false if giving function has return types.
 func (fd FunctionDefinition) HasReturns() bool {
 	return len(fd.Returns) != 0
