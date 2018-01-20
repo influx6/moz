@@ -3,11 +3,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
-	"bytes"
-	"strings"
 	"path/filepath"
+	"strings"
 
 	"github.com/gu-io/gu/parsers/otherfiles"
 )
@@ -18,24 +18,24 @@ var pkg = "// Package {{PKGNAME}} is an auto-generated package which exposes the
 func main() {
 	items, err := otherfiles.ParseDir(filepath.Join("./", "ast"), []string{".tml"})
 	if err != nil {
-		panic("Failed to walk html files: "+ err.Error())
+		panic("Failed to walk html files: " + err.Error())
 	}
 
-    var buf bytes.Buffer
+	var buf bytes.Buffer
 
-    for path, item := range items {
-        fmt.Fprintf(&buf,"\tinternalFiles[%q] = %+q\n", path, item)
-    }
+	for path, item := range items {
+		fmt.Fprintf(&buf, "\tinternalFiles[%q] = %+q\n", path, item)
+	}
 
 	file, err := os.Create(filepath.Join("./", "templates.go"))
 	if err != nil {
-		panic("Failed to create css pkg file: "+ err.Error())
+		panic("Failed to create css pkg file: " + err.Error())
 	}
 
 	defer file.Close()
 
-	pkg = strings.Replace(pkg,"{{PKG}}", pkgName, -1)
-	pkg = strings.Replace(pkg,"{{FILES}}", buf.String(), -1)
+	pkg = strings.Replace(pkg, "{{PKG}}", pkgName, -1)
+	pkg = strings.Replace(pkg, "{{FILES}}", buf.String(), -1)
 
 	file.Write([]byte(pkg))
 }
