@@ -847,6 +847,72 @@ type FunctionDefinition struct {
 	Struct    *ast.StructType
 }
 
+// ReturnTypePos returns position of giving type if part of
+// the function's return types else returning -1.
+func (fd FunctionDefinition) ReturnTypePos(wanted string) int {
+	for index, arg := range fd.Returns {
+		if arg.ExType == wanted {
+			return index
+		}
+	}
+	return -1
+}
+
+// ArgTypePos returns position of giving type if part of
+// the function's argument types else returning -1.
+func (fd FunctionDefinition) ArgTypePos(wanted string) int {
+	for index, arg := range fd.Args {
+		if arg.ExType == wanted {
+			return index
+		}
+	}
+	return -1
+}
+
+// HasNoReturnType returns true/false if giving type is not part of
+// the function's return types.
+func (fd FunctionDefinition) HasNoReturnType(wanted string) bool {
+	for _, arg := range fd.Returns {
+		if arg.ExType == wanted {
+			return false
+		}
+	}
+	return true
+}
+
+// HasNoArgType returns true/false if giving type is part of
+// the function's arguments types.
+func (fd FunctionDefinition) HasNoArgType(wanted string) bool {
+	for _, arg := range fd.Args {
+		if arg.ExType == wanted {
+			return false
+		}
+	}
+	return true
+}
+
+// HasReturnType returns true/false if giving type is part of
+// the function's return types.
+func (fd FunctionDefinition) HasReturnType(wanted string) bool {
+	for _, arg := range fd.Returns {
+		if arg.ExType == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+// HasArgType returns true/false if giving type is part of
+// the function's arguments types.
+func (fd FunctionDefinition) HasArgType(wanted string) bool {
+	for _, arg := range fd.Args {
+		if arg.ExType == wanted {
+			return true
+		}
+	}
+	return false
+}
+
 // ArgumentNamesList returns the assignment names for the function arguments.
 func (fd FunctionDefinition) ArgumentNamesList() string {
 	var args []string
