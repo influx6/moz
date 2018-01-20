@@ -847,6 +847,16 @@ type FunctionDefinition struct {
 	Struct    *ast.StructType
 }
 
+// HasReturns returns true/false if giving function has return types.
+func (fd FunctionDefinition) HasReturns() bool {
+	return len(fd.Returns) != 0
+}
+
+// HasArgs returns true/false if giving function has aarguments.
+func (fd FunctionDefinition) HasArgs() bool {
+	return len(fd.Args) != 0
+}
+
 // ReturnTypePos returns position of giving type if part of
 // the function's return types else returning -1.
 func (fd FunctionDefinition) ReturnTypePos(wanted string) int {
