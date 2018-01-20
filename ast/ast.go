@@ -763,13 +763,51 @@ type InterfaceDeclaration struct {
 	GenObj       *ast.GenDecl
 	Position     token.Pos
 	Declr        *PackageDeclaration
+	methods      []FunctionDefinition
 	Annotations  []AnnotationDeclaration
 	Associations map[string]AnnotationAssociationDeclaration
 }
 
-// Methods returns the associated methods for the giving interface.
-func (i InterfaceDeclaration) Methods(pkg *PackageDeclaration) []FunctionDefinition {
-	return GetInterfaceFunctions(i.Interface, pkg)
+// GetImports returns a map containing all import paths related to
+// types used for the methods of giving interface.
+func (i *InterfaceDeclaration) GetImports(pkg *PackageDeclaration) map[string]string {
+	imports := make(map[string]string, 0)
+
+	methods := i.Methods(pkg)
+	for _, method := range methods {
+		// Retrieve all import paths for arguments.
+		func(args []ArgType) {
+			for _, argument := range args {
+				if argument.Import2.Path != "" {
+					imports[argument.Import2.Path] = argument.Import2.Name
+				}
+				if argument.Import.Path != "" {
+					imports[argument.Import.Path] = argument.Import.Name
+				}
+			}
+		}(method.Args)
+
+		// Retrieve all import paths for returns.
+		func(args []ArgType) {
+			for _, argument := range args {
+				if argument.Import2.Path != "" {
+					imports[argument.Import2.Path] = argument.Import2.Name
+				}
+				if argument.Import.Path != "" {
+					imports[argument.Import.Path] = argument.Import.Name
+				}
+			}
+		}(method.Returns)
+	}
+	return imports
+}
+
+// GetMethods returns the associated methods for the giving interface.
+func (i *InterfaceDeclaration) Methods(pkg *PackageDeclaration) []FunctionDefinition {
+	if len(i.methods) == 0 {
+		i.methods = GetInterfaceFunctions(i.Interface, pkg)
+	}
+	return i.methods
 }
 
 // ArgType defines a type to represent the information for a giving functions argument or
