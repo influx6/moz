@@ -889,6 +889,30 @@ func (fd FunctionDefinition) ArgTypePos(wanted string) int {
 	return -1
 }
 
+// CountOfReturnType counts total number of giving type in the returns lists
+// of function.
+func (fd FunctionDefinition) CountOfReturnType(wanted string) int {
+	var count int
+	for _, arg := range fd.Returns {
+		if arg.ExType == wanted {
+			count++
+		}
+	}
+	return count
+}
+
+// CountOfArgType counts total number of giving type in the arguments lists
+// of function.
+func (fd FunctionDefinition) CountOfArgType(wanted string) int {
+	var count int
+	for _, arg := range fd.Args {
+		if arg.ExType == wanted {
+			count++
+		}
+	}
+	return count
+}
+
 // HasNoReturnType returns true/false if giving type is not part of
 // the function's return types.
 func (fd FunctionDefinition) HasNoReturnType(wanted string) bool {
