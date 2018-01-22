@@ -1983,6 +1983,10 @@ type ImportDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (im ImportDeclr) WriteTo(w io.Writer) (int64, error) {
+	if len(im.Packages) {
+		return 0, nil
+	}
+
 	w = NewNoBOM(w)
 
 	tml, err := ToTemplate("importDeclr", templates.Must("import.tml"), nil)
