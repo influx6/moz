@@ -46,6 +46,7 @@ var (
 		"fieldByName":       FieldByFieldName,
 		"mapJSON":           MapOutFieldsToJSON,
 		"mapRandomJSON":     MapOutFieldsWithRandomValuesToJSON,
+		"mapFieldTypeJSON":  MapOutFieldsWithTypeToJSON,
 		"mapTypeJSON":       MapOutTypeToJSON,
 		"mapRandomTypeJSON": MapOutTypeToJSONWriterWithRandomValues,
 		"stringValueFor":    ToValueString,
@@ -1983,7 +1984,6 @@ func MapOutFields(item StructDeclaration, rootName, tagName, fallback string) (s
 // FieldByFieldName defines a function to return actual name of field with the given tag name.
 func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaration, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
 		return FieldDeclaration{}, errors.New("StructDeclaration has no PackageDeclaration field")
 	}
 	fields := Fields(GetFields(item, item.Declr))
@@ -2002,7 +2002,6 @@ func FieldByFieldName(item StructDeclaration, fieldName string) (FieldDeclaratio
 // FieldFor defines a function to return actual name of field with the given tag name.
 func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDeclaration, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
 		return FieldDeclaration{}, errors.New("StructDeclaration has no PackageDeclaration field")
 	}
 
@@ -2024,10 +2023,6 @@ func FieldFor(item StructDeclaration, tag string, tagFieldName string) (FieldDec
 
 // FieldNameFor defines a function to return actual name of field with the given tag name.
 func FieldNameFor(item StructDeclaration, tag string, tagFieldName string) string {
-	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
-		return ""
-	}
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
@@ -2057,10 +2052,6 @@ func AssignDefaultValue(item StructDeclaration, tag string, tagVal string, varNa
 
 // DefaultFieldValueFor defines a function to return a field default value.
 func DefaultFieldValueFor(item StructDeclaration, tag string, tagVal string) (string, string, error) {
-	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
-		return "", "", errors.New("StructDeclaration has no PackageDeclaration field")
-	}
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tag)
@@ -2092,7 +2083,6 @@ func RandomFieldAssign(item StructDeclaration, varName string, tag string, excep
 // included in the exceptions set.
 func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...string) (string, string, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
 		return "", "", errors.New("StructDeclaration has no PackageDeclaration field")
 	}
 
@@ -2118,14 +2108,95 @@ func RandomFieldWithExcept(item StructDeclaration, tag string, exceptions ...str
 	return "", "", errors.New("All tags match exceptions")
 }
 
+// MapOutFieldsWithTypeToJSON runs MapOutFieldsWithTypeToMap and returns returned map as JSON.
+func MapOutFieldsWithTypeToJSON(item StructDeclaration, rootName, tagName, fallback string) (string, error) {
+	mapped, err := MapOutFieldsWithTypeToMap(item, rootName, tagName, fallback)
+	if err != nil {
+		return "", err
+	}
+
+	mappedJSON, err := json.Marshal(mapped)
+	if err != nil {
+		return "", err
+	}
+
+	return string(mappedJSON), nil
+}
+
+// MapOutFieldsWithTypeToMap defines a function to return a map of field name that has it's type as value
+// pair for the giving struct.
+func MapOutFieldsWithTypeToMap(item StructDeclaration, rootName, tagName, fallback string) (map[string]interface{}, error) {
+	fields := Fields(GetFields(item, item.Declr))
+
+	wTags := fields.TagFor(tagName)
+	if len(wTags) == 0 {
+		wTags = fields.TagFor(fallback)
+
+		if len(wTags) == 0 {
+			return nil, fmt.Errorf("No tags match for %q and %q fallback for struct %q", tagName, fallback, item.Object.Name)
+		}
+	}
+
+	dm := make(map[string]interface{})
+
+	embedded := fields.Embedded()
+
+	for _, embed := range embedded {
+		emt, ems, err := GetStructSpec(embed.Type.Decl)
+		if err != nil {
+			return nil, err
+		}
+
+		vals, err := MapOutFieldsWithTypeToMap(StructDeclaration{
+			Object: emt,
+			Struct: ems,
+			Declr:  item.Declr,
+		}, fmt.Sprintf("%s.%s", rootName, embed.FieldName), tagName, fallback)
+
+		if err != nil {
+			return nil, err
+		}
+
+		for name, val := range vals {
+			dm[name] = val
+		}
+	}
+
+	// Collect key field names from embedded first
+	for _, tag := range wTags {
+		if tag.Value == "-" {
+			continue
+		}
+
+		if tag.Field.Type != nil {
+			embededType, embedStruct, err := GetStructSpec(tag.Field.Type.Decl)
+			if err != nil {
+				return nil, err
+			}
+
+			flds, err := MapOutFieldsWithTypeToMap(StructDeclaration{
+				Object: embededType,
+				Struct: embedStruct,
+				Declr:  item.Declr,
+			}, fmt.Sprintf("%s.%s", rootName, tag.Field.FieldName), tagName, fallback)
+
+			if err != nil {
+				return nil, err
+			}
+
+			dm[tag.Value] = flds
+			continue
+		}
+
+		dm[tag.Value] = tag.Field.FieldTypeName
+	}
+
+	return dm, nil
+}
+
 // MapOutFieldsToMap defines a function to return a map of field name and value
 // pair for the giving struct.
 func MapOutFieldsToMap(item StructDeclaration, rootName, tagName, fallback string) (map[string]io.WriterTo, error) {
-	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
-		return nil, errors.New("StructDeclaration has no PackageDeclaration field")
-	}
-
 	fields := Fields(GetFields(item, item.Declr))
 
 	wTags := fields.TagFor(tagName)
@@ -2215,7 +2286,6 @@ func MapOutFieldsToJSON(item StructDeclaration, tagName, fallback string) (strin
 // output.
 func MapOutTypeToJSON(item TypeDeclaration) (io.WriterTo, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving TypeDeclaration without PackageDeclaration: %#v\n", item)
 		return bytes.NewBuffer(nil), errors.New("TypeDeclaration has no PackageDeclaration field")
 	}
 
@@ -2257,7 +2327,6 @@ func MapOutFieldsWithRandomValuesToJSON(item StructDeclaration, tagName, fallbac
 // output.
 func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) (io.WriterTo, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
 		return bytes.NewBuffer(nil), errors.New("StructDeclaration has no PackageDeclaration field")
 	}
 
@@ -2311,7 +2380,6 @@ func MapOutFieldsToJSONWriter(item StructDeclaration, tagName, fallback string) 
 // output.
 func MapOutTypeToJSONWriterWithRandomValues(item TypeDeclaration) (io.WriterTo, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving TypeDeclaration without PackageDeclaration: %#v\n", item)
 		return bytes.NewBuffer(nil), errors.New("TypeDeclaration has no PackageDeclaration field")
 	}
 
@@ -2336,7 +2404,6 @@ func MapOutTypeToJSONWriterWithRandomValues(item TypeDeclaration) (io.WriterTo, 
 // output.
 func MapOutFieldsToJSONWriterWithRandomValues(item StructDeclaration, tagName, fallback string) (io.WriterTo, error) {
 	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
 		return bytes.NewBuffer(nil), errors.New("StructDeclaration has no PackageDeclaration field")
 	}
 
@@ -2404,11 +2471,6 @@ func MapOutValues(item StructDeclaration, onlyExported bool) (string, error) {
 // MapOutFieldsValues defines a function to return a map of field name and associated
 // placeholders as value.
 func MapOutFieldsValues(item StructDeclaration, onlyExported bool, name *gen.NameDeclr) io.WriterTo {
-	if item.Declr == nil {
-		fmt.Printf("Receiving StructDeclaration without PackageDeclaration: %#v\n", item)
-		return bytes.NewBuffer(nil)
-	}
-
 	fields := Fields(GetFields(item, item.Declr))
 
 	var writers []io.WriterTo
