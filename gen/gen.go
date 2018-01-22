@@ -64,6 +64,10 @@ type WritersTo []io.WriterTo
 
 // WriteTo writes to the provided writer the variable declaration.
 func (d WritersTo) WriteTo(w io.Writer) (int64, error) {
+	if len(d) == 0 {
+		return 0, nil
+	}
+
 	wc := NewWriteCounter(w)
 
 	for _, item := range d {
