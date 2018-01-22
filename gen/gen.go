@@ -1983,7 +1983,7 @@ type ImportDeclr struct {
 
 // WriteTo writes to the provided writer the structure declaration.
 func (im ImportDeclr) WriteTo(w io.Writer) (int64, error) {
-	if len(im.Packages) {
+	if len(im.Packages) == 0 {
 		return 0, nil
 	}
 
