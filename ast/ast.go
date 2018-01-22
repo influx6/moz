@@ -867,12 +867,22 @@ func (fd FunctionDefinition) HasArgs() bool {
 	return len(fd.Args) != 0
 }
 
+// GetReturnsAt gets returns ArgType at index point.
+func (fd FunctionDefinition) GetReturnsAt(i int) ArgType {
+	return fd.Returns[i]
+}
+
+// GetArgsAt gets argument ArgType at index point.
+func (fd FunctionDefinition) GetArgsAt(i int) ArgType {
+	return fd.Returns[i]
+}
+
 // ReturnTypePos returns position of giving type if part of
 // the function's return types else returning -1.
 func (fd FunctionDefinition) ReturnTypePos(wanted string) int {
 	for index, arg := range fd.Returns {
 		if arg.ExType == wanted {
-			return index + 1
+			return index
 		}
 	}
 	return -1
@@ -883,7 +893,7 @@ func (fd FunctionDefinition) ReturnTypePos(wanted string) int {
 func (fd FunctionDefinition) ArgTypePos(wanted string) int {
 	for index, arg := range fd.Args {
 		if arg.ExType == wanted {
-			return index + 1
+			return index
 		}
 	}
 	return -1
