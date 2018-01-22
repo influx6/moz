@@ -874,7 +874,7 @@ func (fd FunctionDefinition) GetReturnsAt(i int) ArgType {
 
 // GetArgsAt gets argument ArgType at index point.
 func (fd FunctionDefinition) GetArgsAt(i int) ArgType {
-	return fd.Returns[i]
+	return fd.Args[i]
 }
 
 // ReturnTypePos returns position of giving type if part of
