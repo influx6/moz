@@ -51,6 +51,7 @@ var (
 		"mapRandomTypeJSON": MapOutTypeToJSONWriterWithRandomValues,
 		"stringValueFor":    ToValueString,
 		"randomValue":       RandomFieldAssign,
+		"defaultGoType":     DefaultGoTypeString,
 		"defaultValue":      AssignDefaultValue,
 		"randomFieldValue":  RandomFieldValue,
 		"defaultType":       DefaultTypeValueString,
@@ -2805,4 +2806,22 @@ func GetTag(f FieldDeclaration, tagName string, fallback string) (TagDeclaration
 	}
 
 	return tg, nil
+}
+
+// DefaultGoTypeString returns the default value string of a giving
+// typeName.
+func DefaultGoTypeString(typeName string) string {
+	if strings.HasPrefix(typeName, "*") {
+		return "nil"
+	}
+
+	if strings.HasPrefix(typeName, "[]") {
+		return "nil"
+	}
+
+	if strings.HasPrefix(typeName, "map[") {
+		return "nil"
+	}
+
+	return fmt.Sprintf("%s{}", typeName)
 }
