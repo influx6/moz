@@ -772,7 +772,7 @@ type InterfaceDeclaration struct {
 
 // GetImports returns a map containing all import paths related to
 // types used for the methods of giving interface.
-func (i *InterfaceDeclaration) GetImports(pkg *PackageDeclaration) map[string]string {
+func (i *InterfaceDeclaration) GetImports(pkg *PackageDeclaration, internal bool) map[string]string {
 	imports := make(map[string]string, 0)
 
 	methods := i.Methods(pkg)
@@ -780,10 +780,20 @@ func (i *InterfaceDeclaration) GetImports(pkg *PackageDeclaration) map[string]st
 		// Retrieve all import paths for arguments.
 		func(args []ArgType) {
 			for _, argument := range args {
+				if argument.Import2.InternalPkg && !internal {
+					continue
+				}
+
 				if argument.Import2.Path != "" {
+					if argument.Import2.InternalPkg && !internal {
+						continue
+					}
 					imports[argument.Import2.Path] = argument.Import2.Name
 				}
 				if argument.Import.Path != "" {
+					if argument.Import.InternalPkg && !internal {
+						continue
+					}
 					imports[argument.Import.Path] = argument.Import.Name
 				}
 			}
@@ -793,9 +803,15 @@ func (i *InterfaceDeclaration) GetImports(pkg *PackageDeclaration) map[string]st
 		func(args []ArgType) {
 			for _, argument := range args {
 				if argument.Import2.Path != "" {
+					if argument.Import2.InternalPkg && !internal {
+						continue
+					}
 					imports[argument.Import2.Path] = argument.Import2.Name
 				}
 				if argument.Import.Path != "" {
+					if argument.Import.InternalPkg && !internal {
+						continue
+					}
 					imports[argument.Import.Path] = argument.Import.Name
 				}
 			}
