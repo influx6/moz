@@ -2823,5 +2823,26 @@ func DefaultGoTypeString(typeName string) string {
 		return "nil"
 	}
 
+	switch typeName {
+	case "uint", "uint32", "uint64":
+		return "0"
+	case "bool":
+		return `false`
+	case "string":
+		return `""`
+	case "rune":
+		return `rune(0)`
+	case "byte":
+		return `byte(rune(0))`
+	case "float32", "float64":
+		return "0.0"
+	case "int", "int32", "int64":
+		return "0"
+	case "map[string]interface{}":
+		return "map[string]interface{}"
+	case "map[string]string":
+		return "map[string]string{}"
+	}
+
 	return fmt.Sprintf("%s{}", typeName)
 }
