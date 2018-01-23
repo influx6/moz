@@ -871,11 +871,17 @@ func (fd FunctionDefinition) HasArgs() bool {
 
 // GetReturnsAt gets returns ArgType at index point.
 func (fd FunctionDefinition) GetReturnsAt(i int) ArgType {
+	if i >= len(fd.Returns) {
+		return ArgType{}
+	}
 	return fd.Returns[i]
 }
 
 // GetArgsAt gets argument ArgType at index point.
 func (fd FunctionDefinition) GetArgsAt(i int) ArgType {
+	if i >= len(fd.Args) {
+		return ArgType{}
+	}
 	return fd.Args[i]
 }
 
