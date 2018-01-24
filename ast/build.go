@@ -415,6 +415,10 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 
 			var pkgName string
 			if imp.Name != nil {
+				if imp.Name.Name == "_" {
+					continue
+				}
+
 				pkgName = strings.Replace(imp.Name.Name, "/", "", -1)
 			} else {
 				pkgName = strings.Replace(filepath.Base(imp.Path.Value), "\"", "", -1)
