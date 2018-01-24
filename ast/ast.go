@@ -1021,12 +1021,12 @@ func (fd FunctionDefinition) ExReturnList(asFromOutside bool, pkgName string) st
 	for _, ret := range fd.Returns {
 		if asFromOutside {
 			exType := strings.TrimPrefix(strings.TrimPrefix(ret.ExType, pkgName), ".")
-			rets = append(rets, fmt.Sprintf("%s %s", ret.Name, exType))
+			rets = append(rets, fmt.Sprintf("%s", exType))
 			continue
 		}
 
 		exType := strings.TrimPrefix(strings.TrimPrefix(ret.Type, pkgName), ".")
-		rets = append(rets, fmt.Sprintf("%s %s", ret.Name, exType))
+		rets = append(rets, fmt.Sprintf("%s", exType))
 	}
 
 	return strings.Join(rets, ",")
