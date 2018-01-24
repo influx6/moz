@@ -1013,6 +1013,44 @@ func (fd FunctionDefinition) ReturnNamesList() string {
 	return strings.Join(rets, ",")
 }
 
+// ExReturnList returns a string version of the returns of the giving function, removing any type
+// with provided package name  `packageName.` as a prefix.
+func (fd FunctionDefinition) ExReturnList(asFromOutside bool, pkgName string) string {
+	var rets []string
+
+	for _, ret := range fd.Returns {
+		if asFromOutside {
+			exType := strings.TrimPrefix(strings.TrimPrefix(ret.ExType, pkgName), ".")
+			rets = append(rets, fmt.Sprintf("%s %s", ret.Name, exType))
+			continue
+		}
+
+		exType := strings.TrimPrefix(strings.TrimPrefix(ret.Type, pkgName), ".")
+		rets = append(rets, fmt.Sprintf("%s %s", ret.Name, exType))
+	}
+
+	return strings.Join(rets, ",")
+}
+
+// ExArgumentList returns a string version of the arguments of the giving function, removing any type
+// with provided package name  `packageName.` as a prefix.
+func (fd FunctionDefinition) ExArgumentList(asFromOutside bool, pkgName string) string {
+	var args []string
+
+	for _, arg := range fd.Args {
+		if asFromOutside {
+			exType := strings.TrimPrefix(strings.TrimPrefix(arg.ExType, pkgName), ".")
+			args = append(args, fmt.Sprintf("%s %s", arg.Name, exType))
+			continue
+		}
+
+		exType := strings.TrimPrefix(strings.TrimPrefix(arg.Type, pkgName), ".")
+		args = append(args, fmt.Sprintf("%s %s", arg.Name, exType))
+	}
+
+	return strings.Join(args, ",")
+}
+
 // ReturnList returns a string version of the return of the giving function.
 func (fd FunctionDefinition) ReturnList(asFromOutside bool) string {
 	var rets []string
