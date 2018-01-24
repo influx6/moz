@@ -34,8 +34,9 @@ var (
 	// we need to ensure we catch all processed packages to ensure we dont get stuck
 	// re-processing in a loop again.
 	processedPackages = struct {
-		pl   sync.Mutex
-		pkgs map[string]Package
+		pl         sync.Mutex
+		pkgs       map[string]Package
+		processing map[string]struct{}
 	}{
 		pkgs: make(map[string]Package),
 	}
@@ -132,11 +133,6 @@ func FilteredPackageWithBuildCtx(log metrics.Metrics, dir string, ctx build.Cont
 				log.Emit(metrics.Error(err), metrics.With("message", "Failed to parse file"), metrics.With("dir", dir), metrics.With("file", file.Name.Name), metrics.With("Package", pkg.Name))
 				return nil, err
 			}
-
-			//if err := res.loadImported(log); err != nil {
-			//	log.Emit(metrics.Error(err), metrics.With("message", "Failed to load imported pacakges"), metrics.With("dir", dir), metrics.With("file", file.Name.Name), metrics.With("Package", pkg.Name))
-			//	return nil, err
-			//}
 
 			log.Emit(metrics.Info("Parsed Package File"), metrics.With("dir", dir), metrics.With("file", file.Name.Name), metrics.With("path", path), metrics.With("Package", pkg.Name))
 
@@ -396,6 +392,11 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
 		packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
 
+		if relPath, err := relativeToSrc(path); err == nil {
+			packageDeclr.Path = filepath.Dir(relPath)
+			packageDeclr.File = filepath.Base(relPath)
+		}
+
 		if file.Doc != nil {
 			for _, comment := range file.Doc.List {
 				packageDeclr.Comments = append(packageDeclr.Comments, comment.Text)
@@ -403,6 +404,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		}
 
 		for _, imp := range file.Imports {
+
 			beginPosition, endPosition := tokenFiles.Position(imp.Pos()), tokenFiles.Position(imp.End())
 			positionLength := endPosition.Offset - beginPosition.Offset
 			source, err := readSourceIn(beginPosition.Filename, int64(beginPosition.Offset), positionLength)
@@ -425,6 +427,10 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 			impPkgPath, err := strconv.Unquote(imp.Path.Value)
 			if err != nil {
 				impPkgPath = imp.Path.Value
+			}
+
+			if impPkgPath == packageDeclr.Path {
+				continue
 			}
 
 			var comment string
@@ -481,11 +487,6 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					}
 				}
 			}
-		}
-
-		if relPath, err := relativeToSrc(path); err == nil {
-			packageDeclr.Path = filepath.Dir(relPath)
-			packageDeclr.File = filepath.Base(relPath)
 		}
 
 		if runtime.GOOS == "windows" {
