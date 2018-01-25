@@ -1126,6 +1126,16 @@ func (flds Fields) Embedded() Fields {
 	return fields
 }
 
+// ByName returns giving field with name.
+func (flds Fields) ByName(name string) (FieldDeclaration, bool) {
+	for _, fl := range flds {
+		if fl.FieldName == name {
+			return fl, true
+		}
+	}
+	return FieldDeclaration{}, false
+}
+
 // TagFor defines a function that returns all appropriate TagDeclaration
 // that match the giving tagName
 func (flds Fields) TagFor(tagName string) []TagDeclaration {
