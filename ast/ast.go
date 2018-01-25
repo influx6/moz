@@ -586,6 +586,15 @@ type StructDeclaration struct {
 	Associations map[string]AnnotationAssociationDeclaration
 }
 
+// Fields returns a slice containing all fields of giving struct.
+// If struct has no associated PackageDeclaration, error is returned.
+func (str StructDeclaration) Fields() ([]FieldDeclaration, error) {
+	if str.Declr == nil {
+		return nil, errors.New("not possible")
+	}
+	return GetFields(str, str.Declr), nil
+}
+
 // AnnotationsFor returns all annotations with the giving name.
 func (str StructDeclaration) AnnotationsFor(typeName string) []AnnotationDeclaration {
 	typeName = strings.TrimPrefix(typeName, "@")
