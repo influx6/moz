@@ -95,7 +95,7 @@ func (pkgs Packages) TestPackageForFile(path string, targetFile string) (Package
 		return PackageDeclaration{}, Package{}, ok
 	}
 
-	plDeclr, ok := pl.DeclarationFor(path, targetFile)
+	plDeclr, ok := pl.DeclarationFor(targetFile)
 	return plDeclr, pl, ok
 }
 
@@ -106,7 +106,7 @@ func (pkgs Packages) PackageForFile(path string, targetFile string) (PackageDecl
 		return PackageDeclaration{}, Package{}, ok
 	}
 
-	plDeclr, ok := pl.DeclarationFor(path, targetFile)
+	plDeclr, ok := pl.DeclarationFor(targetFile)
 	return plDeclr, pl, ok
 }
 
@@ -239,7 +239,6 @@ func (pkg Package) ImportFor(imp string) (ImportDeclaration, error) {
 // FunctionsFor returns a slice of FuncDeclaration for the giving object.
 func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	var funcs []FuncDeclaration
-
 	for _, elem := range pkg.Packages {
 		funcs = append(funcs, elem.FunctionsFor(obj)...)
 	}
@@ -247,49 +246,10 @@ func (pkg Package) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	return funcs
 }
 
-// TestDeclarations returns the associated test declaration for the giving import path.
-func (pkg Package) TestDeclarations(importPath string) []PackageDeclaration {
-	var declrs []PackageDeclaration
-
-	for _, declr := range pkg.TestPackages {
-		if declr.Path == importPath {
-			declrs = append(declrs, declr)
-		}
-	}
-
-	return declrs
-}
-
-// Declarations returns the associated declaration for the giving import path.
-func (pkg Package) Declarations(importPath string) []PackageDeclaration {
-	var declrs []PackageDeclaration
-
-	for _, declr := range pkg.Packages {
-		if declr.Path == importPath {
-			declrs = append(declrs, declr)
-		}
-	}
-
-	return declrs
-}
-
-// TestDeclarationFor returns the associated test declaration for the giving file path.
-func (pkg Package) TestDeclarationFor(importPath string, targetFile string) (PackageDeclaration, bool) {
-	declrs := pkg.TestDeclarations(importPath)
-	for _, declr := range declrs {
-		if declr.File == targetFile {
-			return declr, true
-		}
-	}
-
-	return PackageDeclaration{}, false
-}
-
 // DeclarationFor returns the associated declaration for the giving file path.
-func (pkg Package) DeclarationFor(importPath string, targetFile string) (PackageDeclaration, bool) {
-	declrs := pkg.Declarations(importPath)
-	for _, declr := range declrs {
-		if declr.File == targetFile {
+func (pkg Package) DeclarationFor(targetFile string) (PackageDeclaration, bool) {
+	for _, declr := range pkg.Packages {
+		if declr.FilePath == targetFile || declr.File == targetFile {
 			return declr, true
 		}
 	}
@@ -298,8 +258,8 @@ func (pkg Package) DeclarationFor(importPath string, targetFile string) (Package
 }
 
 // TypeFor returns associated TypeDeclaration for importPath in file with the typeName.
-func (pkg Package) TypeFor(importPath string, typeName string) (TypeDeclaration, bool) {
-	for _, declr := range pkg.Declarations(importPath) {
+func (pkg Package) TypeFor(typeName string) (TypeDeclaration, bool) {
+	for _, declr := range pkg.Packages {
 		for _, elem := range declr.Types {
 			if elem.Object.Name.Name == typeName {
 				return elem, true
@@ -311,8 +271,8 @@ func (pkg Package) TypeFor(importPath string, typeName string) (TypeDeclaration,
 }
 
 // FunctionFor returns associated FuncDeclaration for importPath in file with the typeName.
-func (pkg Package) FunctionFor(importPath string, typeName string) (FuncDeclaration, bool) {
-	for _, declr := range pkg.Declarations(importPath) {
+func (pkg Package) FunctionFor(typeName string) (FuncDeclaration, bool) {
+	for _, declr := range pkg.Packages {
 		for _, elem := range declr.Functions {
 			if elem.FuncDeclr.Name.Name == typeName {
 				return elem, true
@@ -324,8 +284,8 @@ func (pkg Package) FunctionFor(importPath string, typeName string) (FuncDeclarat
 }
 
 // StructFor returns associated StructDeclaration for importPath in file with the typeName.
-func (pkg Package) StructFor(importPath string, typeName string) (StructDeclaration, bool) {
-	for _, declr := range pkg.Declarations(importPath) {
+func (pkg Package) StructFor(typeName string) (StructDeclaration, bool) {
+	for _, declr := range pkg.Packages {
 		for _, elem := range declr.Structs {
 			if elem.Object.Name.Name == typeName {
 				return elem, true
@@ -337,8 +297,8 @@ func (pkg Package) StructFor(importPath string, typeName string) (StructDeclarat
 }
 
 // InterfaceFor returns associated InterfaceDeclaration for importPath in file with the typeName.
-func (pkg Package) InterfaceFor(importPath string, typeName string) (InterfaceDeclaration, bool) {
-	for _, declr := range pkg.Declarations(importPath) {
+func (pkg Package) InterfaceFor(typeName string) (InterfaceDeclaration, bool) {
+	for _, declr := range pkg.Packages {
 		for _, elem := range declr.Interfaces {
 			if elem.Object.Name.Name == typeName {
 				return elem, true
@@ -347,46 +307,6 @@ func (pkg Package) InterfaceFor(importPath string, typeName string) (InterfaceDe
 	}
 
 	return InterfaceDeclaration{}, false
-}
-
-// TypeForFile returns associated TypeDeclaration for importPath in file with the typeName.
-func (pkg Package) TypeForFile(importPath string, targetFile string, typeName string) (TypeDeclaration, bool) {
-	declr, ok := pkg.DeclarationFor(importPath, targetFile)
-	if !ok {
-		return TypeDeclaration{}, false
-	}
-
-	return declr.TypeFor(typeName)
-}
-
-// FunctionForFile returns associated FuncDeclaration for importPath in file with the typeName.
-func (pkg Package) FunctionForFile(importPath string, targetFile string, typeName string) (FuncDeclaration, bool) {
-	declr, ok := pkg.DeclarationFor(importPath, targetFile)
-	if !ok {
-		return FuncDeclaration{}, false
-	}
-
-	return declr.FunctionFor(typeName)
-}
-
-// StructForFile returns associated StructDeclaration for importPath in file with the typeName.
-func (pkg Package) StructForFile(importPath string, targetFile string, typeName string) (StructDeclaration, bool) {
-	declr, ok := pkg.DeclarationFor(importPath, targetFile)
-	if !ok {
-		return StructDeclaration{}, false
-	}
-
-	return declr.StructFor(typeName)
-}
-
-// InterfaceForFile returns associated InterfaceDeclaration for importPath in file with the typeName.
-func (pkg Package) InterfaceForFile(importPath string, targetFile string, typeName string) (InterfaceDeclaration, bool) {
-	declr, ok := pkg.DeclarationFor(importPath, targetFile)
-	if !ok {
-		return InterfaceDeclaration{}, false
-	}
-
-	return declr.InterfaceFor(typeName)
 }
 
 //===========================================================================================================
@@ -1409,16 +1329,16 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		if !importDclr.InternalPkg {
 			if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
 				if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
-					if mtype, ok := mdeclr.TypeFor(importDclr.Path, iobj.Sel.Name); ok {
+					if mtype, ok := mdeclr.TypeFor(iobj.Sel.Name); ok {
 						arg.Spec = mtype.Object
 					}
 
-					if stype, ok := mdeclr.StructFor(importDclr.Path, iobj.Sel.Name); ok {
+					if stype, ok := mdeclr.StructFor(iobj.Sel.Name); ok {
 						arg.Spec = stype.Object
 						arg.StructObject = stype.Struct
 					}
 
-					if itype, ok := mdeclr.InterfaceFor(importDclr.Path, iobj.Sel.Name); ok {
+					if itype, ok := mdeclr.InterfaceFor(iobj.Sel.Name); ok {
 						arg.Spec = itype.Object
 						arg.InterfaceObject = itype.Interface
 					}
@@ -1469,16 +1389,16 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 			if !importDclr.InternalPkg {
 				if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
 					if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
-						if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
+						if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
 							arg.Spec = mtype.Object
 						}
 
-						if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
+						if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
 							arg.Spec = stype.Object
 							arg.StructObject = stype.Struct
 						}
 
-						if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
+						if itype, ok := mdeclr.InterfaceFor(value.Sel.Name); ok {
 							arg.Spec = itype.Object
 							arg.InterfaceObject = itype.Interface
 						}
@@ -1592,16 +1512,16 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 			if !importDclr.InternalPkg {
 				if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
 					if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
-						if mtype, ok := mdeclr.TypeFor(importDclr.Path, value.Sel.Name); ok {
+						if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
 							arg.Spec = mtype.Object
 						}
 
-						if stype, ok := mdeclr.StructFor(importDclr.Path, value.Sel.Name); ok {
+						if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
 							arg.Spec = stype.Object
 							arg.StructObject = stype.Struct
 						}
 
-						if itype, ok := mdeclr.InterfaceFor(importDclr.Path, value.Sel.Name); ok {
+						if itype, ok := mdeclr.InterfaceFor(value.Sel.Name); ok {
 							arg.Spec = itype.Object
 							arg.InterfaceObject = itype.Interface
 						}
