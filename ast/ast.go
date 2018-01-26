@@ -414,7 +414,7 @@ func (pkg PackageDeclaration) ImportFor(imp string) (ImportDeclaration, error) {
 	return impDeclr, nil
 }
 
-// FunctionFor returns associated FuncDeclaration associated with name.
+// FunctionFor returns associated FuncDeclaration with giving name.
 func (pkg PackageDeclaration) FunctionFor(typeName string) (FuncDeclaration, bool) {
 	for _, typed := range pkg.Functions {
 		if typed.FuncDeclr.Name.Name == typeName {
@@ -465,6 +465,20 @@ func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 	}
 
 	return pkg.FunctionsForName(obj.Name)
+}
+
+// MethodFor returns associated FuncDeclaration with has struct declaration has receiver.
+func (pkg PackageDeclaration) MethodFor(structName string) []FuncDeclaration {
+	var methods []FuncDeclaration
+
+	for _, fn := range pkg.Functions {
+		if fn.RecieverName != structName {
+			continue
+		}
+		methods = append(methods, fn)
+	}
+
+	return methods
 }
 
 //===========================================================================================================
