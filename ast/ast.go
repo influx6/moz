@@ -344,6 +344,18 @@ func (pkg PackageDeclaration) HasFunctionFor(str StructDeclaration, funcName str
 	return true
 }
 
+// ImportedPackageFor returns the Package for a giving imported package based on the package name
+// or aliased used in the package for this declaration.
+func (pkg PackageDeclaration) ImportedPackageFor(packageName string) (Package, bool) {
+	pkgPath, ok := pkg.Imports[packageName]
+	if !ok {
+		return Package{}, false
+	}
+
+	pkgItem, ok := pkg.ImportedPackages[pkgPath]
+	return pkgItem, ok
+}
+
 // HasAnnotation returns true/false if giving PackageDeclaration has annotation at package level.
 func (pkg PackageDeclaration) HasAnnotation(typeName string) bool {
 	typeName = strings.TrimPrefix(typeName, "@")
