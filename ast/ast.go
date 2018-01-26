@@ -468,17 +468,15 @@ func (pkg PackageDeclaration) FunctionsFor(obj *ast.Object) []FuncDeclaration {
 }
 
 // MethodFor returns associated FuncDeclaration with has struct declaration has receiver.
-func (pkg PackageDeclaration) MethodFor(structName string) []FuncDeclaration {
-	var methods []FuncDeclaration
-
-	for _, fn := range pkg.Functions {
-		if fn.RecieverName != structName {
+func (pkg PackageDeclaration) MethodFor(structName string) ([]FuncDeclaration, found) {
+	for obj, set := range pkg.ObjectFunc {
+		if obj.Name != structName {
 			continue
 		}
-		methods = append(methods, fn)
+		return set, true
 	}
 
-	return methods
+	return nil, false
 }
 
 //===========================================================================================================
