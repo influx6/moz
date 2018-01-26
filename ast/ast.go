@@ -352,7 +352,7 @@ func (pkg PackageDeclaration) ImportedPackageFor(packageName string) (Package, b
 		return Package{}, false
 	}
 
-	pkgItem, ok := pkg.ImportedPackages[pkgPath]
+	pkgItem, ok := pkg.ImportedPackages[pkgPath.Path]
 	return pkgItem, ok
 }
 
