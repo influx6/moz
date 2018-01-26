@@ -349,7 +349,18 @@ func (pkg PackageDeclaration) HasFunctionFor(str StructDeclaration, funcName str
 func (pkg PackageDeclaration) ImportedPackageFor(packageName string) (Package, bool) {
 	pkgPath, ok := pkg.Imports[packageName]
 	if !ok {
-		return Package{}, false
+		var found bool
+		for _, imp := range pkg.Imports {
+			if imp.Name == packageName {
+				found = true
+				pkgPath = imp
+				break
+			}
+		}
+
+		if !found {
+			return Package{}, false
+		}
 	}
 
 	pkgItem, ok := pkg.ImportedPackages[pkgPath.Path]
