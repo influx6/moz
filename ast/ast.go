@@ -483,40 +483,44 @@ func (pkg PackageDeclaration) MethodFor(structName string) ([]FuncDeclaration, b
 
 // VariableDeclaration defines a type which holds annotation data for a giving variable declaration.
 type VariableDeclaration struct {
-	From         int
-	Length       int
-	Package      string
-	Path         string
-	FilePath     string
-	Source       string
-	Comments     string
-	File         string
-	Position     token.Pos
-	Object       *ast.ValueSpec
-	GenObj       *ast.GenDecl
-	Declr        *PackageDeclaration
-	Annotations  []AnnotationDeclaration
-	Associations map[string]AnnotationAssociationDeclaration
+	From            int
+	Length          int
+	Package         string
+	Path            string
+	Name            string
+	NameWithPackage string
+	NameIdent       *ast.Ident
+	FilePath        string
+	Source          string
+	Comments        string
+	File            string
+	Position        token.Pos
+	Object          *ast.ValueSpec
+	GenObj          *ast.GenDecl
+	Declr           *PackageDeclaration
+	Annotations     []AnnotationDeclaration
+	Associations    map[string]AnnotationAssociationDeclaration
 }
 
 // StructDeclaration defines a type which holds annotation data for a giving struct type declaration.
 type StructDeclaration struct {
-	From         int
-	Length       int
-	Package      string
-	Name         string
-	Path         string
-	FilePath     string
-	Source       string
-	Comments     string
-	File         string
-	Struct       *ast.StructType
-	Object       *ast.TypeSpec
-	GenObj       *ast.GenDecl
-	Position     token.Pos
-	Declr        *PackageDeclaration
-	Annotations  []AnnotationDeclaration
-	Associations map[string]AnnotationAssociationDeclaration
+	From            int
+	Length          int
+	Package         string
+	Name            string
+	NameWithPackage string
+	Path            string
+	FilePath        string
+	Source          string
+	Comments        string
+	File            string
+	Struct          *ast.StructType
+	Object          *ast.TypeSpec
+	GenObj          *ast.GenDecl
+	Position        token.Pos
+	Declr           *PackageDeclaration
+	Annotations     []AnnotationDeclaration
+	Associations    map[string]AnnotationAssociationDeclaration
 }
 
 // Fields returns a slice containing all fields of giving struct.
@@ -550,6 +554,8 @@ type TypeDeclaration struct {
 	From            int
 	Length          int
 	Package         string
+	Name            string
+	NameWithPackage string
 	Path            string
 	FilePath        string
 	Source          string
@@ -590,30 +596,31 @@ func (ty TypeDeclaration) AnnotationsFor(typeName string) []AnnotationDeclaratio
 // FuncDeclaration defines a type used to annotate a giving type declaration
 // associated with a ast for a function.
 type FuncDeclaration struct {
-	From            int
-	Length          int
-	Package         string
-	Path            string
-	FilePath        string
-	Exported        bool
-	File            string
-	FuncName        string
-	RecieverName    string
-	Source          string
-	Comments        string
-	Position        token.Pos
-	TypeDeclr       ast.Decl
-	FuncDeclr       *ast.FuncDecl
-	Type            *ast.FuncType
-	Reciever        *ast.Object
-	RecieverIdent   *ast.Ident
-	RecieverPointer *ast.StarExpr
-	FuncType        *ast.FieldList
-	Returns         *ast.FieldList
-	Arguments       *ast.FieldList
-	Declr           *PackageDeclaration
-	Annotations     []AnnotationDeclaration
-	Associations    map[string]AnnotationAssociationDeclaration
+	From                int
+	Length              int
+	Package             string
+	Path                string
+	FilePath            string
+	Exported            bool
+	File                string
+	FuncName            string
+	FuncNameWithPackage string
+	RecieverName        string
+	Source              string
+	Comments            string
+	Position            token.Pos
+	TypeDeclr           ast.Decl
+	FuncDeclr           *ast.FuncDecl
+	Type                *ast.FuncType
+	Reciever            *ast.Object
+	RecieverIdent       *ast.Ident
+	RecieverPointer     *ast.StarExpr
+	FuncType            *ast.FieldList
+	Returns             *ast.FieldList
+	Arguments           *ast.FieldList
+	Declr               *PackageDeclaration
+	Annotations         []AnnotationDeclaration
+	Associations        map[string]AnnotationAssociationDeclaration
 }
 
 // AnnotationsFor returns all annotations with the giving name.
@@ -694,22 +701,24 @@ type AnnotationAssociationDeclaration struct {
 
 // InterfaceDeclaration defines a type which holds annotation data for a giving interface type declaration.
 type InterfaceDeclaration struct {
-	From         int
-	Length       int
-	Package      string
-	Path         string
-	Source       string
-	Comments     string
-	FilePath     string
-	File         string
-	Interface    *ast.InterfaceType
-	Object       *ast.TypeSpec
-	GenObj       *ast.GenDecl
-	Position     token.Pos
-	Declr        *PackageDeclaration
-	methods      []FunctionDefinition
-	Annotations  []AnnotationDeclaration
-	Associations map[string]AnnotationAssociationDeclaration
+	From            int
+	Length          int
+	Package         string
+	Path            string
+	Name            string
+	NameWithPackage string
+	Source          string
+	Comments        string
+	FilePath        string
+	File            string
+	Interface       *ast.InterfaceType
+	Object          *ast.TypeSpec
+	GenObj          *ast.GenDecl
+	Position        token.Pos
+	Declr           *PackageDeclaration
+	methods         []FunctionDefinition
+	Annotations     []AnnotationDeclaration
+	Associations    map[string]AnnotationAssociationDeclaration
 }
 
 // GetImports returns a map containing all import paths related to
