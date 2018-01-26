@@ -702,6 +702,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 							packageDeclr.Structs = append(packageDeclr.Structs, StructDeclaration{
 								Object:       obj,
 								Struct:       robj,
+								Name:         obj.Name.Name,
 								Annotations:  annotations,
 								Associations: associations,
 								GenObj:       rdeclr,

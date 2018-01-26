@@ -506,6 +506,7 @@ type StructDeclaration struct {
 	From         int
 	Length       int
 	Package      string
+	Name         string
 	Path         string
 	FilePath     string
 	Source       string
