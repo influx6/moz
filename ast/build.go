@@ -578,7 +578,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 				defFunc.File = packageDeclr.File
 				defFunc.Declr = &packageDeclr
 				defFunc.FuncName = rdeclr.Name.Name
-				defFunc.FuncName = fmt.Sprintf("%s.%s", packageDeclr.Package, rdeclr.Name.Name)
+				defFunc.FuncNameWithPackage = fmt.Sprintf("%s.%s", packageDeclr.Package, rdeclr.Name.Name)
 				defFunc.Length = positionLength
 				defFunc.From = beginPosition.Offset
 				defFunc.Package = packageDeclr.Package
