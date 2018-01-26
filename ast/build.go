@@ -388,7 +388,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 		packageDeclr.Dir = dir
 		packageDeclr.FilePath = path
 		packageDeclr.Source = string(pkgSource)
-		packageDeclr.ImportedPackages = make(map[string]Packages)
+		packageDeclr.ImportedPackages = make(map[string]Package)
 		packageDeclr.Imports = make(map[string]ImportDeclaration, 0)
 		packageDeclr.ObjectFunc = make(map[*ast.Object][]FuncDeclaration, 0)
 
@@ -473,7 +473,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 					res, ok := processedPackages.pkgs[uniqueImportDir]
 					processedPackages.pl.Unlock()
 					if ok {
-						packageDeclr.ImportedPackages[imported.Path] = Packages{res}
+						packageDeclr.ImportedPackages[imported.Path] = res
 					} else {
 						imps, err := PackageWithBuildCtx(log, importDir, build.Default)
 						if err != nil {
@@ -484,10 +484,10 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 						for _, imppkg := range imps {
 							imppath := imppkg.Dir + "#" + imported.Name
 							processedPackages.pkgs[imppath] = imppkg
+							packageDeclr.ImportedPackages[imppkg.Path] = imppkg
 						}
 						processedPackages.pl.Unlock()
 
-						packageDeclr.ImportedPackages[imported.Path] = imps
 					}
 				}
 			}

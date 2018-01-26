@@ -322,6 +322,7 @@ type PackageDeclaration struct {
 	Source           string
 	Comments         []string
 	Imports          map[string]ImportDeclaration
+	ImportedPackages map[string]Package
 	Annotations      []AnnotationDeclaration
 	Types            []TypeDeclaration
 	Structs          []StructDeclaration
@@ -329,7 +330,6 @@ type PackageDeclaration struct {
 	Functions        []FuncDeclaration
 	Variables        []VariableDeclaration
 	ObjectFunc       map[*ast.Object][]FuncDeclaration
-	ImportedPackages map[string]Packages
 	importedloaded   bool
 }
 
@@ -1349,21 +1349,19 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		arg.SelectObject = iobj.Sel
 
 		if !importDclr.InternalPkg {
-			if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
-				if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
-					if mtype, ok := mdeclr.TypeFor(iobj.Sel.Name); ok {
-						arg.Spec = mtype.Object
-					}
+			if mdeclr, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+				if mtype, ok := mdeclr.TypeFor(iobj.Sel.Name); ok {
+					arg.Spec = mtype.Object
+				}
 
-					if stype, ok := mdeclr.StructFor(iobj.Sel.Name); ok {
-						arg.Spec = stype.Object
-						arg.StructObject = stype.Struct
-					}
+				if stype, ok := mdeclr.StructFor(iobj.Sel.Name); ok {
+					arg.Spec = stype.Object
+					arg.StructObject = stype.Struct
+				}
 
-					if itype, ok := mdeclr.InterfaceFor(iobj.Sel.Name); ok {
-						arg.Spec = itype.Object
-						arg.InterfaceObject = itype.Interface
-					}
+				if itype, ok := mdeclr.InterfaceFor(iobj.Sel.Name); ok {
+					arg.Spec = itype.Object
+					arg.InterfaceObject = itype.Interface
 				}
 			}
 		}
@@ -1409,21 +1407,19 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 			arg.SelectObject = value.Sel
 
 			if !importDclr.InternalPkg {
-				if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
-					if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
-						if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
-							arg.Spec = mtype.Object
-						}
+				if mdeclr, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+					if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
+						arg.Spec = mtype.Object
+					}
 
-						if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
-							arg.Spec = stype.Object
-							arg.StructObject = stype.Struct
-						}
+					if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
+						arg.Spec = stype.Object
+						arg.StructObject = stype.Struct
+					}
 
-						if itype, ok := mdeclr.InterfaceFor(value.Sel.Name); ok {
-							arg.Spec = itype.Object
-							arg.InterfaceObject = itype.Interface
-						}
+					if itype, ok := mdeclr.InterfaceFor(value.Sel.Name); ok {
+						arg.Spec = itype.Object
+						arg.InterfaceObject = itype.Interface
 					}
 				}
 
@@ -1532,21 +1528,19 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 			arg.SelectObject = value.Sel
 
 			if !importDclr.InternalPkg {
-				if importedParentPackage, ok := pkg.ImportedPackages[importDclr.Path]; ok {
-					if mdeclr, ok := importedParentPackage.PackageFor(importDclr.Path); ok {
-						if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
-							arg.Spec = mtype.Object
-						}
+				if mdeclr, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+					if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
+						arg.Spec = mtype.Object
+					}
 
-						if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
-							arg.Spec = stype.Object
-							arg.StructObject = stype.Struct
-						}
+					if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
+						arg.Spec = stype.Object
+						arg.StructObject = stype.Struct
+					}
 
-						if itype, ok := mdeclr.InterfaceFor(value.Sel.Name); ok {
-							arg.Spec = itype.Object
-							arg.InterfaceObject = itype.Interface
-						}
+					if itype, ok := mdeclr.InterfaceFor(value.Sel.Name); ok {
+						arg.Spec = itype.Object
+						arg.InterfaceObject = itype.Interface
 					}
 				}
 			}
