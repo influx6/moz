@@ -2,9 +2,10 @@
 
 
 [[projects]]
+  branch = "master"
   name = "github.com/corpix/uarand"
   packages = ["."]
-  revision = "031be390f409fb4bac8fb299e3bcd101479f89f8"
+  revision = "2b8494104d86337cdd41d0a49cbed8e4583c0ab4"
 
 [[projects]]
   branch = "master"
@@ -21,7 +22,7 @@
     "types/actions",
     "types/events"
   ]
-  revision = "cd225fdc444828ba27414911549b34db06b0abc4"
+  revision = "6662a2ca657cbb52eac3fb49b0ec2ea7de2613d5"
 
 [[projects]]
   branch = "master"
