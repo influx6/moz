@@ -1,3 +1,0 @@
-function {{.Name}}{{.Arguments}} {
-    {{.Body}}
-}
