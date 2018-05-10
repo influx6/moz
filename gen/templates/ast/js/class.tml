@@ -1,0 +1,15 @@
+{{.Comments}}
+{{.Annotations}}
+class {{.Name}} {
+    {{ range .Fields }}
+        {{.}}
+    {{ end }}
+
+    construct({{.Constructor.Arguments}}){
+        {{.Constructor.Body}}
+    }
+
+    {{ range .Methods }}
+      {{.}}
+    {{ end }}
+}
