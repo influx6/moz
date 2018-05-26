@@ -829,7 +829,7 @@ type ArgType struct {
 	Pkg             *PackageDeclaration
 }
 
-func (a *ArgType) GetStructJSON() string {
+func (a ArgType) GetStructJSON() string {
 	if a.StructObject == nil {
 		return ""
 	}
