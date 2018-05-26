@@ -835,7 +835,6 @@ func (a ArgType) GetStructDeclr() StructDeclaration {
 		Struct:          a.StructObject,
 		Name:            a.Spec.Name.Name,
 		Declr:           a.Pkg,
-		NameWithPackage: fmt.Sprintf("%s.%s", a.Package, a.Spec.Name.Name),
 	}
 }
 
