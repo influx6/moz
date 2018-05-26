@@ -829,14 +829,24 @@ type ArgType struct {
 	Pkg             *PackageDeclaration
 }
 
-func (a *ArgType) GetStructDeclr() StructDeclaration {
-	return StructDeclaration{
+func (a *ArgType) GetStructJSON() string {
+	if a.StructObject == nil {
+		return ""
+	}
+
+	str := StructDeclaration{
 		Object:          a.Spec,
 		Struct:          a.StructObject,
 		Name:            a.Type,
 		Declr:           a.Pkg,
 		NameWithPackage: fmt.Sprintf("%s.%s", a.Package, a.Type),
 	}
+
+	res, err := MapOutFieldsToJSON(str, "json", "")
+	if err != nil {
+		return ""
+	}
+	return res
 }
 
 // FunctionDefinition defines a type to represent the function/method declarations of an
