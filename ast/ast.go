@@ -809,6 +809,7 @@ type ArgType struct {
 	Type            string
 	ExType          string
 	Package         string
+	IsStruct        bool
 	BaseType        bool
 	Import          ImportDeclaration
 	Import2         ImportDeclaration
@@ -1351,6 +1352,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 				arg.Spec = def
 				switch obx := def.Type.(type) {
 				case *ast.StructType:
+					arg.IsStruct = true
 					arg.StructObject = obx
 				case *ast.InterfaceType:
 					arg.InterfaceObject = obx
@@ -1404,6 +1406,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 				if stype, ok := mdeclr.StructFor(iobj.Sel.Name); ok {
 					arg.Spec = stype.Object
+					arg.IsStruct = true
 					arg.StructObject = stype.Struct
 				}
 
@@ -1463,6 +1466,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 					}
 
 					if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
+						arg.IsStruct = true
 						arg.Spec = stype.Object
 						arg.StructObject = stype.Struct
 					}
@@ -1477,6 +1481,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		case *ast.InterfaceType:
 			arg.InterfaceObject = value
 		case *ast.StructType:
+			arg.IsStruct = true
 			arg.StructObject = value
 		case *ast.ArrayType:
 			arg.ArrayType = value
@@ -1492,6 +1497,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 					arg.Spec = def
 					switch obx := def.Type.(type) {
 					case *ast.StructType:
+						arg.IsStruct = true
 						arg.StructObject = obx
 					case *ast.InterfaceType:
 						arg.InterfaceObject = obx
@@ -1587,6 +1593,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 					}
 
 					if stype, ok := mdeclr.StructFor(value.Sel.Name); ok {
+						arg.IsStruct = true
 						arg.Spec = stype.Object
 						arg.StructObject = stype.Struct
 					}
@@ -1602,6 +1609,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		case *ast.InterfaceType:
 			arg.InterfaceObject = value
 		case *ast.StructType:
+			arg.IsStruct = true
 			arg.StructObject = value
 		case *ast.Ident:
 			arg.IdentType = value
@@ -1613,6 +1621,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 					arg.Spec = def
 					switch obx := def.Type.(type) {
 					case *ast.StructType:
+						arg.IsStruct = true
 						arg.StructObject = obx
 					case *ast.InterfaceType:
 						arg.InterfaceObject = obx
@@ -1664,6 +1673,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		case *ast.InterfaceType:
 			arg.InterfaceObject = value
 		case *ast.StructType:
+			arg.IsStruct = true
 			arg.StructObject = value
 		case *ast.ArrayType:
 			arg.ArrayType = value
@@ -1678,6 +1688,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 					arg.Spec = def
 					switch obx := def.Type.(type) {
 					case *ast.StructType:
+						arg.IsStruct = true
 						arg.StructObject = obx
 					case *ast.InterfaceType:
 						arg.InterfaceObject = obx
