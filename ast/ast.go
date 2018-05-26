@@ -833,7 +833,7 @@ func (a ArgType) GetStructDeclr() StructDeclaration {
 	return StructDeclaration{
 		Object:          a.Spec,
 		Struct:          a.StructObject,
-		Name:            a.Spec.Name.Name,
+		Name:            a.Type,
 		Declr:           a.Pkg,
 		NameWithPackage: fmt.Sprintf("%s.%s", a.Package, a.Type),
 	}
