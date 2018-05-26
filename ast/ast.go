@@ -829,7 +829,7 @@ type ArgType struct {
 	Pkg             *PackageDeclaration
 }
 
-func (a ArgType) GetStructDeclr() StructDeclaration {
+func (a *ArgType) GetStructDeclr() StructDeclaration {
 	return StructDeclaration{
 		Object:          a.Spec,
 		Struct:          a.StructObject,
