@@ -130,6 +130,12 @@ var (
 		"equal": func(b, a interface{}) bool {
 			return b == a
 		},
+		"isNil": func(b interface{}) bool {
+			return b == nil
+		},
+		"notNil": func(b interface{}) bool {
+			return b != nil
+		},
 		"not": func(b bool) bool {
 			return !b
 		},
