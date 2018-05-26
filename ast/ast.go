@@ -826,6 +826,17 @@ type ArgType struct {
 	PointerType     *ast.StarExpr
 	IdentType       *ast.Ident
 	Tags            []TagDeclaration
+	Pkg             *PackageDeclaration
+}
+
+func (a ArgType) GetStructDeclr() StructDeclaration {
+	return StructDeclaration{
+		Object:          a.Spec,
+		Struct:          a.StructObject,
+		Name:            a.Spec.Name.Name,
+		Declr:           a.Pkg,
+		NameWithPackage: fmt.Sprintf("%s.%s", a.Package, a.Spec.Name.Name),
+	}
 }
 
 // FunctionDefinition defines a type to represent the function/method declarations of an
@@ -1288,6 +1299,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		arg := ArgType{
 			Name:            name,
+			Pkg:             pkg,
 			Tags:            tags,
 			NameObject:      nameObj,
 			Type:            getName(iobj),
@@ -1314,6 +1326,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		arg := ArgType{
 			Name:       name,
+			Pkg:        pkg,
 			Tags:       tags,
 			NameObject: nameObj,
 			Type:       getName(iobj),
@@ -1359,6 +1372,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		}
 
 		arg := ArgType{
+			Pkg:            pkg,
 			Name:           name,
 			Import:         importDclr,
 			Tags:           tags,
@@ -1373,6 +1387,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		if !importDclr.InternalPkg {
 			if mdeclr, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+				arg.Pkg = &mdeclr.Packages[0]
 				if mtype, ok := mdeclr.TypeFor(iobj.Sel.Name); ok {
 					arg.Spec = mtype.Object
 				}
@@ -1404,6 +1419,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Tags = tags
+		arg.Pkg = pkg
 		arg.Name = name
 		arg.PointerType = iobj
 		arg.Type = getName(iobj)
@@ -1431,6 +1447,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 			if !importDclr.InternalPkg {
 				if mdeclr, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+					arg.Pkg = &mdeclr.Packages[0]
 					if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
 						arg.Spec = mtype.Object
 					}
@@ -1490,6 +1507,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Name = name
+		arg.Pkg = pkg
 		arg.Tags = tags
 		arg.MapType = iobj
 		arg.Type = getName(iobj)
@@ -1525,6 +1543,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Name = name
+		arg.Pkg = pkg
 		arg.Tags = tags
 		arg.ArrayType = iobj
 		arg.Type = getName(iobj)
@@ -1552,6 +1571,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 			if !importDclr.InternalPkg {
 				if mdeclr, ok := pkg.ImportedPackages[importDclr.Path]; ok {
+					arg.Pkg = &mdeclr.Packages[0]
 					if mtype, ok := mdeclr.TypeFor(value.Sel.Name); ok {
 						arg.Spec = mtype.Object
 					}
@@ -1608,6 +1628,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Name = name
+		arg.Pkg = pkg
 		arg.Tags = tags
 		arg.Type = getName(iobj.Value)
 		arg.ExType = getNameAsFromOuter(iobj, filepath.Base(pkg.Package))
