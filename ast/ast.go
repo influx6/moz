@@ -805,6 +805,7 @@ func (i *InterfaceDeclaration) Methods(pkg *PackageDeclaration) []FunctionDefini
 // ArgType defines a type to represent the information for a giving functions argument or
 // return type declaration.
 type ArgType struct {
+	Owner           string
 	Name            string
 	Type            string
 	ExType          string
@@ -1153,13 +1154,23 @@ type FieldDeclaration struct {
 }
 
 // GetFields returns all fields associated with the giving struct but skips
+// ones it cant get details for.
 func GetFields(str StructDeclaration, pkg *PackageDeclaration) []FieldDeclaration {
 	var fields []FieldDeclaration
 
 	var counter int
 	for _, item := range str.Struct.Fields.List {
 		counter++
-		arg, err := GetArgTypeFromField(counter, "var", pkg.File, item, pkg)
+
+		arg, err := GetArgTypeFromField(
+			counter,
+			"var",
+			getNameFromIdents(item.Names, str.Name),
+			pkg.File,
+			item,
+			pkg,
+		)
+
 		if err != nil {
 			continue
 		}
@@ -1270,7 +1281,7 @@ func GetIdentName(field *ast.Field) (*ast.Ident, error) {
 
 // GetArgTypeFromField returns a ArgType that writes out the representation of the giving variable name or decleration ast.Field
 // associated with the giving package. It returns an error if it does not know the type.
-func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
+func GetArgTypeFromField(retCounter int, varPrefix string, method string, targetFile string, result *ast.Field, pkg *PackageDeclaration) (ArgType, error) {
 	var tags []TagDeclaration
 
 	if result.Tag != nil {
@@ -1310,6 +1321,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		arg := ArgType{
 			Name:            name,
+			Owner:           method,
 			Pkg:             pkg,
 			Tags:            tags,
 			NameObject:      nameObj,
@@ -1338,6 +1350,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		arg := ArgType{
 			Name:       name,
 			Pkg:        pkg,
+			Owner:      method,
 			Tags:       tags,
 			NameObject: nameObj,
 			Type:       getName(iobj),
@@ -1386,6 +1399,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		arg := ArgType{
 			Pkg:            pkg,
 			Name:           name,
+			Owner:          method,
 			Import:         importDclr,
 			Tags:           tags,
 			Package:        xobj.Name,
@@ -1433,6 +1447,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 		var arg ArgType
 		arg.Tags = tags
 		arg.Pkg = pkg
+		arg.Owner = method
 		arg.Name = name
 		arg.PointerType = iobj
 		arg.Type = getName(iobj)
@@ -1523,6 +1538,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Name = name
+		arg.Owner = method
 		arg.Pkg = pkg
 		arg.Tags = tags
 		arg.MapType = iobj
@@ -1559,6 +1575,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Name = name
+		arg.Owner = method
 		arg.Pkg = pkg
 		arg.Tags = tags
 		arg.ArrayType = iobj
@@ -1647,6 +1664,7 @@ func GetArgTypeFromField(retCounter int, varPrefix string, targetFile string, re
 
 		var arg ArgType
 		arg.Name = name
+		arg.Owner = method
 		arg.Pkg = pkg
 		arg.Tags = tags
 		arg.Type = getName(iobj.Value)
@@ -1723,7 +1741,7 @@ func GetFunctionDefinitionFromField(method *ast.Field, pkg *PackageDeclaration) 
 		var retCounter int
 		for _, result := range ftype.Results.List {
 			retCounter++
-			arg, err := GetArgTypeFromField(retCounter, "ret", pkg.File, result, pkg)
+			arg, err := GetArgTypeFromField(retCounter, "ret", nameIdent.Name, pkg.File, result, pkg)
 			if err != nil {
 				return FunctionDefinition{}, err
 			}
@@ -1736,7 +1754,7 @@ func GetFunctionDefinitionFromField(method *ast.Field, pkg *PackageDeclaration) 
 		var varCounter int
 		for _, param := range ftype.Params.List {
 			varCounter++
-			arg, err := GetArgTypeFromField(varCounter, "var", pkg.File, param, pkg)
+			arg, err := GetArgTypeFromField(varCounter, "var", nameIdent.Name, pkg.File, param, pkg)
 			if err != nil {
 				return FunctionDefinition{}, err
 			}
@@ -1760,7 +1778,7 @@ func GetFunctionDefinitionFromDeclaration(funcObj FuncDeclaration, pkg *PackageD
 		var retCounter int
 		for _, result := range funcObj.Type.Results.List {
 			retCounter++
-			arg, err := GetArgTypeFromField(retCounter, "ret", funcObj.File, result, pkg)
+			arg, err := GetArgTypeFromField(retCounter, "ret", funcObj.FuncName, funcObj.File, result, pkg)
 			if err != nil {
 				return FunctionDefinition{}, err
 			}
@@ -1774,7 +1792,7 @@ func GetFunctionDefinitionFromDeclaration(funcObj FuncDeclaration, pkg *PackageD
 		var varCounter int
 		for _, param := range funcObj.Type.Params.List {
 			varCounter++
-			arg, err := GetArgTypeFromField(varCounter, "var", funcObj.File, param, pkg)
+			arg, err := GetArgTypeFromField(varCounter, "var", funcObj.FuncName, funcObj.File, param, pkg)
 			if err != nil {
 				return FunctionDefinition{}, err
 			}
@@ -1872,6 +1890,14 @@ func getPackageFromItem(item interface{}, defaultPkg string) (string, bool) {
 	}
 
 	return defaultPkg, false
+}
+
+func getNameFromIdents(idents []*ast.Ident, def string) string {
+	if len(idents) == 0 {
+		return def
+	}
+
+	return idents[0].Name
 }
 
 func getSelector(item interface{}) (*ast.SelectorExpr, error) {
