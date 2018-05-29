@@ -809,6 +809,8 @@ type ArgType struct {
 	Name            string
 	Type            string
 	ExType          string
+	IsReturn        bool
+	FromMethod      bool
 	Package         string
 	IsStruct        bool
 	BaseType        bool
@@ -1746,6 +1748,8 @@ func GetFunctionDefinitionFromField(method *ast.Field, pkg *PackageDeclaration) 
 				return FunctionDefinition{}, err
 			}
 
+			arg.IsReturn = true
+			arg.FromMethod = true
 			returns = append(returns, arg)
 		}
 	}
@@ -1758,6 +1762,8 @@ func GetFunctionDefinitionFromField(method *ast.Field, pkg *PackageDeclaration) 
 			if err != nil {
 				return FunctionDefinition{}, err
 			}
+
+			arg.FromMethod = true
 			arguments = append(arguments, arg)
 		}
 	}
@@ -1783,8 +1789,9 @@ func GetFunctionDefinitionFromDeclaration(funcObj FuncDeclaration, pkg *PackageD
 				return FunctionDefinition{}, err
 			}
 
+			arg.IsReturn = true
+			arg.FromMethod = true
 			returns = append(returns, arg)
-
 		}
 	}
 
@@ -1797,6 +1804,7 @@ func GetFunctionDefinitionFromDeclaration(funcObj FuncDeclaration, pkg *PackageD
 				return FunctionDefinition{}, err
 			}
 
+			arg.FromMethod = true
 			arguments = append(arguments, arg)
 		}
 	}
