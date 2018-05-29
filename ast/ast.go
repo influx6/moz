@@ -833,6 +833,22 @@ type ArgType struct {
 	Pkg             *PackageDeclaration
 }
 
+//type ArgsBasic struct {
+//	Owner      string
+//	Name       string
+//	Type       string
+//	ExType     string
+//	IsReturn   bool
+//	FromMethod bool
+//	IsStruct   bool
+//	IsSlice    bool
+//	IsMap      bool
+//}
+//
+//func (a ArgType) GetBasics() ArgBasics {
+//
+//}
+
 func (a ArgType) GetStructJSON() string {
 	if a.StructObject == nil {
 		return ""

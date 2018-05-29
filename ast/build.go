@@ -779,7 +779,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 										aliasedObjectSpec = atype
 										var field ast.Field
 										field.Type = atype.Type
-										if arg, err := GetArgTypeFromField(1, "type", packageDeclr.File, &field, &packageDeclr); err == nil {
+										if arg, err := GetArgTypeFromField(1, "type", mainType.Name, packageDeclr.File, &field, &packageDeclr); err == nil {
 											argType = &arg
 										} else {
 											log.Emit(
@@ -792,7 +792,7 @@ func parseFileToPackage(log metrics.Metrics, dir string, path string, pkgName st
 								} else {
 									var field ast.Field
 									field.Type = typeIdent
-									if arg, err := GetArgTypeFromField(1, "type", packageDeclr.File, &field, &packageDeclr); err == nil {
+									if arg, err := GetArgTypeFromField(1, "type", typeIdent.Name, packageDeclr.File, &field, &packageDeclr); err == nil {
 										argType = &arg
 									} else {
 										log.Emit(
